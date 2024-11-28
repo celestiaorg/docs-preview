@@ -85,9 +85,6 @@ celestia bridge start \
     --p2p.network test &
 wait_for_service 2121 "bridge node"
 
-echo "Waiting for bridge node to sync..."
-sleep 10
-
 # Get bridge node info
 echo "Getting bridge node peer info..."
 BRIDGE_INFO=$(celestia p2p info --node.store "$HOME/.celestia-custom-bridge")
