@@ -1,0 +1,35 @@
+import{c as o}from"./chunks/constants.b02263eb.js";import{o as e,c as t,k as s,a,t as l,l as p,Q as n}from"./chunks/framework.0dcd4fb2.js";const c=n("",48),r={class:"language-bash vp-adaptive-theme"},i=s("button",{title:"Copy Code",class:"copy"},null,-1),y=s("span",{class:"lang"},"bash",-1),E={class:"shiki github-dark vp-code-dark"},d=n("",1),F=s("span",{class:"line"},[s("span",{style:{color:"#E1E4E8"}},"  $GRANTER_ADDRESS $GRANTEE_ADDRESS "),s("span",{style:{color:"#79B8FF"}},"\\")],-1),_=n("",1),h=n("",1),u=n("",1),C={class:"line"},g=s("span",{style:{color:"#E1E4E8"}},"  ",-1),b=s("span",{style:{color:"#79B8FF"}},"--chain-id",-1),B=s("span",{style:{color:"#E1E4E8"}}," ",-1),T={style:{color:"#9ECBFF"}},m=s("span",{style:{color:"#E1E4E8"}}," ",-1),q=s("span",{style:{color:"#79B8FF"}},"\\",-1),A=n("",1),f=n("",1),S=n("",1),v=s("span",{class:"line"},[s("span",{style:{color:"#E1E4E8"}},"  "),s("span",{style:{color:"#79B8FF"}},"--yes")],-1),R={class:"shiki github-light vp-code-light"},k=n("",1),D=s("span",{class:"line"},[s("span",{style:{color:"#24292E"}},"  $GRANTER_ADDRESS $GRANTEE_ADDRESS "),s("span",{style:{color:"#005CC5"}},"\\")],-1),P=n("",1),w=n("",1),N=n("",1),I={class:"line"},G=s("span",{style:{color:"#24292E"}},"  ",-1),V=s("span",{style:{color:"#005CC5"}},"--chain-id",-1),x=s("span",{style:{color:"#24292E"}}," ",-1),$={style:{color:"#032F62"}},O=s("span",{style:{color:"#24292E"}}," ",-1),U=s("span",{style:{color:"#005CC5"}},"\\",-1),j=n("",1),L=n("",1),M=n("",1),H=s("span",{class:"line"},[s("span",{style:{color:"#24292E"}},"  "),s("span",{style:{color:"#005CC5"}},"--yes")],-1),K=s("p",null,[a("Example: "),s("a",{href:"https://mocha.celenium.io/tx/802a17777fbeab416f6fa2c25f0c56dd9cc8a92afc2a96293d114ac7c22efb5c",target:"_blank",rel:"noreferrer"},"FeeGrant transaction on Mocha")],-1),Y=s("h3",{id:"using-a-grantee-account-to-send-transactions-with-celestia-appd",tabindex:"-1"},[a("Using a grantee account to send transactions with celestia-appd "),s("a",{class:"header-anchor",href:"#using-a-grantee-account-to-send-transactions-with-celestia-appd","aria-label":'Permalink to "Using a grantee account to send transactions with celestia-appd"'},"​")],-1),z=s("p",null,"Once a fee grant has been established, the grantee can submit transactions using the granter's account to pay fees:",-1),X={class:"language-bash vp-adaptive-theme"},J=s("button",{title:"Copy Code",class:"copy"},null,-1),Q=s("span",{class:"lang"},"bash",-1),Z={class:"shiki github-dark vp-code-dark"},W=n("",1),ss=n("",1),as={class:"line"},ns=s("span",{style:{color:"#E1E4E8"}},"  ",-1),os=s("span",{style:{color:"#79B8FF"}},"--chain-id",-1),ls=s("span",{style:{color:"#E1E4E8"}}," ",-1),ps={style:{color:"#9ECBFF"}},es=s("span",{style:{color:"#E1E4E8"}}," ",-1),ts=s("span",{style:{color:"#79B8FF"}},"\\",-1),cs=n("",1),rs=n("",1),is=n("",1),ys=n("",1),Es=n("",1),ds=s("span",{class:"line"},[s("span",{style:{color:"#E1E4E8"}},"  "),s("span",{style:{color:"#79B8FF"}},"--yes")],-1),Fs={class:"shiki github-light vp-code-light"},_s=n("",1),hs=n("",1),us={class:"line"},Cs=s("span",{style:{color:"#24292E"}},"  ",-1),gs=s("span",{style:{color:"#005CC5"}},"--chain-id",-1),bs=s("span",{style:{color:"#24292E"}}," ",-1),Bs={style:{color:"#032F62"}},Ts=s("span",{style:{color:"#24292E"}}," ",-1),ms=s("span",{style:{color:"#005CC5"}},"\\",-1),qs=n("",1),As=n("",1),fs=n("",1),Ss=n("",1),vs=n("",1),Rs=s("span",{class:"line"},[s("span",{style:{color:"#24292E"}},"  "),s("span",{style:{color:"#005CC5"}},"--yes")],-1),ks=n("",23),Vs=JSON.parse('{"title":"FeeGrant module for blobs submission","description":"","frontmatter":{"head":[["meta",{"property":"og:title","content":"FeeGrant module for blobs submission | Celestia Docs"}],["meta",{"property":"og:description","content":"The first modular blockchain network."}]]},"headers":[],"relativePath":"how-to-guides/feegrant-for-blobs.md","filePath":"how-to-guides/feegrant-for-blobs.md","lastUpdated":1747256832000}'),Ds={name:"how-to-guides/feegrant-for-blobs.md"},xs=Object.assign(Ds,{setup(Ps){return(ws,Ns)=>(e(),t("div",null,[c,s("div",r,[i,y,s("pre",E,[s("code",null,[d,a(`
+`),F,a(`
+`),_,a(`
+`),h,a(`
+`),u,a(`
+`),s("span",C,[g,b,B,s("span",T,l(p(o).mochaChainId),1),m,q]),a(`
+`),A,a(`
+`),f,a(`
+`),S,a(`
+`),v])]),s("pre",R,[s("code",null,[k,a(`
+`),D,a(`
+`),P,a(`
+`),w,a(`
+`),N,a(`
+`),s("span",I,[G,V,x,s("span",$,l(p(o).mochaChainId),1),O,U]),a(`
+`),j,a(`
+`),L,a(`
+`),M,a(`
+`),H])])]),K,Y,z,s("div",X,[J,Q,s("pre",Z,[s("code",null,[W,a(`
+`),ss,a(`
+`),s("span",as,[ns,os,ls,s("span",ps,l(p(o).mochaChainId),1),es,ts]),a(`
+`),cs,a(`
+`),rs,a(`
+`),is,a(`
+`),ys,a(`
+`),Es,a(`
+`),ds])]),s("pre",Fs,[s("code",null,[_s,a(`
+`),hs,a(`
+`),s("span",us,[Cs,gs,bs,s("span",Bs,l(p(o).mochaChainId),1),Ts,ms]),a(`
+`),qs,a(`
+`),As,a(`
+`),fs,a(`
+`),Ss,a(`
+`),vs,a(`
+`),Rs])])]),ks]))}});export{Vs as __pageData,xs as default};
