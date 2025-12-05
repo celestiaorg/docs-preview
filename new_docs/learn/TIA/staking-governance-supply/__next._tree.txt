@@ -1,9 +1,10 @@
 1:"$Sreact.fragment"
-2:I[97367,["/docs-preview/new_docs/_next/static/chunks/ff1a16fafef87110.js","/docs-preview/new_docs/_next/static/chunks/aea4de905f757fc5.js"],"ViewportBoundary"]
-4:I[97367,["/docs-preview/new_docs/_next/static/chunks/ff1a16fafef87110.js","/docs-preview/new_docs/_next/static/chunks/aea4de905f757fc5.js"],"MetadataBoundary"]
+2:I[24431,[],"ViewportBoundary"]
+4:I[24431,[],"MetadataBoundary"]
 5:"$Sreact.suspense"
-7:I[27201,["/docs-preview/new_docs/_next/static/chunks/ff1a16fafef87110.js","/docs-preview/new_docs/_next/static/chunks/aea4de905f757fc5.js"],"IconMark"]
-:HL["/docs-preview/new_docs/_next/static/chunks/221ce6682042a4f8.css","style"]
-0:{"buildId":"M23cO12aPLUwOope0gFHr","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"learn","paramType":null,"paramKey":"learn","hasRuntimePrefetch":false,"slots":{"children":{"name":"TIA","paramType":null,"paramKey":"TIA","hasRuntimePrefetch":false,"slots":{"children":{"name":"staking-governance-supply","paramType":null,"paramKey":"staking-governance-supply","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":true},"head":["$","$1","h",{"children":[null,["$","$L2",null,{"children":"$@3"}],["$","div",null,{"hidden":true,"children":["$","$L4",null,{"children":["$","$5",null,{"name":"Next.Metadata","children":"$@6"}]}]}],null]}],"isHeadPartial":false,"staleTime":300}
+7:I[80622,[],"IconMark"]
+:HL["/docs-preview/new_docs/_next/static/css/045f7e7a0b2eb456.css","style"]
+:HL["/docs-preview/new_docs/_next/static/css/59683e49e5570b96.css","style"]
+0:{"buildId":"tKJeD1FXejXJy15wpCrs_","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"learn","paramType":null,"paramKey":"learn","hasRuntimePrefetch":false,"slots":{"children":{"name":"TIA","paramType":null,"paramKey":"TIA","hasRuntimePrefetch":false,"slots":{"children":{"name":"staking-governance-supply","paramType":null,"paramKey":"staking-governance-supply","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":true},"head":["$","$1","h",{"children":[null,["$","$L2",null,{"children":"$@3"}],["$","div",null,{"hidden":true,"children":["$","$L4",null,{"children":["$","$5",null,{"name":"Next.Metadata","children":"$@6"}]}]}],null]}],"isHeadPartial":false,"staleTime":300}
 3:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
-6:[["$","title","0",{"children":"Staking, governance, & supply"}],["$","link","1",{"rel":"icon","href":"/docs-preview/new_docs/favicon.ico?favicon.0b3bf435.ico","sizes":"256x256","type":"image/x-icon"}],["$","$L7","2",{}]]
+6:[["$","title","0",{"children":"Staking, governance, & supply"}],["$","link","1",{"rel":"icon","href":"/docs-preview/new_docs/favicon.ico?603d046c9a6fdfbb","type":"image/x-icon","sizes":"16x16"}],["$","$L7","2",{}]]

@@ -1,0 +1,241 @@
+1:"$Sreact.fragment"
+2:I[32607,["2545","static/chunks/c16f53c3-0e9aa4a91998020e.js","2162","static/chunks/2162-73d17f4e396dee6b.js","2260","static/chunks/app/operate/optional-services/instantiate-testnet/page-58312ecb924bd3f5.js"],"WrapperWithFooter"]
+6:I[99114,["2545","static/chunks/c16f53c3-0e9aa4a91998020e.js","2162","static/chunks/2162-73d17f4e396dee6b.js","2260","static/chunks/app/operate/optional-services/instantiate-testnet/page-58312ecb924bd3f5.js"],"HeadingAnchor"]
+7:I[63692,["2545","static/chunks/c16f53c3-0e9aa4a91998020e.js","2162","static/chunks/2162-73d17f4e396dee6b.js","2260","static/chunks/app/operate/optional-services/instantiate-testnet/page-58312ecb924bd3f5.js"],"ToggleWordWrapButton"]
+39:I[24431,[],"OutletBoundary"]
+3a:"$Sreact.suspense"
+3c:I[42995,["2545","static/chunks/c16f53c3-0e9aa4a91998020e.js","2162","static/chunks/2162-73d17f4e396dee6b.js","2260","static/chunks/app/operate/optional-services/instantiate-testnet/page-58312ecb924bd3f5.js"],"CopyToClipboard"]
+3:T1542,---
+description: A guide that helps you instantiate a new testnetwork with Celestia App.
+---
+
+# Celestia App network instantiation guide
+
+Use this guide to spin up your own Celestia test network for experiments or feature testing.
+
+## Hardware requirements
+
+Follow the validator hardware requirements.
+
+## Setup dependencies
+
+Install prerequisites via the environment setup guide.
+
+## celestia-app installation
+
+Install celestia-app via the install guide.
+
+## Spin up a Celestia testnet
+
+If you want to spin up a quick testnet with your friends, you can follow these steps.
+Unless otherwise noted, every step must be done by everyone who wants to
+participate in this testnet.
+
+### Optional: Reset working directory
+
+If you have already initialized a working directory for `celestia-appd` in the past,
+you must clean up before reinitializing a new directory. You can do so by running
+the following command:
+
+```sh
+celestia-appd tendermint unsafe-reset-all --home $HOME/.celestia-app
+```
+
+### Initialize a working directory
+
+Run the following command:
+
+```sh
+VALIDATOR_NAME=validator1
+CHAIN_ID=testnet
+celestia-appd init $VALIDATOR_NAME --chain-id $CHAIN_ID
+```
+
+- The value we will use for `$VALIDATOR_NAME` is `validator1` but you should choose
+  your own node name.
+- The value we will use for `$CHAIN_ID` is `testnet`. The `$CHAIN_ID` must
+  remain the same for everyone participating in this network.
+
+### Create a new key
+
+Next, run the following command:
+
+```sh
+KEY_NAME=validator
+celestia-appd keys add $KEY_NAME --keyring-backend test
+```
+
+This will create a new key, with a name of your choosing.
+Save the output of this command somewhere; you'll need
+the address generated here later. Here, we set the value of our
+key `$KEY_NAME` to `validator` for demonstration.
+
+### Add genesis account KeyName
+
+Run the following command:
+
+```sh
+TIA_AMOUNT="10000000utia"
+celestia-appd genesis add-genesis-account $KEY_NAME $TIA_AMOUNT --keyring-backend test
+```
+
+Here `$KEY_NAME` is the same key name as before.
+
+### Optional: Adding other validators
+
+If other participants in your testnet also want to be validators,
+repeat the command above with the specific amount for their public keys.
+
+Once all the validators are added, the `genesis.json` file is created. You need
+to share it with all other validators in your testnet in order for everyone to
+proceed with the following step.
+
+You can find the `genesis.json` at `$HOME/.celestia-app/config/genesis.json`
+
+### Create the genesis transaction for new chain
+
+Run the following command:
+
+```sh
+STAKING_AMOUNT=9000000utia
+celestia-appd gentx $KEY_NAME $STAKING_AMOUNT --chain-id $CHAIN_ID \
+  --keyring-backend test
+```
+
+This will create the genesis transaction for your new chain.
+Here `$STAKING_AMOUNT` should be at least `9000000utia`. If you
+provide too much or too little, you will encounter an error
+when starting your node.
+
+You will find the generated gentx JSON file inside `$HOME/.celestia-app/config/gentx/gentx-$KEY_NAME.json`
+
+> **Note:** If you have other validators in your network, they need to also
+> run the above command with the `genesis.json` file you shared with
+> them in the previous step.
+
+### Creating the genesis JSON file
+
+Once all participants have submitted their gentx JSON files to you,
+you will pull all those gentx files inside the following directory:
+`$HOME/.celestia-appd/config/gentx` and use them to create the final
+`genesis.json` file.
+
+Once you added the gentx files of all the participants, run the following command:
+
+```sh
+celestia-appd collect-gentxs
+```
+
+This command will look for the gentx files in this repo which should
+be moved to the following directory `$HOME/.celestia-app/config/gentx`.
+
+It will update the `genesis.json` file after in this location
+`$HOME/.celestia-app/config/genesis.json` which now includes the gentx
+of other participants.
+
+You should then share this final `genesis.json` file with all the
+other participants who must add it to their `$HOME/.celestia-app/config` directory.
+
+Everyone must ensure that they replace their existing `genesis.json` file with
+this new one created.
+
+### Modify your config file
+
+Open the following file `$HOME/.celestia-app/config/config.toml` to modify it.
+
+Inside the file, add the other participants by modifying the following line to
+include other participants as persistent peers:
+
+```text
+# Comma separated list of nodes to keep persistent connections to
+persistent_peers = "[validator_address]@[ip_address]:[port],[validator_address]@[ip_address]:[port]"
+```
+
+### Add your node as a persistent peer
+
+The following allows you to share your node as a persistent peer
+that you can share with others so other participants can peer with you.
+
+Run the following command:
+
+```sh
+IP_ADDRESS=$(curl ifconfig.me)
+NODE_ID=$(celestia-appd tendermint show-node-id)
+PORT_NUMBER=26656
+```
+
+Note that the default port is `26656`.
+
+Now you can run the following command to output your validator node address:
+
+```sh
+PEER="$NODE_ID@$IP_ADDRESS:$PORT_NUMBER"
+echo $PEER
+```
+
+The output is your validator node address which you can share with other validators
+so they can peer with you.
+
+### Instantiate the network
+
+You can start your node by running the following command:
+
+```sh
+celestia-appd start
+```
+
+> **Tip:** Refer to the ports section of the troubleshooting page for information on which ports are required to be open on your machine.
+
+Now you have a new Celestia testnet to play around with!0:{"buildId":"tKJeD1FXejXJy15wpCrs_","rsc":["$","$1","c",{"children":[["$","$L2",null,{"metadata":{"description":"A guide that helps you instantiate a new testnetwork with Celestia App.","title":"Celestia App network instantiation guide","filePath":"app/operate/optional-services/instantiate-testnet/page.mdx","timestamp":1764977130000},"toc":[{"value":"Hardware requirements","id":"hardware-requirements","depth":2},{"value":"Setup dependencies","id":"setup-dependencies","depth":2},{"value":"celestia-app installation","id":"celestia-app-installation","depth":2},{"value":"Spin up a Celestia testnet","id":"spin-up-a-celestia-testnet","depth":2},{"value":"Optional: Reset working directory","id":"optional-reset-working-directory","depth":3},{"value":"Initialize a working directory","id":"initialize-a-working-directory","depth":3},{"value":"Create a new key","id":"create-a-new-key","depth":3},{"value":"Add genesis account KeyName","id":"add-genesis-account-keyname","depth":3},{"value":"Optional: Adding other validators","id":"optional-adding-other-validators","depth":3},{"value":"Create the genesis transaction for new chain","id":"create-the-genesis-transaction-for-new-chain","depth":3},{"value":"Creating the genesis JSON file","id":"creating-the-genesis-json-file","depth":3},{"value":"Modify your config file","id":"modify-your-config-file","depth":3},{"value":"Add your node as a persistent peer","id":"add-your-node-as-a-persistent-peer","depth":3},{"value":"Instantiate the network","id":"instantiate-the-network","depth":3}],"sourceCode":"$3","children":"$L4"}],null,"$L5"]}],"loading":null,"isPartial":false}
+4:[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Celestia App network instantiation guide","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Use this guide to spin up your own Celestia test network for experiments or feature testing."}],"\n",["$","h2",null,{"id":"hardware-requirements","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Hardware requirements",["$","$L6",null,{"id":"hardware-requirements"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Follow the validator hardware requirements."}],"\n",["$","h2",null,{"id":"setup-dependencies","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Setup dependencies",["$","$L6",null,{"id":"setup-dependencies"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Install prerequisites via the environment setup guide."}],"\n",["$","h2",null,{"id":"celestia-app-installation","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["celestia-app installation",["$","$L6",null,{"id":"celestia-app-installation"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Install celestia-app via the install guide."}],"\n",["$","h2",null,{"id":"spin-up-a-celestia-testnet","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Spin up a Celestia testnet",["$","$L6",null,{"id":"spin-up-a-celestia-testnet"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you want to spin up a quick testnet with your friends, you can follow these steps.\nUnless otherwise noted, every step must be done by everyone who wants to\nparticipate in this testnet."}],"\n",["$","h3",null,{"id":"optional-reset-working-directory","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Optional: Reset working directory",["$","$L6",null,{"id":"optional-reset-working-directory"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If you have already initialized a working directory for ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"celestia-appd"}]," in the past,\nyou must clean up before reinitializing a new directory. You can do so by running\nthe following command:"]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L7",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],"$L8"]}],"$L9"]}]]}],"\n","$La","\n","$Lb","\n","$Lc","\n","$Ld","\n","$Le","\n","$Lf","\n","$L10","\n","$L11","\n","$L12","\n","$L13","\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38"]
+5:["$","$L39",null,{"children":["$","$3a",null,{"name":"Next.MetadataOutlet","children":"$@3b"}]}]
+8:["$","$L3c",null,{"className":""}]
+9:["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"celestia-appd"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" tendermint"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" unsafe-reset-all"}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" --home"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" $HOME"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"/.celestia-app"}]]}]}]
+a:["$","h3",null,{"id":"initialize-a-working-directory","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Initialize a working directory",["$","$L6",null,{"id":"initialize-a-working-directory"}]]}]
+b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Run the following command:"}]
+c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L7",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3c",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"VALIDATOR_NAME"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"validator1"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"CHAIN_ID"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"testnet"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"celestia-appd"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" init"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" $VALIDATOR_NAME "}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"--chain-id"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" $CHAIN_ID"}]]}]]}]]}]]}]
+d:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["The value we will use for ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$VALIDATOR_NAME"}]," is ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"validator1"}]," but you should choose\nyour own node name."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The value we will use for ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$CHAIN_ID"}]," is ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"testnet"}],". The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$CHAIN_ID"}]," must\nremain the same for everyone participating in this network."]}],"\n"]}]
+e:["$","h3",null,{"id":"create-a-new-key","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Create a new key",["$","$L6",null,{"id":"create-a-new-key"}]]}]
+f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Next, run the following command:"}]
+10:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L7",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3c",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"KEY_NAME"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"validator"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"celestia-appd"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" keys"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" add"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" $KEY_NAME "}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"--keyring-backend"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" test"}]]}]]}]]}]]}]
+11:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This will create a new key, with a name of your choosing.\nSave the output of this command somewhere; you’ll need\nthe address generated here later. Here, we set the value of our\nkey ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$KEY_NAME"}]," to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"validator"}]," for demonstration."]}]
+12:["$","h3",null,{"id":"add-genesis-account-keyname","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Add genesis account KeyName",["$","$L6",null,{"id":"add-genesis-account-keyname"}]]}]
+13:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Run the following command:"}]
+14:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L7",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3c",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"TIA_AMOUNT"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"\"10000000utia\""}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"celestia-appd"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" genesis"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" add-genesis-account"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" $KEY_NAME $TIA_AMOUNT "}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"--keyring-backend"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" test"}]]}]]}]]}]]}]
+15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Here ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$KEY_NAME"}]," is the same key name as before."]}]
+16:["$","h3",null,{"id":"optional-adding-other-validators","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Optional: Adding other validators",["$","$L6",null,{"id":"optional-adding-other-validators"}]]}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If other participants in your testnet also want to be validators,\nrepeat the command above with the specific amount for their public keys."}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Once all the validators are added, the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"genesis.json"}]," file is created. You need\nto share it with all other validators in your testnet in order for everyone to\nproceed with the following step."]}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can find the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"genesis.json"}]," at ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$HOME/.celestia-app/config/genesis.json"}]]}]
+1a:["$","h3",null,{"id":"create-the-genesis-transaction-for-new-chain","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Create the genesis transaction for new chain",["$","$L6",null,{"id":"create-the-genesis-transaction-for-new-chain"}]]}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Run the following command:"}]
+1c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L7",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3c",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"STAKING_AMOUNT"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"9000000utia"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"celestia-appd"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" gentx"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" $KEY_NAME $STAKING_AMOUNT "}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"--chain-id"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" $CHAIN_ID "}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"\\"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"  --keyring-backend"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" test"}]]}]]}]]}]]}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This will create the genesis transaction for your new chain.\nHere ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$STAKING_AMOUNT"}]," should be at least ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"9000000utia"}],". If you\nprovide too much or too little, you will encounter an error\nwhen starting your node."]}]
+1e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You will find the generated gentx JSON file inside ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$HOME/.celestia-app/config/gentx/gentx-$KEY_NAME.json"}]]}]
+1f:["$","blockquote",null,{"className":"x:not-first:mt-[1.25em] x:border-gray-300 x:italic x:text-gray-700 x:dark:border-gray-700 x:dark:text-gray-400 x:border-s-2 x:ps-[1.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Note:"}]," If you have other validators in your network, they need to also\nrun the above command with the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"genesis.json"}]," file you shared with\nthem in the previous step."]}],"\n"]}]
+20:["$","h3",null,{"id":"creating-the-genesis-json-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Creating the genesis JSON file",["$","$L6",null,{"id":"creating-the-genesis-json-file"}]]}]
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Once all participants have submitted their gentx JSON files to you,\nyou will pull all those gentx files inside the following directory:\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$HOME/.celestia-appd/config/gentx"}]," and use them to create the final\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"genesis.json"}]," file."]}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Once you added the gentx files of all the participants, run the following command:"}]
+23:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L7",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3c",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"celestia-appd"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" collect-gentxs"}]]}]}]]}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This command will look for the gentx files in this repo which should\nbe moved to the following directory ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$HOME/.celestia-app/config/gentx"}],"."]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["It will update the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"genesis.json"}]," file after in this location\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$HOME/.celestia-app/config/genesis.json"}]," which now includes the gentx\nof other participants."]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You should then share this final ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"genesis.json"}]," file with all the\nother participants who must add it to their ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$HOME/.celestia-app/config"}]," directory."]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Everyone must ensure that they replace their existing ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"genesis.json"}]," file with\nthis new one created."]}]
+28:["$","h3",null,{"id":"modify-your-config-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Modify your config file",["$","$L6",null,{"id":"modify-your-config-file"}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Open the following file ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$HOME/.celestia-app/config/config.toml"}]," to modify it."]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Inside the file, add the other participants by modifying the following line to\ninclude other participants as persistent peers:"}]
+2b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L7",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3c",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"# Comma separated list of nodes to keep persistent connections to"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"persistent_peers = \"[validator_address]@[ip_address]:[port],[validator_address]@[ip_address]:[port]\""}]}]]}]]}]]}]
+2c:["$","h3",null,{"id":"add-your-node-as-a-persistent-peer","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Add your node as a persistent peer",["$","$L6",null,{"id":"add-your-node-as-a-persistent-peer"}]]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The following allows you to share your node as a persistent peer\nthat you can share with others so other participants can peer with you."}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Run the following command:"}]
+2f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L7",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3c",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"IP_ADDRESS"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"$$("}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"curl"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" ifconfig.me"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":")"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"NODE_ID"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"$$("}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"celestia-appd"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" tendermint"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" show-node-id"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":")"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"PORT_NUMBER"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"26656"}]]}]]}]]}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Note that the default port is ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"26656"}],"."]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Now you can run the following command to output your validator node address:"}]
+32:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L7",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3c",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"PEER"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"\""}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"$$NODE_ID"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"@"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"$$IP_ADDRESS"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":":"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"$$PORT_NUMBER"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"\""}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"echo"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" $PEER"}]]}]]}]]}]]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The output is your validator node address which you can share with other validators\nso they can peer with you."}]
+34:["$","h3",null,{"id":"instantiate-the-network","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Instantiate the network",["$","$L6",null,{"id":"instantiate-the-network"}]]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can start your node by running the following command:"}]
+36:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L7",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L3c",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"celestia-appd"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" start"}]]}]}]]}]]}]
+37:["$","blockquote",null,{"className":"x:not-first:mt-[1.25em] x:border-gray-300 x:italic x:text-gray-700 x:dark:border-gray-700 x:dark:text-gray-400 x:border-s-2 x:ps-[1.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Tip:"}]," Refer to the ports section of the troubleshooting page for information on which ports are required to be open on your machine."]}],"\n"]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Now you have a new Celestia testnet to play around with!"}]
+3b:null
