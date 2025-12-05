@@ -1,10 +1,15 @@
 1:"$Sreact.fragment"
-2:I[41605,["/docs-preview/new_docs/_next/static/chunks/cf8b63e444af9718.js","/docs-preview/new_docs/_next/static/chunks/434edc4d245e16f2.js","/docs-preview/new_docs/_next/static/chunks/0540bda9562ad847.js","/docs-preview/new_docs/_next/static/chunks/141992c1fb11d67e.js","/docs-preview/new_docs/_next/static/chunks/91a0a7286e3160de.js"],"WrapperWithFooter"]
-4:I[22016,["/docs-preview/new_docs/_next/static/chunks/cf8b63e444af9718.js","/docs-preview/new_docs/_next/static/chunks/434edc4d245e16f2.js","/docs-preview/new_docs/_next/static/chunks/0540bda9562ad847.js","/docs-preview/new_docs/_next/static/chunks/141992c1fb11d67e.js","/docs-preview/new_docs/_next/static/chunks/91a0a7286e3160de.js"],""]
-9:I[97367,["/docs-preview/new_docs/_next/static/chunks/ff1a16fafef87110.js","/docs-preview/new_docs/_next/static/chunks/8d7d635a7c56d90a.js"],"OutletBoundary"]
-a:"$Sreact.suspense"
-3:T910,---
+2:I[41605,["/docs-preview/new_docs/_next/static/chunks/79a6fde0ddc6e93a.js","/docs-preview/new_docs/_next/static/chunks/d58d37d655ba2556.js","/docs-preview/new_docs/_next/static/chunks/80586927a2b92ff4.js","/docs-preview/new_docs/_next/static/chunks/809579129243fe64.js","/docs-preview/new_docs/_next/static/chunks/c74eca95822c5e27.js"],"WrapperWithFooter"]
+4:I[22016,["/docs-preview/new_docs/_next/static/chunks/79a6fde0ddc6e93a.js","/docs-preview/new_docs/_next/static/chunks/d58d37d655ba2556.js","/docs-preview/new_docs/_next/static/chunks/80586927a2b92ff4.js","/docs-preview/new_docs/_next/static/chunks/809579129243fe64.js","/docs-preview/new_docs/_next/static/chunks/c74eca95822c5e27.js"],""]
+b:I[97367,["/docs-preview/new_docs/_next/static/chunks/ff1a16fafef87110.js","/docs-preview/new_docs/_next/static/chunks/aea4de905f757fc5.js"],"OutletBoundary"]
+c:"$Sreact.suspense"
+3:T95a,---
 landingPage: true
+title: Celestia docs
+theme:
+  sidebar: false
+  toc: false
+  breadcrumb: false
 ---
 
 import Link from 'next/link';
@@ -36,7 +41,7 @@ import Link from 'next/link';
     gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
     gap: '1.5rem'
   }}>
-    <Link href="/learn/celestia-101/celestia" style={{
+    <Link href="/learn/celestia-101/data-availability" style={{
       padding: '2rem',
       borderRadius: '8px',
       border: '1px solid var(--border-color, #e5e7eb)',
@@ -50,7 +55,7 @@ import Link from 'next/link';
       <p style={{ margin: '0', fontSize: '0.9rem', opacity: '0.7' }}>Understand modular blockchains and Celestia's architecture</p>
     </Link>
 
-    <Link href="/build/post-retrieve-blob/light-node/quickstart/" style={{
+    <Link href="/build/post-retrieve-blob/overview/" style={{
       padding: '2rem',
       borderRadius: '8px',
       border: '1px solid var(--border-color, #e5e7eb)',
@@ -78,9 +83,11 @@ import Link from 'next/link';
       <p style={{ margin: '0', fontSize: '0.9rem', opacity: '0.7' }}>Run and maintain Celestia nodes and infrastructure</p>
     </Link>
   </div>
-</div>0:{"buildId":"J-Z3Zb9RVJzhMZ0tcu0aq","rsc":["$","$1","c",{"children":[["$","$L2",null,{"metadata":{"landingPage":true,"title":"Page","filePath":"app/page.mdx","timestamp":1764782236000},"toc":[],"sourceCode":"$3","children":["$","div",null,{"style":{"maxWidth":"900px","margin":"4rem auto","padding":"2rem"},"children":[["$","h1",null,{"style":{"fontSize":"2.5rem","fontWeight":"700","marginBottom":"1rem","textAlign":"center"},"children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Celestia docs"}]}],["$","div",null,{"style":{"fontSize":"1.125rem","marginBottom":"3rem","textAlign":"center"},"children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The first modular blockchain network. Build scalable applications with customizable execution environments."}]}],["$","div",null,{"style":{"display":"grid","gridTemplateColumns":"repeat(auto-fit, minmax(250px, 1fr))","gap":"1.5rem"},"children":[["$","$L4",null,{"href":"/learn/celestia-101/celestia","style":{"padding":"2rem","borderRadius":"8px","border":"1px solid var(--border-color, #e5e7eb)","textDecoration":"none","display":"flex","flexDirection":"column","gap":"0.75rem"},"children":[["$","span",null,{"style":{"fontSize":"2rem"},"children":"📚"}],["$","h3",null,{"style":{"fontSize":"1.25rem","fontWeight":"600","margin":"0"},"children":"Learn"}],"$L5"]}],"$L6","$L7"]}]]}]}],null,"$L8"]}],"loading":null,"isPartial":false}
-5:["$","p",null,{"style":{"margin":"0","fontSize":"0.9rem","opacity":"0.7"},"children":"Understand modular blockchains and Celestia’s architecture"}]
-6:["$","$L4",null,{"href":"/build/post-retrieve-blob/light-node/quickstart/","style":{"padding":"2rem","borderRadius":"8px","border":"1px solid var(--border-color, #e5e7eb)","textDecoration":"none","display":"flex","flexDirection":"column","gap":"0.75rem"},"children":[["$","span",null,{"style":{"fontSize":"2rem"},"children":"🛠️"}],["$","h3",null,{"style":{"fontSize":"1.25rem","fontWeight":"600","margin":"0"},"children":"Build"}],["$","p",null,{"style":{"margin":"0","fontSize":"0.9rem","opacity":"0.7"},"children":"Start building applications on Celestia’s data availability layer"}]]}]
-7:["$","$L4",null,{"href":"/operate","style":{"padding":"2rem","borderRadius":"8px","border":"1px solid var(--border-color, #e5e7eb)","textDecoration":"none","display":"flex","flexDirection":"column","gap":"0.75rem"},"children":[["$","span",null,{"style":{"fontSize":"2rem"},"children":"⚙️"}],["$","h3",null,{"style":{"fontSize":"1.25rem","fontWeight":"600","margin":"0"},"children":"Operate"}],["$","p",null,{"style":{"margin":"0","fontSize":"0.9rem","opacity":"0.7"},"children":"Run and maintain Celestia nodes and infrastructure"}]]}]
-8:["$","$L9",null,{"children":["$","$a",null,{"name":"Next.MetadataOutlet","children":"$@b"}]}]
-b:null
+</div>0:{"buildId":"M23cO12aPLUwOope0gFHr","rsc":["$","$1","c",{"children":[["$","$L2",null,{"metadata":{"landingPage":true,"title":"Celestia docs","theme":{"sidebar":false,"toc":false,"breadcrumb":false},"filePath":"app/page.mdx","timestamp":1764957410000},"toc":[],"sourceCode":"$3","children":["$","div",null,{"style":{"maxWidth":"900px","margin":"4rem auto","padding":"2rem"},"children":[["$","h1",null,{"style":{"fontSize":"2.5rem","fontWeight":"700","marginBottom":"1rem","textAlign":"center"},"children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Celestia docs"}]}],["$","div",null,{"style":{"fontSize":"1.125rem","marginBottom":"3rem","textAlign":"center"},"children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The first modular blockchain network. Build scalable applications with customizable execution environments."}]}],["$","div",null,{"style":{"display":"grid","gridTemplateColumns":"repeat(auto-fit, minmax(250px, 1fr))","gap":"1.5rem"},"children":[["$","$L4",null,{"href":"/learn/celestia-101/data-availability","style":{"padding":"2rem","borderRadius":"8px","border":"1px solid var(--border-color, #e5e7eb)","textDecoration":"none","display":"flex","flexDirection":"column","gap":"0.75rem"},"children":["$L5","$L6","$L7"]}],"$L8","$L9"]}]]}]}],null,"$La"]}],"loading":null,"isPartial":false}
+5:["$","span",null,{"style":{"fontSize":"2rem"},"children":"📚"}]
+6:["$","h3",null,{"style":{"fontSize":"1.25rem","fontWeight":"600","margin":"0"},"children":"Learn"}]
+7:["$","p",null,{"style":{"margin":"0","fontSize":"0.9rem","opacity":"0.7"},"children":"Understand modular blockchains and Celestia’s architecture"}]
+8:["$","$L4",null,{"href":"/build/post-retrieve-blob/overview/","style":{"padding":"2rem","borderRadius":"8px","border":"1px solid var(--border-color, #e5e7eb)","textDecoration":"none","display":"flex","flexDirection":"column","gap":"0.75rem"},"children":[["$","span",null,{"style":{"fontSize":"2rem"},"children":"🛠️"}],["$","h3",null,{"style":{"fontSize":"1.25rem","fontWeight":"600","margin":"0"},"children":"Build"}],["$","p",null,{"style":{"margin":"0","fontSize":"0.9rem","opacity":"0.7"},"children":"Start building applications on Celestia’s data availability layer"}]]}]
+9:["$","$L4",null,{"href":"/operate","style":{"padding":"2rem","borderRadius":"8px","border":"1px solid var(--border-color, #e5e7eb)","textDecoration":"none","display":"flex","flexDirection":"column","gap":"0.75rem"},"children":[["$","span",null,{"style":{"fontSize":"2rem"},"children":"⚙️"}],["$","h3",null,{"style":{"fontSize":"1.25rem","fontWeight":"600","margin":"0"},"children":"Operate"}],["$","p",null,{"style":{"margin":"0","fontSize":"0.9rem","opacity":"0.7"},"children":"Run and maintain Celestia nodes and infrastructure"}]]}]
+a:["$","$Lb",null,{"children":["$","$c",null,{"name":"Next.MetadataOutlet","children":"$@d"}]}]
+d:null
