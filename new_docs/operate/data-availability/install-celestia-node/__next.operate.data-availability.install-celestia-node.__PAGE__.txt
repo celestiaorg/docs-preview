@@ -6,7 +6,7 @@
 9:I[42995,["2545","static/chunks/c16f53c3-0e9aa4a91998020e.js","2162","static/chunks/2162-73d17f4e396dee6b.js","3630","static/chunks/app/operate/data-availability/install-celestia-node/page-90d0e2e91c37d05c.js"],"CopyToClipboard"]
 28:I[24431,[],"OutletBoundary"]
 29:"$Sreact.suspense"
-3:T12a3,---
+3:T130f,---
 description: Learn to build and install celestia-node.
 ---
 
@@ -46,17 +46,17 @@ commands:
 
    **Mainnet Beta:**
    ```bash
-   git checkout tags/v0.28.4
+   git checkout tags/{{mainnetVersions['node-latest-tag']}}
    ```
 
    **Mocha:**
    ```bash
-   git checkout tags/v0.28.4-mocha
+   git checkout tags/{{mochaVersions['node-latest-tag']}}
    ```
 
    **Arabica:**
    ```bash
-   git checkout tags/v0.28.4-arabica
+   git checkout tags/{{arabicaVersions['node-latest-tag']}}
    ```
 
 3. Build the `celestia` binary:
@@ -123,7 +123,7 @@ You can install the latest version or specify a particular version:
 bash -c "$(curl -sL https://raw.githubusercontent.com/celestiaorg/docs/main/public/celestia-node.sh)"
 
 # Install specific version, Mainnet Beta in this example
-bash -c "$(curl -sL https://raw.githubusercontent.com/celestiaorg/docs/main/public/celestia-node.sh)" -- -v v0.28.4
+bash -c "$(curl -sL https://raw.githubusercontent.com/celestiaorg/docs/main/public/celestia-node.sh)" -- -v {{mainnetVersions['node-latest-tag']}}
 ```
 
 The script will:
@@ -165,7 +165,7 @@ we recommend the [quick-start guide](/build/post-retrieve-blob/light-node/quicks
 
 To upgrade your binary, you can install the latest version from the
 instructions above and restart your node. If you run into any issues,
-Refer to the [troubleshooting section](/operate/maintenance/troubleshooting).0:{"buildId":"AoRSGKVa7dwxmTCSy5xW2","rsc":["$","$1","c",{"children":[["$","$L2",null,{"metadata":{"description":"Learn to build and install celestia-node.","title":"Install celestia-node","filePath":"app/operate/data-availability/install-celestia-node/page.mdx","timestamp":1765230704000},"toc":[{"value":"Supported architectures","id":"supported-architectures","depth":2},{"value":"Installing from source","id":"installing-from-source","depth":2},{"value":"Installing a pre-built binary","id":"installing-a-pre-built-binary","depth":2},{"value":"Installation Options","id":"installation-options","depth":3},{"value":"Next steps","id":"next-steps","depth":2},{"value":"Upgrading your binary","id":"upgrading-your-binary","depth":2}],"sourceCode":"$3","children":"$L4"}],null,"$L5"]}],"loading":null,"isPartial":false}
+Refer to the [troubleshooting section](/operate/maintenance/troubleshooting).0:{"buildId":"fGymg315jJG1bhK5emnh5","rsc":["$","$1","c",{"children":[["$","$L2",null,{"metadata":{"description":"Learn to build and install celestia-node.","title":"Install celestia-node","filePath":"app/operate/data-availability/install-celestia-node/page.mdx","timestamp":1765235969000},"toc":[{"value":"Supported architectures","id":"supported-architectures","depth":2},{"value":"Installing from source","id":"installing-from-source","depth":2},{"value":"Installing a pre-built binary","id":"installing-a-pre-built-binary","depth":2},{"value":"Installation Options","id":"installation-options","depth":3},{"value":"Next steps","id":"next-steps","depth":2},{"value":"Upgrading your binary","id":"upgrading-your-binary","depth":2}],"sourceCode":"$3","children":"$L4"}],null,"$L5"]}],"loading":null,"isPartial":false}
 4:[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Install celestia-node","$undefined"]}],"\n",["$","h2",null,{"id":"supported-architectures","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Supported architectures",["$","$L6",null,{"id":"supported-architectures"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Celestia-node officially supports the following architectures:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"linux/amd64"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"linux/arm64"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"darwin/amd64 (macOS Intel)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"darwin/arm64 (macOS Apple Silicon)"}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Only these four architectures are officially tested and supported."}],"\n",["$","h2",null,{"id":"installing-from-source","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Installing from source",["$","$L6",null,{"id":"installing-from-source"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This section goes over building and installing celestia-node. This\ntutorial assumes you completed the steps in\n",["$","$L7",null,{"href":"/operate/getting-started/environment-setup","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"setting up your development environment"}],"."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Install the celestia-node binary by running the following\ncommands:"}],"\n",["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Remove any existing copy of celestia-node, clone the repository,\nand change into the directory:"}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L8",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L9",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"cd"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" $HOME"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"rm"}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" -rf"}],"$La"]}],"\n","$Lb","\n","$Lc"]}]]}]]}],"\n"]}],"\n","$Ld","\n","$Le","\n","$Lf","\n","$L10","\n","$L11","\n"]}],"\n","$L12","\n","$L13","\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27"]
 5:["$","$L28",null,{"children":["$","$29",null,{"name":"Next.MetadataOutlet","children":"$@2a"}]}]
 a:["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" celestia-node"}]
