@@ -53,6 +53,7 @@ These docs are built with Next.js + Nextra and exported statically. Links below 
 
 - [Cli Reference](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/consensus-validators/cli-reference/page.mdx)
 - [Consensus Node](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/consensus-validators/consensus-node/page.mdx)
+- [Foundation Delegation Program](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/consensus-validators/foundation-delegation-program/page.mdx)
 - [Install Celestia App](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/consensus-validators/install-celestia-app/page.mdx)
 - [Metrics](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/consensus-validators/metrics/page.mdx)
 - [Slashing](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/consensus-validators/slashing/page.mdx)
