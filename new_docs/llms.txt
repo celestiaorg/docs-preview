@@ -35,6 +35,10 @@ These docs are built with Next.js + Nextra and exported statically. Links below 
 - [Retrievability](https://raw.githubusercontent.com/celestiaorg/docs/main/app/learn/celestia-101/retrievability/page.mdx)
 - [Transaction Lifecycle](https://raw.githubusercontent.com/celestiaorg/docs/main/app/learn/celestia-101/transaction-lifecycle/page.mdx)
 
+## Learn: Code Of Conduct
+
+- [Code Of Conduct](https://raw.githubusercontent.com/celestiaorg/docs/main/app/learn/code-of-conduct/page.mdx)
+
 ## Learn: Features
 
 - [Bridging / Hyperlane](https://raw.githubusercontent.com/celestiaorg/docs/main/app/learn/features/bridging/hyperlane/page.mdx)
