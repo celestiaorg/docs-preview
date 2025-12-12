@@ -27,6 +27,10 @@ These docs are built with Next.js + Nextra and exported statically. Links below 
 - [Nitro Das Server](https://raw.githubusercontent.com/celestiaorg/docs/main/app/build/stacks/nitro-das-server/page.mdx)
 - [Op Alt Da](https://raw.githubusercontent.com/celestiaorg/docs/main/app/build/stacks/op-alt-da/page.mdx)
 
+## Learn: Audits
+
+- [Audits](https://raw.githubusercontent.com/celestiaorg/docs/main/app/learn/audits/page.mdx)
+
 ## Learn: Celestia 101
 
 - [Data Availability Faq](https://raw.githubusercontent.com/celestiaorg/docs/main/app/learn/celestia-101/data-availability-faq/page.mdx)
@@ -69,6 +73,7 @@ These docs are built with Next.js + Nextra and exported statically. Links below 
 - [Bridge Node](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/data-availability/bridge-node/page.mdx)
 - [Config Reference](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/data-availability/config-reference/page.mdx)
 - [Custom Networks](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/data-availability/custom-networks/page.mdx)
+- [Ibc Relayer](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/data-availability/ibc-relayer/page.mdx)
 - [Install Celestia Node](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/data-availability/install-celestia-node/page.mdx)
 - [Light Node](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/data-availability/light-node/page.mdx)
 - [Metrics](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/data-availability/metrics/page.mdx)
@@ -104,9 +109,3 @@ These docs are built with Next.js + Nextra and exported statically. Links below 
 - [Mainnet Beta](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/networks/mainnet-beta/page.mdx)
 - [Mocha Testnet](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/networks/mocha-testnet/page.mdx)
 - [Overview](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/networks/overview/page.mdx)
-
-## Operate: Optional Services
-
-- [Audits](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/optional-services/audits/page.mdx)
-- [Ibc Relayer](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/optional-services/ibc-relayer/page.mdx)
-- [Instantiate Testnet](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/optional-services/instantiate-testnet/page.mdx)
