@@ -3,6 +3,6 @@
 4:I[90484,[],"MetadataBoundary"]
 5:"$Sreact.suspense"
 7:I[86869,[],"IconMark"]
-0:{"buildId":"szIXH0clVnwOvPTYrnJ_-","rsc":["$","$1","h",{"children":[null,["$","$L2",null,{"children":"$@3"}],["$","div",null,{"hidden":true,"children":["$","$L4",null,{"children":["$","$5",null,{"name":"Next.Metadata","children":"$@6"}]}]}],null]}],"loading":null,"isPartial":false}
+0:{"buildId":"w0igM8sRfr9BG6pB8vha1","rsc":["$","$1","h",{"children":[null,["$","$L2",null,{"children":"$@3"}],["$","div",null,{"hidden":true,"children":["$","$L4",null,{"children":["$","$5",null,{"name":"Next.Metadata","children":"$@6"}]}]}],null]}],"loading":null,"isPartial":false}
 3:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
 6:[["$","title","0",{"children":"Private blockspace quickstart"}],["$","link","1",{"rel":"icon","href":"/docs-preview/new_docs/favicon.ico?603d046c9a6fdfbb","type":"image/x-icon","sizes":"16x16"}],["$","$L7","2",{}]]
