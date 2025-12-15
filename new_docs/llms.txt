@@ -8,8 +8,6 @@ These docs are built with Next.js + Nextra and exported statically. Links below 
 
 - [Client / Go](https://raw.githubusercontent.com/celestiaorg/docs/main/app/build/post-retrieve-blob/client/go/page.mdx)
 - [Client / Rust](https://raw.githubusercontent.com/celestiaorg/docs/main/app/build/post-retrieve-blob/client/rust/page.mdx)
-- [Light Node / Advanced](https://raw.githubusercontent.com/celestiaorg/docs/main/app/build/post-retrieve-blob/light-node/advanced/page.mdx)
-- [Light Node / Quickstart](https://raw.githubusercontent.com/celestiaorg/docs/main/app/build/post-retrieve-blob/light-node/quickstart/page.mdx)
 - [Overview](https://raw.githubusercontent.com/celestiaorg/docs/main/app/build/post-retrieve-blob/overview/page.mdx)
 
 ## Build: Private Blockspace
@@ -75,7 +73,8 @@ These docs are built with Next.js + Nextra and exported statically. Links below 
 - [Custom Networks](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/data-availability/custom-networks/page.mdx)
 - [Ibc Relayer](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/data-availability/ibc-relayer/page.mdx)
 - [Install Celestia Node](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/data-availability/install-celestia-node/page.mdx)
-- [Light Node](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/data-availability/light-node/page.mdx)
+- [Light Node / Advanced](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/data-availability/light-node/advanced/page.mdx)
+- [Light Node / Quickstart](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/data-availability/light-node/quickstart/page.mdx)
 - [Metrics](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/data-availability/metrics/page.mdx)
 - [Storage Optimization](https://raw.githubusercontent.com/celestiaorg/docs/main/app/operate/data-availability/storage-optimization/page.mdx)
 
