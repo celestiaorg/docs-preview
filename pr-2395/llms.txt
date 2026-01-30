@@ -29,8 +29,7 @@ These docs are built with Next.js + Nextra and exported statically. Links below 
 ## Build: Stacks
 
 - [Nitro Das Server](https://raw.githubusercontent.com/celestiaorg/docs/main/app/build/stacks/nitro-das-server/page.mdx)
-- [Op Alt Da / Aws Kms Guide](https://raw.githubusercontent.com/celestiaorg/docs/main/app/build/stacks/op-alt-da/aws-kms-guide/page.mdx)
-- [Op Alt Da / Introduction](https://raw.githubusercontent.com/celestiaorg/docs/main/app/build/stacks/op-alt-da/introduction/page.mdx)
+- [Optimism / Aws Kms Guide](https://raw.githubusercontent.com/celestiaorg/docs/main/app/build/stacks/optimism/aws-kms-guide/page.mdx)
 - [Optimism / Local Devnet](https://raw.githubusercontent.com/celestiaorg/docs/main/app/build/stacks/optimism/local-devnet/page.mdx)
 - [Optimism / Op Alt Da](https://raw.githubusercontent.com/celestiaorg/docs/main/app/build/stacks/optimism/op-alt-da/page.mdx)
 - [Optimism / Popkins Popsigner](https://raw.githubusercontent.com/celestiaorg/docs/main/app/build/stacks/optimism/popkins-popsigner/page.mdx)
