@@ -1,7 +1,3 @@
----
-description: Learn how to generate a Celestia wallet using celestia-app.
----
-
 # Create a wallet with celestia-app
 
 For this guide, we will go over how you can generate a Celestia

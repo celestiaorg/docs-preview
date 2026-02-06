@@ -1,7 +1,3 @@
----
-description: This section contains information on the celestia-node datastore and its contents.
----
-
 # celestia-node datastore
 
 The node's datastore refers to the storage structure

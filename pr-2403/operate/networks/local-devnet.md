@@ -1,7 +1,3 @@
----
-description: Learn how to set up a local devnet with Celestia consensus and bridge nodes.
----
-
 # Local devnet setup
 
 This guide covers how to set up a local devnet with both consensus and bridge

@@ -1,7 +1,3 @@
----
-description: Fundamental shared values and special norms that distinguish Celestia's community.
----
-
 # Celestia.org Code of Conduct
 
 ## Our Pledge

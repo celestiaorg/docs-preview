@@ -1,7 +1,3 @@
----
-description: Learn how to setup your DA node to use on-fly compression with ZFS.
----
-
 # Optional: Setting up your DA node to use ZFS
 
 > **Warning:**

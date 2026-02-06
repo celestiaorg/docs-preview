@@ -1,7 +1,3 @@
----
-description: A guide on how to run metrics for your celestia-node DA instance.
----
-
 # celestia-node metrics
 
 This tutorial is for running metrics for your celestia-node data

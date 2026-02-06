@@ -1,7 +1,3 @@
----
-description: Run a Celestia light node and post/retrieve your first blob.
----
-
 # Light node: overview & quickstart
 
 Celestia light nodes perform data availability sampling (DAS) to verify that

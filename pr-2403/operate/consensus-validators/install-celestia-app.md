@@ -1,7 +1,3 @@
----
-description: Learn how you can build celestia-app.
----
-
 # Install celestia-app
 
 This tutorial will guide you through installing celestia-app, both
@@ -57,7 +53,7 @@ terminal:
 bash -c "$(curl -sL https://docs.celestia.org/celestia-app.sh)"
 
 # Install specific version, latest version for Mocha testnet in this example
-bash -c "$(curl -sL https://docs.celestia.org/celestia-app.sh)" -- -v {{mochaVersions['app-latest-tag']}}
+bash -c "$(curl -sL https://docs.celestia.org/celestia-app.sh)" -- -v v6.4.10-mocha
 ```
 
 Follow the instructions in the terminal output to choose your installation

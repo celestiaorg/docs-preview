@@ -1,7 +1,3 @@
----
-description: Learn how to set up a Celestia validator node.
----
-
 # Setting up a Celestia validator node
 
 This tutorial will guide you through setting up a validator node on Celestia.
@@ -193,7 +189,7 @@ example you can run:
 ```bash
 celestia-appd tx staking delegate \
 <the_valoper_address_starts_with_celestiavaloper1...> 1000000utia \
---from=$VALIDATOR_WALLET --chain-id={{constants['mochaChainId']}} \
+--from=$VALIDATOR_WALLET --chain-id=mocha-4 \
 --fees=21000utia
 ```
 

@@ -1,7 +1,3 @@
----
-description: Advanced topics for operating a Celestia light node.
----
-
 # Advanced
 
 This page collects advanced topics for Celestia light nodes. For
@@ -136,7 +132,7 @@ parallel submission by setting `TxWorkerAccounts` to a value greater than 1.
 The node store is created during `celestia light init` and lives under
 `~/.celestia-<node-type>-<network>`.
 
-For example, a Mocha light node store at `~/.celestia-light-{{constants['mochaChainId']}}` contains:
+For example, a Mocha light node store at `~/.celestia-light-mocha-4` contains:
 
 - `config.toml`: Node configuration settings
 - `data/`: Database files

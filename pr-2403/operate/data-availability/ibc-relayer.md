@@ -1,7 +1,3 @@
----
-description: Learn how to establish IBC connections and relay packets.
----
-
 # IBC relaying guide
 
 Celestia uses [IBC](https://ibcprotocol.dev/) to enable cross-chain token transfers. Relayers scan for outbound packets on one chain and submit them with proofs on the destination chain. This guide shows how to set up a relayer and create connections using Hermes between Celestia Mocha testnet and Cosmos Hub theta-testnet-001.
@@ -21,7 +17,7 @@ Check the [latest celestia-app release's `go.mod`](https://github.com/celestiaor
 
 After installing Hermes, edit `config.toml` to add your chains. This tutorial uses:
 
-- Celestia `{{constants['mochaChainId']}}` testnet
+- Celestia `mocha-4` testnet
 - Cosmos Hub `theta-testnet-001` testnet
 
 Edit the Hermes configuration:
@@ -118,7 +114,7 @@ list = [["transfer", "channel-3108"]]
 derivation = "cosmos"
 
 [[chains]]
-id = "{{constants['mochaChainId']}}"
+id = "mocha-4"
 type = "CosmosSdk"
 rpc_addr = "https://rpc-celestia-mocha.architectnodes.com"
 grpc_addr = "https://grpc.celestia-mocha.com:443"
@@ -179,7 +175,7 @@ hermes keys add --key-name key-cosmos --chain theta-testnet-001 --mnemonic-file 
 Add Celestia wallet:
 
 ```bash
-hermes keys add --key-name celestia-key --chain {{constants['mochaChainId']}} --mnemonic-file $HOME/.hermes/key-celestia-mnemonic.txt
+hermes keys add --key-name celestia-key --chain mocha-4 --mnemonic-file $HOME/.hermes/key-celestia-mnemonic.txt
 ```
 
 ### Create a channel
@@ -187,7 +183,7 @@ hermes keys add --key-name celestia-key --chain {{constants['mochaChainId']}} --
 With both chains configured and wallets funded, create a channel:
 
 ```bash
-hermes create channel --a-chain theta-testnet-001 --b-chain {{constants['mochaChainId']}} --a-port transfer --b-port transfer --new-client-connection
+hermes create channel --a-chain theta-testnet-001 --b-chain mocha-4 --a-port transfer --b-port transfer --new-client-connection
 ```
 
 This command creates:

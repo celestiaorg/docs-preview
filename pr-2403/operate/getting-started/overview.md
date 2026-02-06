@@ -1,8 +1,3 @@
----
-landingPage: true
-description: An overview on how to participate in the Celestia network.
----
-
 # Overview to running nodes on Celestia
 
 There are many ways you can participate in the Celestia

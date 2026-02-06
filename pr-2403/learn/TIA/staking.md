@@ -1,7 +1,3 @@
----
-description: Learn how to stake your tokens on the Celestia network.
----
-
 # Staking on Celestia
 
 Engage with the Celestia network at a deeper level through staking. An

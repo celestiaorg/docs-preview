@@ -1,7 +1,3 @@
----
-description: Recommended hardware profiles for Celestia node types.
----
-
 # Hardware requirements
 
 ## Data availability nodes

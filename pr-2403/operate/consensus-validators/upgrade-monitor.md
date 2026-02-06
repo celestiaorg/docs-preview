@@ -1,7 +1,3 @@
----
-description: upgrade-monitor is a tool to monitor upgrades on a Celestia network.
----
-
 # Upgrade Monitor
 
 Upgrade monitor is a binary that monitors that status of upgrades on a Celestia

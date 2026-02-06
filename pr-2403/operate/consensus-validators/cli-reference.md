@@ -1,7 +1,3 @@
----
-description: Some of the most helpful celestia-app CLI commands.
----
-
 # Helpful CLI commands
 
 View all options:

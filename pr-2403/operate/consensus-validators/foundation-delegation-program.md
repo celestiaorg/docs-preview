@@ -1,7 +1,3 @@
----
-description: Overview of the Celestia Foundation Delegation Program, including objectives, eligibility, and application details.
----
-
 # The Celestia Foundation Delegation Program
 
 ![Delegation program banner](/img/foundation-delegation-program.jpg)

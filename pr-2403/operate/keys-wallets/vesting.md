@@ -1,7 +1,3 @@
----
-description: Learn how to generate a vesting account using celestia-app.
----
-
 # How to create a vesting account with celestia-app
 
 In this guide, we will learn how to create a vesting account using

@@ -1,7 +1,3 @@
----
-description: Learn about custom networks and values on celestia-node.
----
-
 # Custom networks and values
 
 This section will cover importing bootstrapper IDs, chain ID,

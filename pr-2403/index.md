@@ -1,12 +1,3 @@
----
-landingPage: true
-title: Celestia docs
-theme:
-  sidebar: false
-  toc: false
-  breadcrumb: false
----
-
 <div style={{
   maxWidth: '900px',
   margin: '4rem auto',

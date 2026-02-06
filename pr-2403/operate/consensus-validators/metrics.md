@@ -1,7 +1,3 @@
----
-description: A guide on how to monitor the health and performance of your system.
----
-
 # Metrics
 
 Metrics are a powerful tool for monitoring the health

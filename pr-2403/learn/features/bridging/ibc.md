@@ -1,7 +1,3 @@
----
-description: How to use IBC with Celestia — wallet, CLI, and JavaScript.
----
-
 # Using IBC with Celestia
 
 ## Live IBC channels

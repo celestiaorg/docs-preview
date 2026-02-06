@@ -1,7 +1,3 @@
----
-description: Celestia's Data Availability layer and its key features.
----
-
 # Celestia's data availability layer
 
 Data availability (DA) answers a simple question: **has this block's data been published and can it be downloaded? In other words, is the data available?** When a node receives a new block, it must be able to retrieve the associated transaction data; otherwise, the chain can stall or be exploited. Celestia provides a modular DA layer so light nodes can verify availability efficiently without downloading whole blocks.
@@ -15,7 +11,7 @@ Data availability (DA) answers a simple question: **has this block's data been p
 5. Light nodes sample within a rolling window; archival nodes (or providers) keep older data retrievable.
 
 Celestia is a data availability (DA) layer that provides a
-scalable solution to the [data availability problem](https://coinmarketcap.com/academy/article/what-is-data-availability).
+scalable solution to the [data availability problem](https://coinmarketcap.com/academy/glossary/data-availability-sampling-das).
 Due to the permissionless nature of the blockchain networks,
 a DA layer must provide a mechanism for the execution and settlement
 layers to check in a trust-minimized way whether transaction data is indeed available.

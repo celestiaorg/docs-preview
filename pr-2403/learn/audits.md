@@ -1,7 +1,3 @@
----
-description: Comprehensive list of security audits conducted on Celestia software.
----
-
 # Audits
 
 This page provides a comprehensive list of audits conducted on various Celestia software, including OP Stack, Nitro, celestia-app, Blobstream, and more. Each audit is linked to its respective report.

@@ -1,7 +1,3 @@
----
-description: How to use Hyperlane with Celestia — bridging TIA and cross-chain messaging.
----
-
 # Using Hyperlane with Celestia
 
 ## Live bridge

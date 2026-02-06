@@ -1,7 +1,3 @@
----
-description: Learn how to setup your node as a background process with SystemD.
----
-
 # Setting up your node as a background process with SystemD
 
 SystemD is a daemon service useful for running applications as background

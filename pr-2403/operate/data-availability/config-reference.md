@@ -1,7 +1,3 @@
----
-description: A guide to the contents of the Config.toml file.
----
-
 # config.toml guide
 
 ## Pre-requisites

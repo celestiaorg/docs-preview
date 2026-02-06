@@ -1,7 +1,3 @@
----
-description: A guide to using node snapshots and snapshot providers for quick node setup, including how to use the celestia-snapshot-finder tool
----
-
 # Node snapshots
 
 ## What are node snapshots?
@@ -53,7 +49,6 @@ Their services include installation scripts, state sync, snapshots, RPC endpoint
 | TTT         | [Pruned](https://services.tienthuattoan.com/mainnet/celestia/snapshot)                                                                         | -                                                                          |
 | Noders      | [Pruned](https://noders.services/mainnet-networks/celestia/snapshot/)                                                                          | -                                                                          |
 | QubeLabs    | [Archive](https://snaps.qubelabs.io/celestia/)                                                                                                 | -                                                                          |
-| BlackBlocks | [Archive](https://wiki.blackblocks.io/en/public/services/mainnet/celestia)                                                                     | [Archive](https://wiki.blackblocks.io/en/public/services/mainnet/celestia) |
 
 ### Mocha testnet
 
@@ -64,7 +59,6 @@ Their services include installation scripts, state sync, snapshots, RPC endpoint
 | kjnodes     | [Pruned](https://services.kjnodes.com/testnet/celestia/snapshot/)                                                      | -                                                                          |
 | Noders      | [Pruned](https://noders.services/testnet-networks/celestia/snapshot)                                                   | -                                                                          |
 | QubeLabs    | [Archive](https://snaps.qubelabs.io/celestia/)                                                                         | -                                                                          |
-| BlackBlocks | [Archive](https://wiki.blackblocks.io/en/public/services/testnet/celestia)                                             | [Archive](https://wiki.blackblocks.io/en/public/services/testnet/celestia) |
 
 ## Using celestia-snapshot-finder
 

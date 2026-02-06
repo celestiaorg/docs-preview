@@ -1,7 +1,3 @@
----
-description: A guide to Arabica devnet.
----
-
 # Arabica devnet
 
 ![arabica-devnet](/img/arabica-devnet.png)
@@ -30,18 +26,18 @@ undergoes network upgrades in coordination with validators.
 
 | Detail        | Value                                                                                                  |
 | ------------- | ------------------------------------------------------------------------------------------------------ |
-| Chain ID      | `{{constants['arabicaChainId']}}`                                                                                      |
+| Chain ID      | `arabica-11`                                                                                      |
 | Genesis hash  | `27122593765E07329BC348E8D16E92DCB4C75B34CCCB35C640FD7A4484D4C711`                                     |
-| Genesis file  | https://github.com/celestiaorg/networks/blob/master/{constants.arabicaChainId}/genesis.json                       |
-| Peers file    | https://github.com/celestiaorg/networks/blob/master/{constants.arabicaChainId}/peers.txt                          |
+| Genesis file  | https://github.com/celestiaorg/networks/blob/master/arabica-11/genesis.json                       |
+| Peers file    | https://github.com/celestiaorg/networks/blob/master/arabica-11/peers.txt                          |
 | Validators    | 4                                                                                                      |
 
 ### Software version numbers
 
 | Software       | Version                                                                  |
 | -------------- | ------------------------------------------------------------------------ |
-| celestia-node  | [{arabicaVersions['node-latest-tag']}](https://github.com/celestiaorg/celestia-node/releases/tag/{arabicaVersions['node-latest-tag']}) |
-| celestia-app   | [{arabicaVersions['app-latest-tag']}](https://github.com/celestiaorg/celestia-app/releases/tag/{arabicaVersions['app-latest-tag']})   |
+| celestia-node  | [v0.28.5-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.28.5-arabica) |
+| celestia-app   | [v6.4.10-arabica](https://github.com/celestiaorg/celestia-app/releases/tag/v6.4.10-arabica)   |
 
 ## Network status
 

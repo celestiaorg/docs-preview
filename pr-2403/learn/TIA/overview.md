@@ -1,7 +1,3 @@
----
-asIndexPage: true
----
-
 # Overview of TIA
 
 ## TIA at a glance

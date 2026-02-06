@@ -13,8 +13,8 @@ reduced performance.
 
 | Software       | Version                                                             |
 | -------------- | ------------------------------------------------------------------- |
-| celestia-node  | [{mainnetVersions['node-latest-tag']}](https://github.com/celestiaorg/celestia-node/releases/tag/{mainnetVersions['node-latest-tag']}) |
-| celestia-app   | [{mainnetVersions['app-latest-tag']}](https://github.com/celestiaorg/celestia-app/releases/tag/{mainnetVersions['app-latest-tag']})   |
+| celestia-node  | [v0.28.4](https://github.com/celestiaorg/celestia-node/releases/tag/v0.28.4) |
+| celestia-app   | [v6.4.10](https://github.com/celestiaorg/celestia-app/releases/tag/v6.4.10)   |
 
 ## Testnets
 
@@ -32,8 +32,8 @@ validators to participate.
 
 | Software       | Version                                                                  |
 | -------------- | ------------------------------------------------------------------------ |
-| celestia-node  | [{arabicaVersions['node-latest-tag']}](https://github.com/celestiaorg/celestia-node/releases/tag/{arabicaVersions['node-latest-tag']}) |
-| celestia-app   | [{arabicaVersions['app-latest-tag']}](https://github.com/celestiaorg/celestia-app/releases/tag/{arabicaVersions['app-latest-tag']})     |
+| celestia-node  | [v0.28.5-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.28.5-arabica) |
+| celestia-app   | [v6.4.10-arabica](https://github.com/celestiaorg/celestia-app/releases/tag/v6.4.10-arabica)     |
 
 ### Mocha testnet
 
@@ -47,8 +47,8 @@ in coordination with the validator community on Mocha.
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [{mochaVersions['node-latest-tag']}](https://github.com/celestiaorg/celestia-node/releases/tag/{mochaVersions['node-latest-tag']}) |
-| celestia-app   | [{mochaVersions['app-latest-tag']}](https://github.com/celestiaorg/celestia-app/releases/tag/{mochaVersions['app-latest-tag']})   |
+| celestia-node  | [v0.28.5-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.28.5-mocha) |
+| celestia-app   | [v6.4.10-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v6.4.10-mocha)   |
 
 ## Network upgrades
 

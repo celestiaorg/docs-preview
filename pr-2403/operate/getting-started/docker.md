@@ -1,8 +1,3 @@
----
-sidebar_label: Docker images
-description: Running Celestia Node using Docker.
----
-
 # 🐳 Docker setup
 
 This page has instructions to run celestia-node using Docker. If you are

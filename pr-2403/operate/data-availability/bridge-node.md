@@ -1,7 +1,3 @@
----
-description: Learn how to set up your Celestia bridge node.
----
-
 # Setting up a Celestia bridge node
 
 This tutorial will go over the steps to set up your Celestia bridge node.

@@ -1,7 +1,3 @@
----
-description: Learn how to set up a Celestia consensus node.
----
-
 # Consensus node
 
 This guide covers how to set up a consensus node on Celestia.

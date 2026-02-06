@@ -1,7 +1,3 @@
----
-description: Learn to set up your development environment to run Celestia software.
----
-
 # Development environment
 
 This page will go over setting up your development environment

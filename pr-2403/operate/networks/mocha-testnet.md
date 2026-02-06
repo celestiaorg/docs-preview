@@ -1,7 +1,3 @@
----
-description: Learn how to connect to the Mocha network.
----
-
 # Mocha testnet
 
 ![mocha-testnet](/img/mocha.jpg)
@@ -41,18 +37,18 @@ to the correct instructions on this page on how to connect to Mocha.
 
 | Detail        | Value                                                                                              |
 | ------------- | -------------------------------------------------------------------------------------------------- |
-| Chain ID      | `{{constants['mochaChainId']}}`                                                                                     |
+| Chain ID      | `mocha-4`                                                                                     |
 | Genesis hash  | `B93BBE20A0FBFDF955811B6420F8433904664D45DB4BF51022BE4200C1A1680D`                                 |
-| Genesis file  | https://github.com/celestiaorg/networks/blob/master/{constants.mochaChainId}/genesis.json                      |
-| Peers file    | https://github.com/celestiaorg/networks/blob/master/{constants.mochaChainId}/peers.txt                         |
+| Genesis file  | https://github.com/celestiaorg/networks/blob/master/mocha-4/genesis.json                      |
+| Peers file    | https://github.com/celestiaorg/networks/blob/master/mocha-4/peers.txt                         |
 | Validators    | 100                                                                                                |
 
 ## Software version numbers
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [{mochaVersions['node-latest-tag']}](https://github.com/celestiaorg/celestia-node/releases/tag/{mochaVersions['node-latest-tag']}) |
-| celestia-app   | [{mochaVersions['app-latest-tag']}](https://github.com/celestiaorg/celestia-app/releases/tag/{mochaVersions['app-latest-tag']})   |
+| celestia-node  | [v0.28.5-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.28.5-mocha) |
+| celestia-app   | [v6.4.10-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v6.4.10-mocha)   |
 
 ## Network status
 
@@ -110,9 +106,9 @@ to their respective DA node.
 
 > **Tip for bridge nodes:** Community RPC endpoints do not guarantee full block downloads. If you are running a bridge node, also run a local [consensus node](/operate/consensus-validators/consensus-node) to download full blocks.
 
-- `public-celestia-{{constants['mochaChainId']}}-consensus.numia.xyz`
-- `full.consensus.{{constants['mochaChainId']}}.celestia-mocha.com`
-- `consensus-full-{{constants['mochaChainId']}}.celestia-mocha.com`
+- `public-celestia-mocha-4-consensus.numia.xyz`
+- `full.consensus.mocha-4.celestia-mocha.com`
+- `consensus-full-mocha-4.celestia-mocha.com`
 - `rpc-mocha.pops.one`
 - `celestia-testnet-consensus.itrocket.net`
   - RPC port: 26657
@@ -127,7 +123,7 @@ The RPC endpoint is to allow users to interact with Celestia's nodes by
 querying the node's state and broadcasting transactions on the
 Celestia network. The default port is 26657.
 
-- `public-celestia-{{constants['mochaChainId']}}-consensus.numia.xyz:26657`
+- `public-celestia-mocha-4-consensus.numia.xyz:26657`
 - `celestia-testnet.brightlystake.com`
 - `rpc-celestia-mocha.trusted-point.com`
 - `rpc-celestia-testnet-01.stakeflow.io`
@@ -170,11 +166,11 @@ gRPC, a modern open-source and high-performance RPC framework. The default
 port is 9090. In the Cosmos SDK, gRPC is used to define state queries and
 broadcast transactions.
 
-- `public-celestia-{{constants['mochaChainId']}}-consensus.numia.xyz:9090`
+- `public-celestia-mocha-4-consensus.numia.xyz:9090`
 - `grpc-mocha.pops.one`
 - `grpc.celestia-mocha.com:443`
-- `full.consensus.{{constants['mochaChainId']}}.celestia-mocha.com:9090`
-- `consensus-full-{{constants['mochaChainId']}}.celestia-mocha.com:9090`
+- `full.consensus.mocha-4.celestia-mocha.com:9090`
+- `consensus-full-mocha-4.celestia-mocha.com:9090`
 - `celestia-testnet.brightlystake.com:9390`
 - `grpc-celestia-mocha.trusted-point.com:9099`
 - `grpc-celestia-testnet-01.stakeflow.io:16002`
@@ -203,13 +199,13 @@ find bootstrapper peers in the p2p network.
 
 Bridge node 1:
 
-- da-bridge-{constants.mochaChainId}.celestia-mocha.com
-- bridge-{constants.mochaChainId}.da.celestia-mocha.com
+- da-bridge-mocha-4.celestia-mocha.com
+- bridge-mocha-4.da.celestia-mocha.com
 
 Bridge node 2:
 
-- da-bridge-{constants.mochaChainId}-2.celestia-mocha.com
-- bridge-{constants.mochaChainId}-2.da.celestia-mocha.com
+- da-bridge-mocha-4-2.celestia-mocha.com
+- bridge-mocha-4-2.da.celestia-mocha.com
 
 ## Mocha testnet faucet
 
@@ -255,7 +251,7 @@ There are several explorers you can use for Mocha:
 - `https://testnet.celestia.explorers.guru`
 - `https://testnet.itrocket.net/celestia`
 - `https://testnet.celestia.valopers.com/`
-- `https://explorer.chainroot.io/celestia-testnet-{{constants['mochaChainId']}}`
+- `https://explorer.chainroot.io/celestia-testnet-mocha-4`
 
 ## Network upgrades
 

@@ -23,18 +23,18 @@ functional, users may encounter occasional instability or reduced performance.
 
 | Detail        | Value                                                                                              |
 | ------------- | -------------------------------------------------------------------------------------------------- |
-| Chain ID      | `{{constants['mainnetChainId']}}`                                                                       |
+| Chain ID      | `celestia`                                                                       |
 | Genesis hash  | `6BE39EFD10BA412A9DB5288488303F5DD32CF386707A5BEF33617F4C43301872`                                 |
-| Genesis file  | https://github.com/celestiaorg/networks/blob/master/{constants.mainnetChainId}/genesis.json        |
-| Peers file    | https://github.com/celestiaorg/networks/blob/master/{constants.mainnetChainId}/peers.txt           |
+| Genesis file  | https://github.com/celestiaorg/networks/blob/master/celestia/genesis.json        |
+| Peers file    | https://github.com/celestiaorg/networks/blob/master/celestia/peers.txt           |
 | Validators    | 100                                                                                                |
 
 ## Software version numbers
 
 | Software       | Version                                                             |
 | -------------- | ------------------------------------------------------------------- |
-| celestia-node  | [{mainnetVersions['node-latest-tag']}](https://github.com/celestiaorg/celestia-node/releases/tag/{mainnetVersions['node-latest-tag']}) |
-| celestia-app   | [{mainnetVersions['app-latest-tag']}](https://github.com/celestiaorg/celestia-app/releases/tag/{mainnetVersions['app-latest-tag']})   |
+| celestia-node  | [v0.28.4](https://github.com/celestiaorg/celestia-node/releases/tag/v0.28.4) |
+| celestia-app   | [v6.4.10](https://github.com/celestiaorg/celestia-app/releases/tag/v6.4.10)   |
 
 ## Network status
 
