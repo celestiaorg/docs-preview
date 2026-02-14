@@ -143,6 +143,6 @@ Key features include:
 
 | Network      | Chain ID   | Date and time | Upgrade height                                                        | Delay period |
 | ------------ | ---------- | ------------- | --------------------------------------------------------------------- | ------------ |
-| Arabica      | arabica-11 | TBD           | [10133989](https://arabica.celenium.io/block/10133989?tab=transactions) | 1 day        |
+| Arabica      | arabica-11 | 2026/02/14 02:36:26 UTC | [10133989](https://arabica.celenium.io/block/10133989?tab=transactions) | 1 day        |
 | Mocha        | mocha-4    | TBD           | TBD                                                                   | 2 days       |
 | Mainnet Beta | celestia   | TBD           | TBD                                                                   | 7 days       |
