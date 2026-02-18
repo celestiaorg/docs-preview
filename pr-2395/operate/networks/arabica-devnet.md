@@ -36,8 +36,8 @@ undergoes network upgrades in coordination with validators.
 
 | Software       | Version                                                                  |
 | -------------- | ------------------------------------------------------------------------ |
-| celestia-node  | [v0.28.5-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.28.5-arabica) |
-| celestia-app   | [v6.4.10-arabica](https://github.com/celestiaorg/celestia-app/releases/tag/v6.4.10-arabica)   |
+| celestia-node  | [v0.29.1-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.29.1-arabica) |
+| celestia-app   | [v7.0.2-arabica](https://github.com/celestiaorg/celestia-app/releases/tag/v7.0.2-arabica)   |
 
 ## Network status
 

@@ -53,7 +53,7 @@ terminal:
 bash -c "$(curl -sL https://docs.celestia.org/celestia-app.sh)"
 
 # Install specific version, latest version for Mocha testnet in this example
-bash -c "$(curl -sL https://docs.celestia.org/celestia-app.sh)" -- -v v6.4.10-mocha
+bash -c "$(curl -sL https://docs.celestia.org/celestia-app.sh)" -- -v v7.0.2-mocha
 ```
 
 Follow the instructions in the terminal output to choose your installation
