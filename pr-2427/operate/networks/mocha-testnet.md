@@ -70,9 +70,6 @@ history, such as:
 
 | Provider  | URL                                                                                       |
 | --------- | ----------------------------------------------------------------------------------------- |
-| Grove     | [https://www.grove.city/](https://www.grove.city/)                                                                 |
-| Numia     | For RPC access: [https://docs.numia.xyz/infra/overview/getting-started](https://docs.numia.xyz/infra/overview/getting-started)                   |
-| Numia     | For data warehouse access: [https://docs.numia.xyz/sql/querying-data/chains/celestia](https://docs.numia.xyz/sql/querying-data/chains/celestia)     |
 | QuickNode | [https://www.quicknode.com/chains/celestia](https://www.quicknode.com/chains/celestia) ([docs](https://quicknode.com/docs/celestia)) |
 
 > **Warning:** Do not rely on the free community endpoints listed below for production deployments. Production deployments should rely on [service providers with SLAs](#production-rpc-endpoints) or your own node.
@@ -113,9 +110,6 @@ to their respective DA node.
 - `celestia-testnet-consensus.itrocket.net`
   - RPC port: 26657
   - gRPC port: 9090
-- `celestia-mocha-archive-rpc.mzonder.com`
-  - RPC port: 26657
-  - gRPC port: 9090
 
 ## Community RPC endpoints
 
@@ -124,17 +118,10 @@ querying the node's state and broadcasting transactions on the
 Celestia network. The default port is 26657.
 
 - `public-celestia-mocha-4-consensus.numia.xyz:26657`
-- `celestia-testnet.brightlystake.com`
-- `rpc-celestia-mocha.trusted-point.com`
-- `rpc-celestia-testnet-01.stakeflow.io`
-- `mocha.celestia.rpc.cumulo.me`
-- `rpc.archive.mocha.cumulo.com.es`
 - `rpc-1.testnet.celestia.nodes.guru`
 - `rpc-2.testnet.celestia.nodes.guru`
 - `celestia-testnet-rpc.itrocket.net:443`
 - `celestia-t-rpc.noders.services`
-- `rpc-celestia-testnet.mzonder.com:443`
-- `celestia-testnet-da-archival.rpc.grove.city/v1/c33eeadb`
 
 ## Community API endpoints
 
@@ -145,19 +132,11 @@ calls, which can be useful if the client does not support gRPC or HTTP2.
 The default port is 1317.
 
 - `https://api-mocha.pops.one`
-- `https://api.celestia-mocha.com/`
-- `https://celestia-testnet.brightlystake.com/api`
-- `https://api-celestia-mocha.trusted-point.com`
-- `https://api-celestia-testnet-01.stakeflow.io/`
 - `https://mocha.api.cumulo.me/`
-- `https://api.archive.mocha.cumulo.com.es`
 - `https://api-1.testnet.celestia.nodes.guru`
 - `https://api-2.testnet.celestia.nodes.guru`
 - `https://celestia-testnet-api.itrocket.net`
 - `https://celestia-t-api.noders.services`
-- `http://celestiam.rest.lava.build`
-- `https://api-celestia-testnet.mzonder.com:443`
-- `https://celestia-testnet-da-archival.rpc.grove.city/v1/c33eeadb`
 
 ## Community gRPC endpoints
 
@@ -171,26 +150,11 @@ broadcast transactions.
 - `grpc.celestia-mocha.com:443`
 - `full.consensus.mocha-4.celestia-mocha.com:9090`
 - `consensus-full-mocha-4.celestia-mocha.com:9090`
-- `celestia-testnet.brightlystake.com:9390`
-- `grpc-celestia-mocha.trusted-point.com:9099`
-- `grpc-celestia-testnet-01.stakeflow.io:16002`
 - `mocha.grpc.cumulo.me:443`
-- `grpc.archive.mocha.cumulo.com.es:443`
 - `grpc-1.testnet.celestia.nodes.guru:10790`
 - `grpc-2.testnet.celestia.nodes.guru:10790`
 - `celestia-testnet-grpc.itrocket.net:443`
 - `celestia-t-grpc.noders.services:21090`
-- `celestiam.grpc.lava.build:443`
-- `grpc-celestia-testnet.mzonder.com:443`
-
-## Community JSON-RPC Endpoints
-
-- `celestiam.jsonrpc.lava.build`
-- `celestia-testnet-da-archival.rpc.grove.city/v1/c33eeadb`
-
-## Community Tendermint RPC Endpoints
-
-- `celestiam.tendermintrpc.lava.build`
 
 ## Community bridge node endpoints
 
