@@ -32,8 +32,8 @@ validators to participate.
 
 | Software       | Version                                                                  |
 | -------------- | ------------------------------------------------------------------------ |
-| celestia-node  | [v0.29.2-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.29.2-arabica) |
-| celestia-app   | [v7.0.2-arabica](https://github.com/celestiaorg/celestia-app/releases/tag/v7.0.2-arabica)     |
+| celestia-node  | [v0.29.3-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.29.3-arabica) |
+| celestia-app   | [v7.0.3-arabica](https://github.com/celestiaorg/celestia-app/releases/tag/v7.0.3-arabica)     |
 
 ### Mocha testnet
 
@@ -47,8 +47,8 @@ in coordination with the validator community on Mocha.
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [v0.29.1-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.29.1-mocha) |
-| celestia-app   | [v7.0.2-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v7.0.2-mocha)   |
+| celestia-node  | [v0.29.3-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.29.3-mocha) |
+| celestia-app   | [v7.0.3-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v7.0.3-mocha)   |
 
 ## Network upgrades
 
