@@ -155,6 +155,18 @@ broadcast transactions.
 - `grpc-2.testnet.celestia.nodes.guru:10790`
 - `celestia-testnet-grpc.itrocket.net:443`
 - `celestia-t-grpc.noders.services:21090`
+- `celestiam.grpc.lava.build:443`
+- `grpc-celestia-testnet.mzonder.com:443`
+
+## Community JSON-RPC Endpoints
+
+- `celestia-testnet-consensus.itrocket.net:26658`
+- `celestiam.jsonrpc.lava.build`
+- `celestia-testnet-da-archival.rpc.grove.city/v1/c33eeadb`
+
+## Community Tendermint RPC Endpoints
+
+- `celestiam.tendermintrpc.lava.build`
 
 ## Community bridge node endpoints
 
