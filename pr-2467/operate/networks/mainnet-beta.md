@@ -34,7 +34,7 @@ functional, users may encounter occasional instability or reduced performance.
 | Software       | Version                                                             |
 | -------------- | ------------------------------------------------------------------- |
 | celestia-node  | [v0.28.4](https://github.com/celestiaorg/celestia-node/releases/tag/v0.28.4) |
-| celestia-app   | [v3.11.0](https://github.com/celestiaorg/celestia-app/releases/tag/v3.11.0)   |
+| celestia-app   | [v3.12.0](https://github.com/celestiaorg/celestia-app/releases/tag/v3.12.0)   |
 
 ## Network status
 
