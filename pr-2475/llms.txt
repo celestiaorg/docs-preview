@@ -23,7 +23,6 @@ These docs are built with Next.js + Nextra and exported statically. Links below 
 
 ## Build: Rpc
 
-- [App Api](https://raw.githubusercontent.com/celestiaorg/docs/main/app/build/rpc/app-api/page.mdx)
 - [Clients](https://raw.githubusercontent.com/celestiaorg/docs/main/app/build/rpc/clients/page.mdx)
 - [Node Api](https://raw.githubusercontent.com/celestiaorg/docs/main/app/build/rpc/node-api/page.mdx)
 
