@@ -155,6 +155,6 @@ Like previous upgrades, v8 uses the in-protocol signaling mechanism. The upgrade
 
 | Network      | Chain ID                   | Date and time           | Upgrade height                                                          | Delay period |
 | ------------ | -------------------------- | ----------------------- | ----------------------------------------------------------------------- | ------------ |
-| Arabica      | arabica-11 | 2026/03/11 12:36:36 UTC | [10853352](https://arabica.celenium.io/block/10853352?tab=transactions) | 1 day        |
+| Arabica      | arabica-11 | 2026/04/04 17:22:00 UTC | [10853352](https://arabica.celenium.io/block/10853352?tab=transactions) | 1 day        |
 | Mocha        | mocha-4   | TBD                     | [10941526](https://www.mintscan.io/celestia-testnet/block/10941526)     | 2 days       |
 | Mainnet Beta | celestia                   | TBD                     | TBD                                                                     | 7 days       |
