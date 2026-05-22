@@ -20,6 +20,10 @@ These docs are built with Next.js + Nextra and exported statically. Links below 
 - Node API OpenRPC spec: https://docs.celestia.org/specs/openrpc-v0.28.4.json
 - CIPs (Celestia Improvement Proposals): https://cips.celestia.org
 
+## Overview
+
+- [Home](https://docs.celestia.org/index.md)
+
 ## Build: Blobstream
 
 - [Integrate Contracts](https://docs.celestia.org/build/blobstream/integrate-contracts.md)
