@@ -5016,7 +5016,7 @@ terminal:
 bash -c "$(curl -sL https://docs.celestia.org/celestia-app.sh)"
 
 # Install specific version, latest version for Mocha testnet in this example
-bash -c "$(curl -sL https://docs.celestia.org/celestia-app.sh)" -- -v v9.0.0-mocha
+bash -c "$(curl -sL https://docs.celestia.org/celestia-app.sh)" -- -v v9.0.1-mocha
 ```
 
 Follow the instructions in the terminal output to choose your installation
@@ -9248,7 +9248,7 @@ to the correct instructions on this page on how to connect to Mocha.
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
 | celestia-node  | [v0.30.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.30.2-mocha) |
-| celestia-app   | [v9.0.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.0-mocha)   |
+| celestia-app   | [v9.0.1-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.1-mocha)   |
 
 ## Network status
 
@@ -9500,7 +9500,7 @@ in coordination with the validator community on Mocha.
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
 | celestia-node  | [v0.30.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.30.2-mocha) |
-| celestia-app   | [v9.0.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.0-mocha)   |
+| celestia-app   | [v9.0.1-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.1-mocha)   |
 
 ## Network upgrades
 
