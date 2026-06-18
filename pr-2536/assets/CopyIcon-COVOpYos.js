@@ -1,0 +1,1 @@
+import{t as e}from"./CopyIcon-R1FQwg2t.js";var t={default:e};export{t as export_2186a1b0d489};
