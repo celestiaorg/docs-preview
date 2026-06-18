@@ -33,7 +33,7 @@ functional, users may encounter occasional instability or reduced performance.
 
 | Software       | Version                                                             |
 | -------------- | ------------------------------------------------------------------- |
-| celestia-node  | [v0.30.2](https://github.com/celestiaorg/celestia-node/releases/tag/v0.30.2) |
+| celestia-node  | [v0.31.3](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3) |
 | celestia-app   | [v9.0.4](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.4)   |
 
 ## Network status

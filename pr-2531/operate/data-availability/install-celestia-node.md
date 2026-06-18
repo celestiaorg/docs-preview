@@ -44,7 +44,7 @@ You can install the latest version or specify a particular version:
 bash -c "$(curl -sL https://docs.celestia.org/celestia-node.sh)"
 
 # Install specific version, Mainnet Beta in this example
-bash -c "$(curl -sL https://docs.celestia.org/celestia-node.sh)" -- -v v0.30.2
+bash -c "$(curl -sL https://docs.celestia.org/celestia-node.sh)" -- -v v0.31.3
 ```
 
 The script will:
