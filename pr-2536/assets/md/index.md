@@ -1,0 +1,105 @@
+<div
+  style={{
+maxWidth: '900px',
+margin: '4rem auto',
+padding: '2rem'
+}}
+>
+  <h1
+    style={{
+  fontSize: '2.5rem',
+  fontWeight: '700',
+  marginBottom: '1rem',
+  textAlign: 'center'
+}}
+  >
+    Celestia docs
+  </h1>
+
+  <div
+    style={{
+  fontSize: "1.125rem",
+  marginBottom: "3rem",
+  textAlign: "center",
+}}
+  >
+    Celestia is the modular blockchain powering unstoppable apps with full-stack
+    control.
+  </div>
+
+  <div
+    style={{
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+  gap: '1.5rem'
+}}
+  >
+    <Link
+      href="/learn/celestia-101/data-availability"
+      style={{
+    padding: '2rem',
+    borderRadius: '8px',
+    border: '1px solid var(--border-color, #e5e7eb)',
+    textDecoration: 'none',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.75rem'
+  }}
+    >
+      <span style={{ fontSize: '2rem' }}>📚</span>
+      <h3 style={{ fontSize: '1.25rem', fontWeight: '600', margin: '0' }}>Learn</h3>
+      <p style={{ margin: '0', fontSize: '0.9rem', opacity: '0.7' }}>Understand modular blockchains and Celestia's architecture</p>
+    </Link>
+
+    <Link
+      href="/build/post-retrieve-blob/overview/"
+      style={{
+    padding: '2rem',
+    borderRadius: '8px',
+    border: '1px solid var(--border-color, #e5e7eb)',
+    textDecoration: 'none',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.75rem'
+  }}
+    >
+      <span style={{ fontSize: '2rem' }}>🛠️</span>
+      <h3 style={{ fontSize: '1.25rem', fontWeight: '600', margin: '0' }}>Build</h3>
+      <p style={{ margin: '0', fontSize: '0.9rem', opacity: '0.7' }}>Start building applications on Celestia's data availability layer</p>
+    </Link>
+
+    <Link
+      href="/operate/getting-started/overview/"
+      style={{
+    padding: '2rem',
+    borderRadius: '8px',
+    border: '1px solid var(--border-color, #e5e7eb)',
+    textDecoration: 'none',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.75rem'
+  }}
+    >
+      <span style={{ fontSize: '2rem' }}>⚙️</span>
+      <h3 style={{ fontSize: '1.25rem', fontWeight: '600', margin: '0' }}>Operate</h3>
+      <p style={{ margin: '0', fontSize: '0.9rem', opacity: '0.7' }}>Run and maintain Celestia nodes and infrastructure</p>
+    </Link>
+
+    <Link
+      href="/build/rpc/node-api"
+      style={{
+    padding: '2rem',
+    borderRadius: '8px',
+    border: '1px solid var(--border-color, #e5e7eb)',
+    textDecoration: 'none',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.75rem'
+  }}
+    >
+      <span style={{ fontSize: '2rem' }}>🔌</span>
+      <h3 style={{ fontSize: '1.25rem', fontWeight: '600', margin: '0' }}>API</h3>
+      <p style={{ margin: '0', fontSize: '0.9rem', opacity: '0.7' }}>Reference for Celestia's node RPC methods and client libraries</p>
+    </Link>
+  </div>
+</div>

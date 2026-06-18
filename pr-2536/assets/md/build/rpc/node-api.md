@@ -1,0 +1,10 @@
+# Node API
+
+The Celestia Node API is the collection of RPC methods that can be used to
+interact with the services provided by Celestia Data Availability Nodes. Node
+API uses auth tokens to control access to this API.
+
+Use this reference to browse the OpenRPC schema for blob, blobstream, DA, DAS,
+fraud, header, node, P2P, share, and state packages.
+
+<NodeAPIContent />

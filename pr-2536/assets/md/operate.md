@@ -1,0 +1,29 @@
+# Operate
+
+Learn how to run and maintain Celestia infrastructure. This section covers node operation, network participation, and maintenance.
+
+## Node types
+
+* [Light node](/operate/data-availability/light-node/quickstart): Data availability sampling and verification
+* [Bridge node](/operate/data-availability/bridge-node): Connects rollups to Celestia
+* [Consensus node](/operate/consensus-validators/consensus-node): Participates in consensus and optionally validates the chain
+* [Validator node](/operate/consensus-validators/validator-node): Participates in consensus and signs blocks
+
+## Getting started
+
+* [Overview](/operate/getting-started/overview)
+* [Hardware requirements](/operate/getting-started/hardware-requirements)
+* [Environment setup](/operate/getting-started/environment-setup)
+* [Using Docker](/operate/getting-started/docker)
+
+## Maintenance
+
+* [Metrics and dashboards](/operate/data-availability/metrics)
+* [Network upgrades](/operate/maintenance/network-upgrades)
+* [Troubleshooting](/operate/maintenance/troubleshooting)
+
+## Advanced operations
+
+* [Configuration reference](/operate/data-availability/config-reference)
+* [Custom networks and values](/operate/data-availability/custom-networks)
+* [Slashing and jailing](/operate/consensus-validators/slashing)
