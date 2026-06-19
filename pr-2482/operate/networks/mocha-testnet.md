@@ -47,14 +47,19 @@ to the correct instructions on this page on how to connect to Mocha.
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [v0.30.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.30.2-mocha) |
-| celestia-app   | [v8.0.2-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v8.0.2-mocha)   |
+| celestia-node  | [v0.31.3-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3-mocha) |
+| celestia-app   | [v9.0.4-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.4-mocha)   |
 
 ## Network status
 
 For real-time network status information, including uptime, incident reports,
 and service availability, visit the
 [official Celestia Mocha testnet status page](https://status.celestia.dev/status/mocha).
+
+## Network constants
+
+For the current Mocha testnet network constants, see
+[mocha.celenium.io/constants](https://mocha.celenium.io/constants).
 
 ## RPC for DA bridge, full, and light nodes
 
@@ -148,6 +153,18 @@ broadcast transactions.
 - `grpc-1.testnet.celestia.nodes.guru:10790`
 - `grpc-2.testnet.celestia.nodes.guru:10790`
 - `celestia-testnet-grpc.itrocket.net:443`
+- `celestiam.grpc.lava.build:443`
+- `grpc-celestia-testnet.mzonder.com:443`
+
+## Community JSON-RPC endpoints
+
+- `celestia-testnet-consensus.itrocket.net:26658`
+- `celestiam.jsonrpc.lava.build`
+- `celestia-testnet-da-archival.rpc.grove.city/v1/c33eeadb`
+
+## Community Tendermint RPC endpoints
+
+- `celestiam.tendermintrpc.lava.build`
 
 ## Community bridge node endpoints
 
@@ -217,5 +234,5 @@ There are a few ways to stay informed about network upgrades on the Mocha testne
 - Telegram [announcement channel](https://t.me/+smSFIA7XXLU4MjJh)
 - Discord [Mocha announcements](https://discord.com/channels/638338779505229824/979037494735691816)
 
-See the [network upgrade process page](/operate/maintenance/network-upgrades) to learn more
+See the [network upgrades page](/operate/maintenance/network-upgrades) to learn more
 about specific upgrades like the [Ginger network upgrade](/operate/maintenance/network-upgrades#ginger-network-upgrade).

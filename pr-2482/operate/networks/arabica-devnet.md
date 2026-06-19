@@ -36,14 +36,19 @@ undergoes network upgrades in coordination with validators.
 
 | Software       | Version                                                                  |
 | -------------- | ------------------------------------------------------------------------ |
-| celestia-node  | [v0.30.2-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.30.2-arabica) |
-| celestia-app   | [v8.0.2-arabica](https://github.com/celestiaorg/celestia-app/releases/tag/v8.0.2-arabica)   |
+| celestia-node  | [v0.31.3-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3-arabica) |
+| celestia-app   | [v9.0.4-arabica](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.4-arabica)   |
 
 ## Network status
 
 For real-time network status information, including uptime, incident reports,
 and service availability, visit the
 [official Celestia Arabica devnet status page](https://status.celestia.dev/status/arabica).
+
+## Network constants
+
+For the current Arabica devnet network constants, see
+[arabica.celenium.io/constants](https://arabica.celenium.io/constants).
 
 ## Integrations
 
@@ -151,5 +156,5 @@ There are multiple explorers you can use for Arabica:
 Join our [Telegram announcement channel](https://t.me/+smSFIA7XXLU4MjJh)
 for network upgrades.
 
-See the [network upgrade process page](/operate/maintenance/network-upgrades) to learn more
+See the [network upgrades page](/operate/maintenance/network-upgrades) to learn more
 about specific upgrades like the [Ginger network upgrade](/operate/maintenance/network-upgrades#ginger-network-upgrade).

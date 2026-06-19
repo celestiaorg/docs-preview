@@ -33,8 +33,8 @@ functional, users may encounter occasional instability or reduced performance.
 
 | Software       | Version                                                             |
 | -------------- | ------------------------------------------------------------------- |
-| celestia-node  | [v0.28.4](https://github.com/celestiaorg/celestia-node/releases/tag/v0.28.4) |
-| celestia-app   | [v6.4.10](https://github.com/celestiaorg/celestia-app/releases/tag/v6.4.10)   |
+| celestia-node  | [v0.31.3](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3) |
+| celestia-app   | [v9.0.4](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.4)   |
 
 ## Network status
 
@@ -88,6 +88,11 @@ See the code in
 Full network parameters, such as [max bytes](https://github.com/celestiaorg/celestia-app/blob/52a3cfadbf4439e5e1bd89a8c47e14d3209ca525/specs/src/parameters_v6.md?plain=1#L35),
 can be found in the
 [celestia-app specifications](https://celestiaorg.github.io/celestia-app/parameters_v6.html).
+
+## Network constants
+
+For the current Mainnet Beta network constants, see
+[celenium.io/constants](https://celenium.io/constants).
 
 ## Integrations
 
@@ -230,5 +235,5 @@ There are a few ways to stay informed about network upgrades on Mainnet Beta:
 - Telegram [announcement channel](https://t.me/+smSFIA7XXLU4MjJh)
 - Discord [Mainnet Beta announcements](https://discord.com/channels/638338779505229824/1169237690114388039)
 
-See the [network upgrade process page](/operate/maintenance/network-upgrades) to learn more
+See the [network upgrades page](/operate/maintenance/network-upgrades) to learn more
 about specific upgrades like the [Ginger network upgrade](/operate/maintenance/network-upgrades#ginger-network-upgrade).

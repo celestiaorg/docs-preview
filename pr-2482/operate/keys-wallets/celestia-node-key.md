@@ -243,7 +243,7 @@ testnet):
 
 ```bash
 docker run --name celestia-node -e NODE_TYPE=light -e P2P_NETWORK=mocha -p 26659:26659 \
-ghcr.io/celestiaorg/celestia-node:v0.30.2-mocha celestia light start \
+ghcr.io/celestiaorg/celestia-node:v0.31.3-mocha celestia light start \
 --core.ip rpc-mocha.pops.one --core.port 9090 --p2p.network mocha
 ```
 

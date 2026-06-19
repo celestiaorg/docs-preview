@@ -11,7 +11,7 @@ The Celestia Go client lets you submit and retrieve data from the Celestia netwo
 
 ## Prerequisites
 
-- Go 1.24 or later
+- Go 1.25.1 or later
 - A Celestia account (created automatically)
 - Testnet tokens from the [Mocha faucet](/operate/networks/mocha-testnet#mocha-testnet-faucet)
 
@@ -31,10 +31,10 @@ The Celestia Go client lets you submit and retrieve data from the Celestia netwo
 
 ### Connection types
 
-| Purpose     | Node type      | Example URL              |
-| ----------- | -------------- | ------------------------ |
-| Read data   | Bridge node    | `http://localhost:26658` |
-| Submit data | Consensus node | `localhost:26657`        |
+| Purpose     | Node type               | Example URL                                   |
+| ----------- | ----------------------- | --------------------------------------------- |
+| Read data   | DA JSON-RPC             | `http://localhost:26658`                      |
+| Submit data | Consensus node gRPC     | `localhost:9090`                              |
 
 ### Read-only mode
 
