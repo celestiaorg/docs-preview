@@ -32,7 +32,7 @@ validators to participate.
 
 | Software       | Version                                                                  |
 | -------------- | ------------------------------------------------------------------------ |
-| celestia-node  | [v0.31.3-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3-arabica) |
+| celestia-node  | [v0.31.4-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.4-arabica) |
 | celestia-app   | [v9.0.5-arabica](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.5-arabica)     |
 
 ### Mocha testnet
