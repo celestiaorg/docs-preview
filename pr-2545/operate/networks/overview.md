@@ -47,7 +47,7 @@ in coordination with the validator community on Mocha.
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [v0.31.3-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3-mocha) |
+| celestia-node  | [v0.31.4-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.4-mocha) |
 | celestia-app   | [v9.0.4-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.4-mocha)   |
 
 ## Network upgrades
