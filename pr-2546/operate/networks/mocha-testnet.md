@@ -29,13 +29,32 @@ genesis transactions. Other validators can join after launch with
 channels, Hyperlane state, community pool, and all other chain state
 will not carry over.
 
+### Accessing mocha-4 history after the restart
+
+Because `mocha-5` starts from a new genesis, `mocha-4` history is not
+queryable on the restarted network. The Celestia Foundation will publish
+an exported copy of the final `mocha-4` state and host it until a stated
+retirement date. Individual node operators are not responsible for
+retaining `mocha-4` data; community operators who want to keep their own
+archival copies, or continue serving `mocha-4` endpoints, are welcome to,
+but this is optional.
+
 ### Prepare a separate consensus-node home
 
 If you already operate a `mocha-4` consensus node or validator, do not
 initialize `mocha-5` in the existing `$HOME/.celestia-app` directory.
-Keep that directory and its service intact during the cutover, and back
-up your [wallet keys](/operate/keys-wallets/celestia-app-wallet#key-management)
-and `$HOME/.celestia-app/config/priv_validator_key.json` before continuing.
+That directory's `data/priv_validator_state.json` records the last
+`mocha-4` height you signed, and a validator will not sign at a height
+at or below that value. Because `mocha-5` restarts at height 1, a node
+reusing the old home would refuse to sign. The old `data` directory also
+holds blocks from a different chain, which will not reconcile with the
+`mocha-5` genesis.
+
+Using a separate home avoids both problems and leaves your `mocha-4`
+node runnable if you need to fall back during the cutover. Back up your
+[wallet keys](/operate/keys-wallets/celestia-app-wallet#key-management)
+and `$HOME/.celestia-app/config/priv_validator_key.json` before
+continuing.
 
 Initialize `mocha-5` with its own home directory:
 
