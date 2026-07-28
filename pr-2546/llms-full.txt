@@ -9232,15 +9232,60 @@ to show you how to connect to them.
 
 ## Mocha-5 network restart
 
-Account balances from a selected `mocha-4` snapshot will carry over to
-`mocha-5`, but account sequences reset to 0. Existing delegations,
-unbonding delegations, and pending staking rewards will become liquid
-balances. The validator set, governance proposals, IBC channels, and
-Hyperlane state will not carry over.
+Only account balances recorded at the selected `mocha-4` snapshot height
+will carry over to `mocha-5`. Transactions and balance changes after that
+height will not exist on `mocha-5`, and account sequences reset to 0.
+Existing delegations, unbonding delegations, and pending staking rewards
+will become liquid balances.
 
 The initial validator set will be created from separately coordinated
 genesis transactions. Other validators can join after launch with
-`MsgCreateValidator`.
+`MsgCreateValidator`. The validator set, governance proposals, IBC
+channels, Hyperlane state, community pool, and all other chain state
+will not carry over.
+
+### Prepare a separate consensus-node home
+
+If you already operate a `mocha-4` consensus node or validator, do not
+initialize `mocha-5` in the existing `$HOME/.celestia-app` directory.
+Keep that directory and its service intact during the cutover, and back
+up your [wallet keys](/operate/keys-wallets/celestia-app-wallet#key-management)
+and `$HOME/.celestia-app/config/priv_validator_key.json` before continuing.
+
+Initialize `mocha-5` with its own home directory:
+
+```bash
+MOCHA_5_HOME="$HOME/.celestia-app-mocha-5"
+
+celestia-appd init "node-name" \
+  --chain-id mocha-5 \
+  --home "$MOCHA_5_HOME"
+
+celestia-appd download-genesis mocha-5 \
+  --home "$MOCHA_5_HOME"
+```
+
+Configure the new Mocha seeds and peers in that directory:
+
+```bash
+SEEDS=$(curl -sL https://raw.githubusercontent.com/celestiaorg/networks/master/mocha-5/seeds.txt | tr '\n' ',')
+PERSISTENT_PEERS=$(curl -sL https://raw.githubusercontent.com/celestiaorg/networks/master/mocha-5/peers.txt | tr '\n' ',')
+
+sed -i.bak -e "s/^seeds *=.*/seeds = \"$SEEDS\"/" "$MOCHA_5_HOME/config/config.toml"
+sed -i.bak -e "s/^persistent_peers *=.*/persistent_peers = \"$PERSISTENT_PEERS\"/" "$MOCHA_5_HOME/config/config.toml"
+```
+
+Do not copy the `mocha-4` data directory or
+`data/priv_validator_state.json` into the new home. Initial validators
+should restore validator and wallet keys only as directed by the
+separately coordinated genesis transaction process.
+
+At launch, run `mocha-5` under a separate service whose start command
+includes the new home:
+
+```bash
+celestia-appd start --home "$MOCHA_5_HOME"
+```
 
 You have a list of options on the types of nodes you can run to
 participate in Mocha:
