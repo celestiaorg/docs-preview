@@ -65,7 +65,6 @@ These RPC providers are meant to be used in production environments
 and for specific use cases that require reliable access to full block
 history, such as:
 
-- Running archival bridge nodes that download full history from core RPC endpoints
 - Applications that need Bridge Node endpoints with guaranteed uptime and SLAs
 - Submitting blobs in production settings (free RPC endpoints have no guarantees, even for submitting transactions)
 

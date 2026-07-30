@@ -46,8 +46,9 @@ new bridge node to sync from a recent point instead of from genesis.
 
 To retain the full history, pass `--archival` every time you start the bridge
 node. Archival mode disables pruning and syncs from genesis, so it requires
-substantially more storage and a consensus endpoint that can serve the required
-historical blocks.
+substantially more storage. The connected consensus endpoint does not need to
+retain the full history: the bridge node can retrieve older headers and data
+from the peer-to-peer network.
 
 See the [hardware requirements](/operate/getting-started/hardware-requirements)
 before choosing archival mode.
