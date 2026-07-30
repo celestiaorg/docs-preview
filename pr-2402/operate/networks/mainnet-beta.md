@@ -33,8 +33,8 @@ functional, users may encounter occasional instability or reduced performance.
 
 | Software       | Version                                                             |
 | -------------- | ------------------------------------------------------------------- |
-| celestia-node  | [v0.28.4](https://github.com/celestiaorg/celestia-node/releases/tag/v0.28.4) |
-| celestia-app   | [v6.4.10](https://github.com/celestiaorg/celestia-app/releases/tag/v6.4.10)   |
+| celestia-node  | [v0.31.4](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.4) |
+| celestia-app   | [v9.0.4](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.4)   |
 
 ## Network status
 
@@ -89,6 +89,11 @@ Full network parameters, such as [max bytes](https://github.com/celestiaorg/cele
 can be found in the
 [celestia-app specifications](https://celestiaorg.github.io/celestia-app/parameters_v6.html).
 
+## Network constants
+
+For the current Mainnet Beta network constants, see
+[celenium.io/constants](https://celenium.io/constants).
+
 ## Integrations
 
 This guide contains the relevant sections for how to connect to Mainnet Beta,
@@ -96,7 +101,7 @@ depending on the type of node you are running. Your best approach to
 participating is to first [determine which node you would like to run](/operate/getting-started/overview). Each
 node's guide will link to the relevant network in order to show you how
 to connect to them. Learn about the different endpoint types
-[in the Cosmos SDK documentation](https://docs.cosmos.network/v0.50/learn/advanced/grpc_rest).
+[in the Cosmos SDK documentation](https://docs.cosmos.network/sdk/v0.53/learn/advanced/grpc_rest).
 
 ### Production RPC endpoints
 
@@ -104,15 +109,12 @@ These RPC providers are meant to be used in production environments
 and for specific use cases that require reliable access to full block
 history, such as:
 
-- Running Bridge Nodes that download data from core RPC endpoints (Note: Bridge nodes will default to pruning mode in upcoming release - see PR #4768. Use `--archival` flag for full history)
+- Running archival bridge nodes that download full history from core RPC endpoints
 - Applications that need Bridge Node endpoints with guaranteed uptime and SLAs
 - Submitting blobs in production settings (free RPC endpoints have no guarantees, even for submitting transactions)
 
 | Provider  | URL                                                                                       |
 | --------- | ----------------------------------------------------------------------------------------- |
-| Grove     | [https://www.grove.city/](https://www.grove.city/)                                                                 |
-| Numia     | For RPC access: [https://docs.numia.xyz/infra/overview/getting-started](https://docs.numia.xyz/infra/overview/getting-started)                   |
-| Numia     | For data warehouse access: [https://docs.numia.xyz/sql/querying-data/chains/celestia](https://docs.numia.xyz/sql/querying-data/chains/celestia)     |
 | QuickNode | [https://www.quicknode.com/chains/celestia](https://www.quicknode.com/chains/celestia) ([docs](https://quicknode.com/docs/celestia)) |
 
 If you are using QuickNode or another provider with authenticated endpoints,
@@ -135,31 +137,20 @@ You can also find the list of official Celestia bootstrappers in the [celestia-n
 
 The following table lists community-provided consensus node endpoints that you can use:
 
-| Provider        | RPC Endpoint                                             | API Endpoint                                                     | gRPC Endpoint                                  | WebSocket Endpoint                                       |
-| --------------- | -------------------------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------- | -------------------------------------------------------- |
-| 0xcryptovestor  | `celestia-rpc.0xcryptovestor.com`                        | -                                                                | -                                              | -                                                        |
-| AlphaB          | `rpc-celestia.alphab.ai`                                 | `api-celestia.alphab.ai`                                         | `rpc-celestia.alphab.ai:9090`                  | -                                                        |
-| Brightly Stake  | `celestia-rpc.brightlystake.com`                         | `celestia-rpc.brightlystake.com/api`                             | `celestia-rpc.brightlystake.com:9090`          | `wss://celestia-ws.chainode.tech:33373/websocket`        |
-| Chainode        | `celestia-rpc.chainode.tech:33373`                       | `celestia-api.chainode.tech`                                     | `celestia-grpc.chainode.tech:443`              | `wss://celestia-ws.chainode.tech:33373/websocket`        |
-| Cumulo          | `celestia.cumulo.org.es`                                 | `celestia.api.cumulo.org.es`                                     | `celestia.grpc.cumulo.org.es:443`              | `wss://celestia.cumulo.org.es:443/websocket`             |
-| Cumulo Archive  | `rpc.archive.celestia.cumulo.com.es`                     | `api.archive.celestia.cumulo.com.es`                             | `grpc.archive.celestia.cumulo.com.es:443`      | `wss://rpc.archive.celestia.cumulo.com.es:443/websocket` |
-| Easy2Stake      | `celestia-rpc.easy2stake.com`                            | `celestia-lcd.easy2stake.com`                                    | -                                              | -                                                        |
-| Grove           | `celestia-consensus-archival.rpc.grove.city/v1/c33eeadb` | `https://celestia-consensus-archival.rpc.grove.city/v1/c33eeadb` | -                                              | -                                                        |
-| ITRocket        | `celestia-mainnet-rpc.itrocket.net:443`                  | `celestia-mainnet-api.itrocket.net:443`                          | `celestia-mainnet-grpc.itrocket.net:443`       | `wss://celestia-mainnet-ws.itrocket.net:443/websocket`   |
-| kjnodes         | `celestia.rpc.kjnodes.com`                               | `celestia.api.kjnodes.com`                                       | `celestia.grpc.kjnodes.com:443`                | -                                                        |
-| Lava            | -                                                        | `celestia.rest.lava.build`                                       | `celestia.grpc.lava.build:443`                 | -                                                        |
-| lunaroasis      | `rpc.lunaroasis.net`                                     | `api.lunaroasis.net`                                             | `grpc.lunaroasis.net:443`                      | -                                                        |
-| Mzonder         | `rpc-celestia.mzonder.com:443`                           | `api-celestia.mzonder.com:443`                                   | `grpc-celestia.mzonder.com:443`                | `wss://rpc-celestia.mzonder.com:443/websocket`           |
-| NodeStake       | `rpc.celestia.nodestake.top`                             | `api.celestia.nodestake.top`                                     | `grpc.celestia.nodestake.top`                  | -                                                        |
-| Noders Services | `celestia-rpc.noders.services`                           | `celestia-api.noders.services`                                   | `celestia-grpc.noders.services:11090`          | -                                                        |
-| Numia           | `public-celestia-rpc.numia.xyz`                          | `public-celestia-lcd.numia.xyz`                                  | `public-celestia-grpc.numia.xyz`               | `wss://public-celestia-rpc.numia.xyz/websocket`          |
-| P-OPS           | `rpc.celestia.pops.one`                                  | `api.celestia.pops.one`                                          | `grpc.celestia.pops.one`                       | -                                                        |
-| Stakeflow       | `rpc-celestia-01.stakeflow.io`                           | `api-celestia-01.stakeflow.io`                                   | `grpc-celestia-01.stakeflow.io:15002`          | -                                                        |
-| Stakin          | `celestia.rpc.stakin-nodes.com`                          | `celestia.rest.stakin-nodes.com`                                 | `celestia.grpc.stakin-nodes.com:443`           | -                                                        |
-| Trusted Point   | `rpc-celestia-mainnet.trusted-point.com`                 | `api-celestia-mainnet.trusted-point.com`                         | `grpc-celestia-mainnet.trusted-point.com:9095` | -                                                        |
-| deNodes         | `celestia-mainnet-rpc.denodes.xyz`                       | `celestia-mainnet-api.denodes.xyz`                               | `celestia-mainnet-grpc.denodes.xyz:443`        | `wss://celestia-mainnet-rpc.denodes.xyz:443/websocket`   |
-
-| CitizenWeb3 | `rpc.celestia.citizenweb3.com` | `api.celestia.citizenweb3.com` | `grpc.celestia.citizenweb3.com:443` | - |
+| Provider        | RPC Endpoint                            | API Endpoint                            | gRPC Endpoint                             | WebSocket Endpoint                                       |
+| --------------- | --------------------------------------- | --------------------------------------- | ----------------------------------------- | -------------------------------------------------------- |
+| AlphaB          | `rpc-celestia.alphab.ai`               | `api-celestia.alphab.ai`               | `rpc-celestia.alphab.ai:9090`             | -                                                        |
+| CitizenWeb3     | `rpc.celestia.citizenweb3.com`          | `api.celestia.citizenweb3.com`          | `grpc.celestia.citizenweb3.com:443`       | -                                                        |
+| Cumulo Archive  | `rpc.archive.celestia.cumulo.com.es`    | `api.archive.celestia.cumulo.com.es`    | `grpc.archive.celestia.cumulo.com.es:443` | `wss://rpc.archive.celestia.cumulo.com.es:443/websocket` |
+| Easy2Stake      | `celestia-rpc.easy2stake.com`           | `celestia-lcd.easy2stake.com`           | -                                         | -                                                        |
+| ITRocket        | `celestia-mainnet-rpc.itrocket.net:443` | `celestia-mainnet-api.itrocket.net:443` | `celestia-mainnet-grpc.itrocket.net:443`  | `wss://celestia-mainnet-ws.itrocket.net:443/websocket`   |
+| kjnodes         | `celestia.rpc.kjnodes.com`              | `celestia.api.kjnodes.com`              | `celestia.grpc.kjnodes.com:443`           | -                                                        |
+| lunaroasis      | `rpc.lunaroasis.net`                    | `api.lunaroasis.net`                    | `grpc.lunaroasis.net:443`                 | -                                                        |
+| Noders Services | `celestia-rpc.noders.services`          | `celestia-api.noders.services`          | `celestia-grpc.noders.services:11090`     | -                                                        |
+| Numia           | `public-celestia-rpc.numia.xyz`         | `public-celestia-lcd.numia.xyz`         | `public-celestia-grpc.numia.xyz`          | `wss://public-celestia-rpc.numia.xyz/websocket`          |
+| P-OPS           | `rpc.celestia.pops.one`                 | `api.celestia.pops.one`                 | `grpc.celestia.pops.one`                  | -                                                        |
+| Stakin          | `celestia.rpc.stakin-nodes.com`         | `celestia.rest.stakin-nodes.com`        | `celestia.grpc.stakin-nodes.com:443`      | -                                                        |
+| deNodes         | `celestia-mainnet-rpc.denodes.xyz`      | `celestia-mainnet-api.denodes.xyz`      | `celestia-mainnet-grpc.denodes.xyz:443`   | `wss://celestia-mainnet-rpc.denodes.xyz:443/websocket`   |
 
 ### Connecting DA nodes to consensus nodes
 
@@ -175,19 +166,14 @@ celestia light start --core.ip rpc.celestia.pops.one --core.port 9090
 
 ### Bridge node requirements
 
-For archival bridge nodes (using `--archival` flag):
-- Not all RPC endpoints guarantee the full block history
-- Bridge nodes with `--archival` flag require access to the full historical block data
-- Use an archive endpoint to run your archival bridge node
-- Check the [production endpoints](#production-rpc-endpoints) or the [community dashboard](https://celestia-tools.brightlystake.com/) to identify which endpoints are archive nodes
+Bridge nodes run in pruned mode by default and can start from a recent point
+using a non-archival consensus endpoint.
 
-For pruned bridge nodes (default):
-- Will only store recent data within the availability window
-- Can sync from a recent height or hash
-- Significantly lower storage requirements
-- Suitable for most use cases
-
-Alternatively, you can run your own consensus node with no pruning for your bridge node.
+For full history, start the bridge node with `--archival`. The connected
+consensus endpoint must serve the historical blocks needed during sync. Use a
+[production endpoint](#production-rpc-endpoints), find an archive endpoint on
+the [community dashboard](https://celestia-tools.brightlystake.com/), or run
+your own consensus node with pruning disabled.
 
 ### Archival DA RPC endpoints
 
@@ -198,11 +184,10 @@ pruning any data so all data available data is retrievable. You can
 
 | Provider                         | Endpoint                                                                                  | RPC Port | Gateway Port |
 | -------------------------------- | ----------------------------------------------------------------------------------------- | -------- | ------------ |
-| Grove                            | `celestia-archival.rpc.grove.city/v1/c33eeadb`                                            | -        | -            |
+| QuickNode                        | [https://www.quicknode.com/chains/celestia](https://www.quicknode.com/chains/celestia) ([docs](https://quicknode.com/docs/celestia)) | -        | -            |
 | Mzonder                          | `celestia-da-full-storage.mzonder.com`                                                    | 27758    | 27759        |
 | Noders Services                  | `celestia-archive-da.noders.services`                                                     | 26658    | 26659        |
 | ITRocket                         | `celestia-mainnet-da-full-storage.itrocket.net`                                           | 26658    | 26659        |
-| QuickNode                        | [https://www.quicknode.com/chains/celestia](https://www.quicknode.com/chains/celestia) ([docs](https://quicknode.com/docs/celestia)) | -        | -            |
 | See the Brightly Stake dashboard | [https://celestia-tools.brightlystake.com/](https://celestia-tools.brightlystake.com/)                                               | -        | -            |
 
 ## Explorers
@@ -212,7 +197,6 @@ There are multiple explorers you can use for Mainnet Beta:
 - [https://celenium.io](https://celenium.io)
 - [https://celestia.explorers.guru](https://celestia.explorers.guru)
 - [https://celestia.valopers.com/](https://celestia.valopers.com/)
-- [https://celestiahub.org](https://celestiahub.org/explorer)
 - [https://explorer.nodestake.top/celestia](https://explorer.nodestake.top/celestia)
 - [https://mainnet.itrocket.net/celestia/](https://mainnet.itrocket.net/celestia/)
 - [https://mammoblocks.io/](https://mammoblocks.io/)
@@ -235,7 +219,6 @@ This is an essential resource when selecting endpoints for your nodes or applica
 The following websites provide analytics for Celestia:
 
 - [https://alphab.ai/s/m/celestia/](https://alphab.ai/s/m/celestia/)
-- [https://celestiahub.org/explorer/blobs](https://celestiahub.org/explorer/blobs)
 - [https://itrocket.net/services/mainnet/celestia/](https://itrocket.net/services/mainnet/celestia/) - Node setup, monitoring, and chain status tools
 - [https://itrocket.net/services/mainnet/celestia/analytics/consensus-signal-tracker/](https://itrocket.net/services/mainnet/celestia/analytics/consensus-signal-tracker/) - Consensus signal tracker
 - [https://itrocket.net/services/mainnet/celestia/decentralization/](https://itrocket.net/services/mainnet/celestia/decentralization/)
@@ -254,5 +237,5 @@ There are a few ways to stay informed about network upgrades on Mainnet Beta:
 - Telegram [announcement channel](https://t.me/+smSFIA7XXLU4MjJh)
 - Discord [Mainnet Beta announcements](https://discord.com/channels/638338779505229824/1169237690114388039)
 
-See the [network upgrade process page](/operate/maintenance/network-upgrades) to learn more
+See the [network upgrades page](/operate/maintenance/network-upgrades) to learn more
 about specific upgrades like the [Ginger network upgrade](/operate/maintenance/network-upgrades#ginger-network-upgrade).

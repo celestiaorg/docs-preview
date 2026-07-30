@@ -11,7 +11,7 @@ Data availability (DA) answers a simple question: **has this block's data been p
 5. Light nodes sample within a rolling window; archival nodes (or providers) keep older data retrievable.
 
 Celestia is a data availability (DA) layer that provides a
-scalable solution to the [data availability problem](https://coinmarketcap.com/academy/glossary/data-availability-sampling-das).
+scalable solution to the [data availability problem](https://coinmarketcap.com/academy/article/what-is-data-availability).
 Due to the permissionless nature of the blockchain networks,
 a DA layer must provide a mechanism for the execution and settlement
 layers to check in a trust-minimized way whether transaction data is indeed available.
@@ -145,7 +145,7 @@ For more details on NMTs, refer to the [original paper](https://arxiv.org/abs/19
 The Celestia DA layer consists of a PoS blockchain. Celestia is dubbing this
 blockchain as the [celestia-app](https://github.com/celestiaorg/celestia-app),
 an application that provides transactions to facilitate the DA layer and is built
-using [Cosmos SDK](https://docs.cosmos.network/main). The following figure
+using [Cosmos SDK](https://docs.cosmos.network/sdk/v0.53). The following figure
 shows the main components of celestia-app.
 
 ![Main components of celestia-app](/img/learn/celestia-app.png)

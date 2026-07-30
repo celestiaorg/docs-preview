@@ -36,14 +36,19 @@ undergoes network upgrades in coordination with validators.
 
 | Software       | Version                                                                  |
 | -------------- | ------------------------------------------------------------------------ |
-| celestia-node  | [v0.28.5-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.28.5-arabica) |
-| celestia-app   | [v6.4.10-arabica](https://github.com/celestiaorg/celestia-app/releases/tag/v6.4.10-arabica)   |
+| celestia-node  | [v0.31.4-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.4-arabica) |
+| celestia-app   | [v9.0.5-arabica](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.5-arabica)   |
 
 ## Network status
 
 For real-time network status information, including uptime, incident reports,
 and service availability, visit the
 [official Celestia Arabica devnet status page](https://status.celestia.dev/status/arabica).
+
+## Network constants
+
+For the current Arabica devnet network constants, see
+[arabica.celenium.io/constants](https://arabica.celenium.io/constants).
 
 ## Integrations
 
@@ -52,7 +57,7 @@ devnet, depending on the type of node you are running. Your best
 approach to participating is to first determine which node you would
 like to run. Each node’s guide will link to the relevant network in
 order to show you how to connect to them. Learn about the different
-endpoint types [in the Cosmos SDK documentation](https://docs.cosmos.network/v0.50/learn/advanced/grpc_rest).
+endpoint types [in the Cosmos SDK documentation](https://docs.cosmos.network/sdk/v0.53/learn/advanced/grpc_rest).
 
 ### Production RPC endpoints
 
@@ -60,15 +65,13 @@ These RPC providers are meant to be used in production environments
 and for specific use cases that require reliable access to full block
 history, such as:
 
-- Running Bridge Nodes that download data from core RPC endpoints (Note: Bridge nodes will default to pruning mode in upcoming release - see PR #4768)
+- Running archival bridge nodes that download full history from core RPC endpoints
 - Applications that need Bridge Node endpoints with guaranteed uptime and SLAs
 - Submitting blobs in production settings (free RPC endpoints have no guarantees, even for submitting transactions)
 
-| Provider | URL                                                                                   |
-| -------- | ------------------------------------------------------------------------------------- |
-| Numia    | For RPC access: [docs.numia.xyz/infra/overview/getting-started](https://docs.numia.xyz/infra/overview/getting-started)               |
-| Numia    | For data warehouse access: [docs.numia.xyz/sql/querying-data/chains/celestia](https://docs.numia.xyz/sql/querying-data/chains/celestia) |
-| Grove    | [https://www.grove.city/](https://www.grove.city/)                                                             |
+| Provider  | URL                                                                                       |
+| --------- | ----------------------------------------------------------------------------------------- |
+| QuickNode | [https://www.quicknode.com/chains/celestia](https://www.quicknode.com/chains/celestia) ([docs](https://quicknode.com/docs/celestia)) |
 
 ### Community RPC endpoints
 
@@ -147,12 +150,11 @@ The web faucet is available at [https://arabica.celenium.io/faucet](https://arab
 There are multiple explorers you can use for Arabica:
 
 - [https://arabica.celenium.io](https://arabica.celenium.io)
-- [https://explorer.celestia-arabica-11.com](https://explorer.celestia-arabica-11.com)
 
 ## Network upgrades
 
 Join our [Telegram announcement channel](https://t.me/+smSFIA7XXLU4MjJh)
 for network upgrades.
 
-See the [network upgrade process page](/operate/maintenance/network-upgrades) to learn more
+See the [network upgrades page](/operate/maintenance/network-upgrades) to learn more
 about specific upgrades like the [Ginger network upgrade](/operate/maintenance/network-upgrades#ginger-network-upgrade).

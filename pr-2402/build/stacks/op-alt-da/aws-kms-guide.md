@@ -9,20 +9,45 @@ This guide walks through running [op-alt-da](https://github.com/celestiaorg/op-a
 - Docker
 - Go 1.21+
 - A Celestia RPC endpoint from [Quicknode](https://quicknode.com/)
-- [cel-key utility installed](/operate/keys-wallets/celestia-node-key/#installation)
 
 ## Getting started
 
 ## Production (AWS)
 
-For production AWS-KMS usage, remove the endpoint, set your region, and private key:
+For production AWS KMS usage:
 
-```toml
-[celestia.awskms]
-region = "us-east-2"
-endpoint = ""
-alias_prefix = "alias/op-alt-da/"
-auto_create = false
-import_key_name = "celestia_key"
-import_key_hex = "YOUR_EXPORTED_PRIVATE_KEY_HEX"
-```
+1. Create a KMS keypair in AWS with key spec `ECC_SECG_P256K1` and key usage `SIGN_VERIFY`.
+
+2. Create an alias for your key (e.g., `alias/op-alt-da/my_celes_key`). Per AWS requirements, the alias name must start with `alias/`.
+
+3. Configure your IAM policy with the minimum required permissions:
+
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Action": [
+           "kms:GetPublicKey",
+           "kms:Sign"
+         ],
+         "Resource": "arn:aws:kms:REGION:ACCOUNT_ID:key/KEY_ID"
+       }
+     ]
+   }
+   ```
+
+4. Update your `config.toml`:
+
+   ```toml
+   [celestia]
+   keyring_backend = "awskms"
+   default_key_name = "alias/op-alt-da/my_celes_key"
+
+   [celestia.awskms]
+   region = "us-east-2"
+   endpoint = ""
+   ```
+
+   Note: Leave `endpoint` empty for production AWS. The `default_key_name` must include the full alias path (e.g., `alias/my_celes_key` or `alias/op-alt-da/my_celes_key`).

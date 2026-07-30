@@ -13,8 +13,8 @@ reduced performance.
 
 | Software       | Version                                                             |
 | -------------- | ------------------------------------------------------------------- |
-| celestia-node  | [v0.28.4](https://github.com/celestiaorg/celestia-node/releases/tag/v0.28.4) |
-| celestia-app   | [v6.4.10](https://github.com/celestiaorg/celestia-app/releases/tag/v6.4.10)   |
+| celestia-node  | [v0.31.4](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.4) |
+| celestia-app   | [v9.0.4](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.4)   |
 
 ## Testnets
 
@@ -32,8 +32,8 @@ validators to participate.
 
 | Software       | Version                                                                  |
 | -------------- | ------------------------------------------------------------------------ |
-| celestia-node  | [v0.28.5-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.28.5-arabica) |
-| celestia-app   | [v6.4.10-arabica](https://github.com/celestiaorg/celestia-app/releases/tag/v6.4.10-arabica)     |
+| celestia-node  | [v0.31.4-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.4-arabica) |
+| celestia-app   | [v9.0.5-arabica](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.5-arabica)     |
 
 ### Mocha testnet
 
@@ -47,8 +47,8 @@ in coordination with the validator community on Mocha.
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [v0.28.5-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.28.5-mocha) |
-| celestia-app   | [v6.4.10-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v6.4.10-mocha)   |
+| celestia-node  | [v0.31.4-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.4-mocha) |
+| celestia-app   | [v9.0.4-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.4-mocha)   |
 
 ## Network upgrades
 
@@ -58,5 +58,5 @@ There are a few ways to stay informed about network upgrades:
 - Discord [Mainnet Beta announcements](https://discord.com/channels/638338779505229824/1169237690114388039)
 - Discord [Mocha announcements](https://discord.com/channels/638338779505229824/979037494735691816)
 
-See the [network upgrade process page](/operate/maintenance/network-upgrades) to learn more
+See the [network upgrades page](/operate/maintenance/network-upgrades) to learn more
 about specific upgrades like the [Ginger network upgrade](/operate/maintenance/network-upgrades#ginger-network-upgrade).

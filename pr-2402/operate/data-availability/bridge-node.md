@@ -36,38 +36,21 @@ From an implementation perspective, Bridge nodes run two separate processes:
 
    - **celestia-node** augments the above with a separate libp2p network that
      serves data availability sampling requests. The team sometimes refers to
-     this as the "halo" network.
+     this as the “halo” network.
 
-## Pruning vs archival modes
+## Pruned and archival modes
 
-Bridge nodes can operate in two modes:
+Bridge nodes run in pruned mode by default. They retain recent headers and data
+within the availability window, which reduces storage requirements and allows a
+new bridge node to sync from a recent point instead of from genesis.
 
-### Pruned mode (default)
-- **Default behavior**: Bridge nodes now prune old data automatically
-- Stores only recent blocks within the availability window
-- Significantly reduces storage requirements
-- Can sync from a recent height or hash instead of genesis
-- Suitable for most use cases
+To retain the full history, pass `--archival` every time you start the bridge
+node. Archival mode disables pruning and syncs from genesis, so it requires
+substantially more storage and a consensus endpoint that can serve the required
+historical blocks.
 
-### Archival mode
-- Stores all historical data from genesis
-- Requires the `--archival` flag to enable
-- Much higher storage requirements (see [hardware requirements](/operate/getting-started/hardware-requirements))
-- Necessary for applications requiring full historical data access
-- Required if you need to serve data to light nodes for blocks outside the availability window
-
-### Choosing between modes
-
-Use **pruned mode** (default) if you:
-- Want lower storage requirements
-- Only need recent blockchain data
-- Are running a standard bridge node for the network
-
-Use **archival mode** (`--archival` flag) if you:
-- Need access to full historical data
-- Are running infrastructure that requires all blocks from genesis
-- Want to serve data for blocks outside the availability window
-- Are running a bridge node on a private network without proper genesis hash configuration
+See the [hardware requirements](/operate/getting-started/hardware-requirements)
+before choosing archival mode.
 
 ## Hardware requirements
 
@@ -123,7 +106,3 @@ You have successfully set up a bridge node that is syncing with the network.
 
 Follow the
 [tutorial on how to set up your DA node to use on-fly compression with ZFS](/operate/data-availability/storage-optimization).
-
-## Migration guide for existing bridge nodes
-
-[TODO: Add migration guide once PR #4768 is released with specific version number and finalized migration instructions]
