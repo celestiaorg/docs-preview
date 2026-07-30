@@ -15,6 +15,9 @@ to the [celestia-node Docker page](/operate/getting-started/docker).
 
 ## Run celestia-node in Docker against your containerized celestia-app
 
+celestia-node connects to consensus over gRPC (`--core.port`, default `9090`),
+not Tendermint RPC.
+
 ## Next steps
 
 - [Consensus node guide](/operate/consensus-validators/consensus-node)
