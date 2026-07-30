@@ -47,14 +47,19 @@ to the correct instructions on this page on how to connect to Mocha.
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [v0.29.1-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.29.1-mocha) |
-| celestia-app   | [v7.0.2-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v7.0.2-mocha)   |
+| celestia-node  | [v0.31.4-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.4-mocha) |
+| celestia-app   | [v9.0.4-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.4-mocha)   |
 
 ## Network status
 
 For real-time network status information, including uptime, incident reports,
 and service availability, visit the
 [official Celestia Mocha testnet status page](https://status.celestia.dev/status/mocha).
+
+## Network constants
+
+For the current Mocha testnet network constants, see
+[mocha.celenium.io/constants](https://mocha.celenium.io/constants).
 
 ## RPC for DA bridge, full, and light nodes
 
@@ -84,15 +89,15 @@ Several community providers offer comprehensive node setup tools, installation s
 
 ### Community consensus endpoints
 
-Use these consensus endpoints for `--core.ip` when your DA node needs both
-RPC (26657) and gRPC (9090) available from the same host.
+Use these hosts for `--core.ip`. celestia-node connects over gRPC with
+`--core.port` (default `9090`). RPC ports are listed for operators who also
+need Tendermint RPC from the same provider.
 
-| Provider                     | Endpoint for `--core.ip`                                          | RPC port | gRPC port |
-| ---------------------------- | ------------------------------------------------------------------ | -------- | --------- |
-| Numia                        | `public-celestia-mocha-4-consensus.numia.xyz` | 26657    | 9090      |
-| Celestia Labs (full)         | `full.consensus.mocha-4.celestia-mocha.com`   | 26657    | 9090      |
-| Celestia Labs (consensus)    | `consensus-full-mocha-4.celestia-mocha.com`   | 26657    | 9090      |
-| ITRocket                     | `celestia-testnet-consensus.itrocket.net`                           | 26657    | 9090      |
+| Provider      | Endpoint for `--core.ip`                                          | RPC port | gRPC port |
+| ------------- | ----------------------------------------------------------------- | -------- | --------- |
+| Celestia Labs | `full.consensus.mocha-4.celestia-mocha.com` | 26657    | 9090      |
+| P-OPS         | `rpc-mocha.pops.one`                                              | 443      | 9090      |
+| ITRocket      | `celestia-testnet-consensus.itrocket.net`                         | 443      | 9090      |
 
 You can also find the list of official Celestia bootstrappers in the [celestia-node GitHub repository](https://github.com/celestiaorg/celestia-node/blob/a87a17557223d88231b56d323d22ac9da31871db/nodebuilder/p2p/bootstrap.go#L39).
 
@@ -113,7 +118,7 @@ to their respective DA node.
 
 > **Tip for bridge nodes:** Community RPC endpoints do not guarantee full block downloads. If you are running a bridge node, also run a local [consensus node](/operate/consensus-validators/consensus-node) to download full blocks.
 
-Use one of the `--core.ip` values from the [community consensus endpoints](#community-consensus-endpoints) table above to ensure both ports are available.
+Use one of the `--core.ip` values from the [community consensus endpoints](#community-consensus-endpoints) table above.
 
 ## Community RPC endpoints
 
@@ -121,11 +126,9 @@ The RPC endpoint is to allow users to interact with Celestia's nodes by
 querying the node's state and broadcasting transactions on the
 Celestia network. The default port is 26657.
 
-- `public-celestia-mocha-4-consensus.numia.xyz:26657`
 - `rpc-1.testnet.celestia.nodes.guru`
 - `rpc-2.testnet.celestia.nodes.guru`
 - `celestia-testnet-rpc.itrocket.net:443`
-- `celestia-t-rpc.noders.services`
 
 ## Community API endpoints
 
@@ -140,7 +143,6 @@ The default port is 1317.
 - `https://api-1.testnet.celestia.nodes.guru`
 - `https://api-2.testnet.celestia.nodes.guru`
 - `https://celestia-testnet-api.itrocket.net`
-- `https://celestia-t-api.noders.services`
 
 ## Community gRPC endpoints
 
@@ -149,16 +151,24 @@ gRPC, a modern open-source and high-performance RPC framework. The default
 port is 9090. In the Cosmos SDK, gRPC is used to define state queries and
 broadcast transactions.
 
-- `public-celestia-mocha-4-consensus.numia.xyz:9090`
 - `grpc-mocha.pops.one`
-- `grpc.celestia-mocha.com:443`
 - `full.consensus.mocha-4.celestia-mocha.com:9090`
-- `consensus-full-mocha-4.celestia-mocha.com:9090`
 - `mocha.grpc.cumulo.me:443`
 - `grpc-1.testnet.celestia.nodes.guru:10790`
 - `grpc-2.testnet.celestia.nodes.guru:10790`
 - `celestia-testnet-grpc.itrocket.net:443`
-- `celestia-t-grpc.noders.services:21090`
+- `celestiam.grpc.lava.build:443`
+- `grpc-celestia-testnet.mzonder.com:443`
+
+## Community JSON-RPC endpoints
+
+- `celestia-testnet-consensus.itrocket.net:26658`
+- `celestiam.jsonrpc.lava.build`
+- `celestia-testnet-da-archival.rpc.grove.city/v1/c33eeadb`
+
+## Community Tendermint RPC endpoints
+
+- `celestiam.tendermintrpc.lava.build`
 
 ## Community bridge node endpoints
 
@@ -228,5 +238,5 @@ There are a few ways to stay informed about network upgrades on the Mocha testne
 - Telegram [announcement channel](https://t.me/+smSFIA7XXLU4MjJh)
 - Discord [Mocha announcements](https://discord.com/channels/638338779505229824/979037494735691816)
 
-See the [network upgrade process page](/operate/maintenance/network-upgrades) to learn more
+See the [network upgrades page](/operate/maintenance/network-upgrades) to learn more
 about specific upgrades like the [Ginger network upgrade](/operate/maintenance/network-upgrades#ginger-network-upgrade).

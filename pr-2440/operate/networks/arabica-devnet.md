@@ -36,14 +36,19 @@ undergoes network upgrades in coordination with validators.
 
 | Software       | Version                                                                  |
 | -------------- | ------------------------------------------------------------------------ |
-| celestia-node  | [v0.29.1-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.29.1-arabica) |
-| celestia-app   | [v7.0.2-arabica](https://github.com/celestiaorg/celestia-app/releases/tag/v7.0.2-arabica)   |
+| celestia-node  | [v0.31.4-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.4-arabica) |
+| celestia-app   | [v9.0.5-arabica](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.5-arabica)   |
 
 ## Network status
 
 For real-time network status information, including uptime, incident reports,
 and service availability, visit the
 [official Celestia Arabica devnet status page](https://status.celestia.dev/status/arabica).
+
+## Network constants
+
+For the current Arabica devnet network constants, see
+[arabica.celenium.io/constants](https://arabica.celenium.io/constants).
 
 ## Integrations
 
@@ -68,11 +73,11 @@ history, such as:
 | --------- | ----------------------------------------------------------------------------------------- |
 | QuickNode | [https://www.quicknode.com/chains/celestia](https://www.quicknode.com/chains/celestia) ([docs](https://quicknode.com/docs/celestia)) |
 
-### Community consensus endpoints
+### Community RPC endpoints
 
 > **Warning:** Do not rely on the free community endpoints listed below for production deployments. Production deployments should rely on [service providers with SLAs](#production-rpc-endpoints) or your own node.
 
-Consensus endpoints and node types you can run in order to participate in Arabica devnet:
+RPC endpoints and types of nodes you can run in order to participate in Arabica devnet:
 
 | Node type                                                        | Endpoint type                    | Endpoint                                                                                                                                                                                                               |
 | ---------------------------------------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -151,5 +156,5 @@ There are multiple explorers you can use for Arabica:
 Join our [Telegram announcement channel](https://t.me/+smSFIA7XXLU4MjJh)
 for network upgrades.
 
-See the [network upgrade process page](/operate/maintenance/network-upgrades) to learn more
+See the [network upgrades page](/operate/maintenance/network-upgrades) to learn more
 about specific upgrades like the [Ginger network upgrade](/operate/maintenance/network-upgrades#ginger-network-upgrade).
