@@ -56,6 +56,20 @@ While individual transactions are limited to 8 MiB as of v6, a block can contain
 
 The current max square size on Mocha and Mainnet Beta is 32 MiB.
 
+The following provides an approximation of the maximum blob capacity:
+
+- The maximum square size is 256x256, which gives us 65,536 shares.
+- One share is reserved for the PFB transaction, leaving us with 65,535 shares available for blob data.
+- The first sparse share has 478 bytes available, and the remaining sparse shares have 482 bytes each.
+
+Approximate capacity:
+
+```
+First share:       1 x 478 bytes
+Remaining shares:  65,534 x 482 bytes
+Total bytes:       31,587,866 bytes
+```
+
 There is no precise, static upper bound on the maximum total
 blob size. It depends on several factors:
 
@@ -211,7 +225,7 @@ The following websites provide analytics for Celestia:
 
 The following websites provide visual maps of Celestia DA nodes:
 
-- [https://validao.xyz/#maps-celestia-da](https://validao.xyz/#maps-celestia-da) (community contribution)
+- [https://probelab.io/celestia/](https://probelab.io/celestia/) (community contribution)
 
 ## Network upgrades
 
