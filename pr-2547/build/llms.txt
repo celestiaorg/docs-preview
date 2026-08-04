@@ -29,6 +29,7 @@
 
 ## Stacks
 
+- [Account Selection](https://docs.celestia.org/build/stacks/account-selection.md)
 - [Nitro Das Server](https://docs.celestia.org/build/stacks/nitro-das-server.md)
 - [Op Alt Da / Aws Kms Guide](https://docs.celestia.org/build/stacks/op-alt-da/aws-kms-guide.md)
 - [Op Alt Da / Introduction](https://docs.celestia.org/build/stacks/op-alt-da/introduction.md)
