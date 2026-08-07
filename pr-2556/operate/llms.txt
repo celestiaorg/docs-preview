@@ -61,7 +61,6 @@
 
 ## Networks
 
-- [Arabica Devnet](https://docs.celestia.org/operate/networks/arabica-devnet.md)
 - [Local Devnet](https://docs.celestia.org/operate/networks/local-devnet.md)
 - [Mainnet Beta](https://docs.celestia.org/operate/networks/mainnet-beta.md)
 - [Mocha Testnet](https://docs.celestia.org/operate/networks/mocha-testnet.md)

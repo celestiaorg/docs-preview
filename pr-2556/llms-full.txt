@@ -2984,7 +2984,7 @@ The _exact_ maximum total blob size in a transaction depends on:
 - the share version and layout rules,
 - and the fact that the **first sparse share has 478 bytes**, while **all subsequent sparse shares have 482 bytes**.
 
-The current max square size on Arabica is 128 MiB, Mocha is 32 MiB, and Mainnet is 8 MiB.
+The current max square size on Mocha and Mainnet Beta is 32 MiB.
 
 Under v6 and future upgrades, networks will use larger square sizes, so the absolute maximum blob capacity per transaction will increase correspondingly—up to the global **8 MiB transaction size limit**, which is now the binding constraint.
 
@@ -3124,7 +3124,7 @@ state config in `config.toml`. Each mode has different throughput characteristic
 ### Default behavior (TxWorkerAccounts = 0)
 
 By default, `TxWorkerAccounts` is set to `0`, which means queued submission is disabled. All PayForBlobs transactions are submitted
-immediately to the mempool without waiting for confirmations. This is the same behavior as versions prior to [v0.28.2-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.28.2-arabica).
+immediately to the mempool without waiting for confirmations. This is the same behavior as versions before queued submission was introduced.
 
 The mempool maintains a fork of the canonical state each block, updating the sequence number (nonce) for each account that submits a
 transaction. If you wish to submit multiple transactions from the same account in quick succession, you must specify the nonce
@@ -4536,7 +4536,7 @@ instance machine.
 
 #### Optional: Set persistent peers
 
-You can get the persistent peers from the [@cosmos/chain-registry](https://github.com/cosmos/chain-registry) repository (for Mainnet Beta) or [@celestiaorg/networks repository](https://github.com/celestiaorg/networks) repo (for Mocha and Arabica) with the following commands:
+You can get the persistent peers from the [@cosmos/chain-registry](https://github.com/cosmos/chain-registry) repository (for Mainnet Beta) or [@celestiaorg/networks repository](https://github.com/celestiaorg/networks) repo (for Mocha) with the following commands:
 
 ## Storage and pruning configurations
 
@@ -5451,10 +5451,9 @@ is properly configured in your consensus node's `app.toml` file. The `[grpc]`
 section should have `enable = true` and the appropriate address setting for the
 bridge node to connect successfully.
 
-Using an RPC of your own, or one from
-[Mainnet Beta](/operate/networks/mainnet-beta#integrations),
-[Mocha testnet](/operate/networks/mocha-testnet#community-consensus-endpoints) or
-[Arabica devnet](/operate/networks/arabica-devnet#integrations),
+Using an RPC of your own, or one listed for
+[Mainnet Beta](/operate/networks/mainnet-beta#integrations) or
+[Mocha testnet](/operate/networks/mocha-testnet#community-consensus-endpoints),
 initialize your node.
 
 ### Run the bridge node
@@ -5497,23 +5496,6 @@ In order to create a validator on-chain, follow the steps below.
 
    # Set VALIDATOR_PUBKEY to the pubkey of your validator wallet.
    export VALIDATOR_PUBKEY=$(celestia-appd tendermint show-validator)
-   ```
-
-1. If you want to create a validator on a testnet that is on app version 4 (currently only Arabica), you will need to create a `validator.json` file.
-
-   **Arabica:**
-   ```bash
-   cat <<EOF > validator.json
-   {
-     "pubkey": $VALIDATOR_PUBKEY,
-     "amount": "1000000utia",
-     "moniker": "$MONIKER",
-     "commission-rate": "0.1",
-     "commission-max-rate": "0.2",
-     "commission-max-change-rate": "0.01",
-     "min-self-delegation": "1"
-   }
-   EOF
    ```
 
 1. Create a validator
@@ -5819,7 +5801,6 @@ You can find the address by running the following command:
 You can get testnet tokens from:
 
 - [Mocha](/operate/networks/mocha-testnet)
-- [Arabica](/operate/networks/arabica-devnet)
 
 > **Note:** If you are running a bridge node for your validator, it is highly recommended to request Mocha testnet tokens as this is the testnet used to test out validator operations.
 
@@ -6579,16 +6560,6 @@ celestia <node-type> start --metrics.tls=true \
     --core.ip <URI> --core.port <port> --p2p.network mocha
 ```
 
-### Arabica devnet
-
-Here is an example for Arabica devnet:
-
-```sh
-celestia <node-type> start --metrics.tls=true \
-    --metrics --metrics.endpoint otel.arabica.celestia.observer \
-    --core.ip <URI> --core.port <port> --p2p.network arabica
-```
-
 ### TLS connections
 
 The `--metrics.tls` flag enables or disables a TLS connection to the
@@ -7188,7 +7159,7 @@ After you set a password, your encrypted key will be displayed.
 
 For the public celestia address, you can fund the
 previously created wallet via [Discord](https://discord.com/invite/YsnTPcSfWQ)
-by sending this message to either the #mocha-faucet or #arabica-faucet channel:
+by sending this message to the #mocha-faucet channel:
 
 ```text
 $request celestia1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -7276,14 +7247,14 @@ This will load the key `<key-name>` into the directory of the node.
 
 Further flags you can use to customize your key are the following:
 
-- `--p2p.network`: Specifies which network you want the key for. Values
-  are `arabica` and `mocha`. Please note the default network will be `mocha`.
+- `--p2p.network`: Specifies which network you want the key for. Use `mocha`
+  to target Mocha.
 
 Keep in mind that your celestia-node will only pick up keys that
 are inside the default directory under `/keys` so you should make
 sure to point `cel-key` utility to the correct directory via the
 `p2p.network` or `home` flags if you have specified a custom
-directory or network other than Arabica, Mocha, or Mainnet Beta.
+directory or network other than Mocha or Mainnet Beta.
 
 Also keep in mind that if you do not specify a network with `--p2p.network`,
 the default one will always be `celestia` (Mainnet Beta).
@@ -8093,7 +8064,7 @@ The upgrade process can be broken down into a few steps:
 1. [Celestia Improvement Proposals](https://cips.celestia.org) (CIPs) are created for consensus-breaking changes and features that impact user experience. These CIPs are included in a meta-CIP, which define the scope of the upgrade.
 1. Celestia core developer teams implement the features defined in the CIPs.
 1. A new binary is released with the new features to be tested on testnets.
-1. Node operators upgrade to the new binary, on [Arabica devnet](/operate/networks/arabica-devnet), [Mocha testnet](/operate/networks/mocha-testnet), and finally on Celestia [Mainnet Beta](/operate/networks/mainnet-beta).
+1. Node operators upgrade to the new binary on [Mocha testnet](/operate/networks/mocha-testnet), and finally on Celestia [Mainnet Beta](/operate/networks/mainnet-beta).
    - Upgrades using pre-programmed height (v2) activate at a predetermined block number.
    - Upgrades using in-protocol signaling (v3+) activate one week after 5/6 of the voting power has signaled for a particular version
 
@@ -8102,19 +8073,6 @@ The upgrade process can be broken down into a few steps:
 v7 (Hibiscus) was skipped on Mainnet Beta due to a bug discovered after testnet activation; v8 (defined in [CIP-49](https://cips.celestia.org/cip-049.html)) was activated instead.
 
 Version links point to Celenium upgrade status pages for signaling upgrades (v3+). v2 used a pre-programmed height and does not have a Celenium signaling page.
-
-### Arabica devnet
-
-| Version                                                                                 | Name       | CIP                                                                     | Date and time           | Upgrade height                                                          | Delay period | Parameters                                                          |
-| --------------------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------------- | ----------------------- | ----------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------- |
-| v2                                                                                      | Lemongrass | [CIP-17](https://github.com/celestiaorg/CIPs/blob/main/cips/cip-017.md) | 2024/08/19 14:00 UTC    | [1751707](https://arabica.celenium.io/block/1751707)                    | —            | [v2](https://celestiaorg.github.io/celestia-app/parameters_v2.html) |
-| [v3](https://arabica.celenium.io/upgrade/3?tab=signals&page=1)                          | Ginger     | [CIP-25](https://cips.celestia.org/cip-025.html)                        | 2024/11/05 21:55:13 UTC | [2348907](https://arabica.celenium.io/block/2348907)                    | —            | [v3](https://celestiaorg.github.io/celestia-app/parameters_v3.html) |
-| [v4](https://arabica.celenium.io/upgrade/4?tab=signals&page=1)                          | Lotus      | [CIP-33](https://cips.celestia.org/cip-033.html)                        | 2025/05/16 07:51:35 UTC | [5975265](https://arabica.celenium.io/block/5975265)                    | 1 day        | [v4](https://celestiaorg.github.io/celestia-app/parameters_v4.html) |
-| [v5](https://arabica.celenium.io/upgrade/5?tab=signals&page=1)                          | —          | —                                                                       | 2025/07/29 19:59:00 UTC | [7316464](https://arabica.celenium.io/block/7316464)                    | 1 block      | [v5](https://celestiaorg.github.io/celestia-app/parameters_v5.html) |
-| [v6](https://arabica.celenium.io/upgrade/6?tab=signals&page=1)                          | Matcha     | [CIP-42](https://cips.celestia.org/cip-042.html)                        | 2025/09/09 06:08:11 UTC | [8105605](https://arabica.celenium.io/block/8105605)                    | 1 day        | [v6](https://celestiaorg.github.io/celestia-app/parameters_v6.html) |
-| [v7](https://arabica.celenium.io/upgrade/7?tab=signals&page=1)                          | Hibiscus   | [CIP-47](https://cips.celestia.org/cip-047.html)                        | 2026/02/14 02:36:26 UTC | [10133989](https://arabica.celenium.io/block/10133989?tab=transactions) | 1 day        | [v7](https://celestiaorg.github.io/celestia-app/parameters_v7.html) |
-| [v8](https://arabica.celenium.io/upgrade/8?tab=signals&page=1)                          | —          | [CIP-49](https://cips.celestia.org/cip-049.html)                        | 2026/04/04 17:22:12 UTC | [10853352](https://arabica.celenium.io/block/10853352?tab=transactions) | 1 day        | [v8](https://celestiaorg.github.io/celestia-app/parameters_v8.html) |
-| [v9](https://arabica.celenium.io/upgrade/9?tab=signals&page=1)                          | —          | [CIP-50](https://cips.celestia.org/cip-050.html)                        | 2026/05/28 12:00:22 UTC | [11636100](https://arabica.celenium.io/block/11636100?tab=transactions) | 1 day        | [v9](https://celestiaorg.github.io/celestia-app/parameters_v9.html) |
 
 ### Mocha testnet
 
@@ -8498,7 +8456,6 @@ _i.e._ no `--p2p.network string` flag is required for Mainnet Beta.
 | ------------ | -------------------------- | --------------------------------------- |
 | Mainnet Beta | celestia | not required (`--p2p.network celestia`) |
 | Mocha        | mocha-4   | `--p2p.network mocha`                   |
-| Arabica      | arabica-11 | `--p2p.network arabica`                 |
 
 ## Ports
 
@@ -8537,7 +8494,7 @@ manually specify the `--node.store` flag for each RPC request.
 **Assumptions:**
 
 - The presence of a lock signifies a running node.
-- Networks are ordered as Mainnet Beta, Mocha, Arabica, private, custom.
+- Networks are ordered as Mainnet Beta, Mocha, private, custom.
 - Node types are ordered as bridge and light.
 - Each network has only one running node type.
 - Multiple nodes of the same network and type are prohibited
@@ -8607,26 +8564,6 @@ making the request:
 The request will go to the Mainnet Beta node, and a 401 will show in
 this node's logs. Note that a 401 is expected because this blob was
 posted to Mocha and neither the namespace nor the blob exist on Mainnet Beta.
-
-#### Mocha bridge and Arabica light
-
-This example uses a Mocha bridge node and an Arabica light node. When
-making the request:
-
-```bash
-❯ celestia blob get 1318129 0x42690c204d39600fddd3 0MFhYKQUi2BU+U1jxPzG7QY2BVV1lb3kiU+zAK7nUiY=
-{
-  "result": {
-    "namespace": "AAAAAAAAAAAAAAAAAAAAAAAAAEJpDCBNOWAP3dM=",
-    "data": "0x676d",
-    "share_version": 0,
-    "commitment": "0MFhYKQUi2BU+U1jxPzG7QY2BVV1lb3kiU+zAK7nUiY=",
-    "index": 23
-  }
-}
-```
-
-The request will go to the Mocha bridge node, and result shown as expected.
 
 #### Using a custom rpc.config address
 
@@ -8821,7 +8758,7 @@ Source: app/operate/maintenance/trusted-hash-recovery/page.mdx
 # Syncing a light node from a trusted hash
 
 This guide goes over how to sync a DA light node from a trusted hash.
-The example uses the Mocha testnet. You will need to adjust the commands accordingly for Mainnet Beta, Arabica, or a custom network.
+The example uses the Mocha testnet. You will need to adjust the commands accordingly for Mainnet Beta or a custom network.
 
 If you already have a data store for your node, you need to remove it before syncing from a trusted hash:
 
@@ -8860,173 +8797,6 @@ You can automate the process of setting the trusted height and hash using the fo
 If you're using multiple light nodes for similar services like tracking the same rollup,
 it is recommended to use the same hash and height for all services using
 the same starting height.
-
----
-Title: Arabica devnet
-URL: https://docs.celestia.org/operate/networks/arabica-devnet.md
-Source: app/operate/networks/arabica-devnet/page.mdx
----
-
-# Arabica devnet
-
-![arabica-devnet](/img/arabica-devnet.png)
-
-Arabica devnet is a testnet from Celestia Labs that is focused
-exclusively on providing developers with enhanced performance and
-the latest upgrades for testing their rollups and applications.
-
-Arabica does not focus on validator or consensus-level testing, rather,
-that is what Mocha testnet is used for. If you are a validator, we
-recommend testing your validator operations on the
-[Mocha testnet](/operate/networks/mocha-testnet).
-
-## Network stability and upgrades
-
-Arabica has the latest updates from all Celestia's products deployed
-on it, it can be subject to many changes. Therefore, as a fair warning,
-Arabica can break unexpectedly, but given it will be continuously updated,
-it is a useful way to keep testing the latest changes in the software.
-
-Developers can still deploy on Mocha testnet their sovereign rollups if they
-chose to do so, it just will always lag behind Arabica devnet until Mocha
-undergoes network upgrades in coordination with validators.
-
-## Network details
-
-| Detail        | Value                                                                                                  |
-| ------------- | ------------------------------------------------------------------------------------------------------ |
-| Chain ID      | `arabica-11`                                                                                      |
-| Genesis hash  | `27122593765E07329BC348E8D16E92DCB4C75B34CCCB35C640FD7A4484D4C711`                                     |
-| Genesis file  | https://github.com/celestiaorg/networks/blob/master/arabica-11/genesis.json                       |
-| Peers file    | https://github.com/celestiaorg/networks/blob/master/arabica-11/peers.txt                          |
-| Validators    | 4                                                                                                      |
-
-### Software version numbers
-
-| Software       | Version                                                                  |
-| -------------- | ------------------------------------------------------------------------ |
-| celestia-node  | [v0.31.4-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.4-arabica) |
-| celestia-app   | [v9.0.5-arabica](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.5-arabica)   |
-
-## Network status
-
-For real-time network status information, including uptime, incident reports,
-and service availability, visit the
-[official Celestia Arabica devnet status page](https://status.celestia.dev/status/arabica).
-
-## Network constants
-
-For the current Arabica devnet network constants, see
-[arabica.celenium.io/constants](https://arabica.celenium.io/constants).
-
-## Integrations
-
-This guide contains the relevant sections for how to connect to Arabica
-devnet, depending on the type of node you are running. Your best
-approach to participating is to first determine which node you would
-like to run. Each node’s guide will link to the relevant network in
-order to show you how to connect to them. Learn about the different
-endpoint types [in the Cosmos SDK documentation](https://docs.cosmos.network/sdk/v0.53/learn/advanced/grpc_rest).
-
-### Production RPC endpoints
-
-These RPC providers are meant to be used in production environments
-and for specific use cases that require reliable access to full block
-history, such as:
-
-- Running Bridge Nodes that download data from core RPC endpoints
-- Applications that need Bridge Node endpoints with guaranteed uptime and SLAs
-- Submitting blobs in production settings (free RPC endpoints have no guarantees, even for submitting transactions)
-
-| Provider  | URL                                                                                       |
-| --------- | ----------------------------------------------------------------------------------------- |
-| QuickNode | [https://www.quicknode.com/chains/celestia](https://www.quicknode.com/chains/celestia) ([docs](https://quicknode.com/docs/celestia)) |
-
-### Community RPC endpoints
-
-> **Warning:** Do not rely on the free community endpoints listed below for production deployments. Production deployments should rely on [service providers with SLAs](#production-rpc-endpoints) or your own node.
-
-RPC endpoints and types of nodes you can run in order to participate in Arabica devnet:
-
-| Node type                                                        | Endpoint type                    | Endpoint                                                                                                                                                                                                               |
-| ---------------------------------------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Consensus nodes** ([full guide](/operate/consensus-validators/consensus-node)) | Consensus RPC                    | `https://rpc.celestia-arabica-11.com`                                                                                                                                                                                 |
-|                                                                  | API                              | `https://api.celestia-arabica-11.com`                                                                                                                                                                                 |
-|                                                                  | gRPC                             | `grpc.celestia-arabica-11.com:443`                                                                                                                                                                                    |
-|                                                                  | Direct endpoints with open ports | Open ports: 26656 (p2p), 26657 (RPC), 1317 (API), 9090 (GRPC)                                                                                                                                                          |
-|                                                                  |                                  | `validator-1.celestia-arabica-11.com`                                                                                                                                                                                 |
-|                                                                  |                                  | `validator-2.celestia-arabica-11.com`                                                                                                                                                                                 |
-|                                                                  |                                  | `validator-3.celestia-arabica-11.com`                                                                                                                                                                                 |
-|                                                                  |                                  | `validator-4.celestia-arabica-11.com`                                                                                                                                                                                 |
-|                                                                  |                                  |                                                                                                                                                                                                                        |
-| **Data availability nodes**                                      | DA Bridge Node Endpoints         | See the list of official Celestia bootstrappers in the [celestia-node GitHub repository](https://github.com/celestiaorg/celestia-node/blob/a87a17557223d88231b56d323d22ac9da31871db/nodebuilder/p2p/bootstrap.go#L39). |
-|                                                                  | `--core.ip string` endpoints     | Refer to "Direct endpoints with open ports" above                                                                                                                                                                      |
-
-You can [find the status of these endpoints](https://celestia-tools.brightlystake.com/).
-
-### Using consensus endpoints with DA nodes
-
-#### Data availability (DA) RPC endpoints for bridge node sync
-
-These RPC endpoints allow bridge nodes to sync blocks from the Celestia network.
-For users, they will need to provide a `–core.ip string`
-from a consensus node’s URL or IP that populates a default RPC port at 26657
-to their respective DA node.
-
-#### Data availability (DA) gRPC endpoints for state access
-
-These gRPC endpoints for DA nodes provide state access for querying the
-chain’s state and broadcasting transactions (balances, blobs, etc.) to the
-Celestia network. For users, they will need to provide a `–core.ip string`
-from a consensus node’s URL or IP that populates a default gRPC port at 9090
-to their respective DA node.
-
-RPCs for DA nodes to initialise or start your celestia-node to
-Arabica devnet with can be found in the table in the
-"Direct endpoints with open ports" section above.
-
-As an example, this command will work to start a light node with state access, using default ports:
-
-```bash
-celestia light start --p2p.network arabica \
-  --core.ip validator-1.celestia-arabica-11.com \
-  --core.port 9090
-```
-
-## Arabica devnet faucet
-
-> **Warning:** Using this faucet does not entitle you to any airdrop or other distribution of mainnet Celestia tokens.
-
-### Discord
-
-You can request from Arabica devnet Faucet on the #arabica-faucet channel on
-Celestia's Discord server with the following command:
-
-```text
-$request <CELESTIA-ADDRESS>
-```
-
-Where `<CELESTIA-ADDRESS>` is a `celestia1******` generated address.
-
-> **Note:** Faucet has a limit of 10 tokens per week per address/Discord ID.
-
-### Web
-
-The web faucet is available at [https://arabica.celenium.io/faucet](https://arabica.celenium.io/faucet) and [https://faucet.celestia-arabica-11.com/](https://faucet.celestia-arabica-11.com/).
-
-## Explorers
-
-There are multiple explorers you can use for Arabica:
-
-- [https://arabica.celenium.io](https://arabica.celenium.io)
-
-## Network upgrades
-
-Join our [Telegram announcement channel](https://t.me/+smSFIA7XXLU4MjJh)
-for network upgrades.
-
-See the [network upgrades page](/operate/maintenance/network-upgrades) to learn more
-about specific upgrades like the [Ginger network upgrade](/operate/maintenance/network-upgrades#ginger-network-upgrade).
 
 ---
 Title: Local devnet setup
@@ -9138,21 +8908,23 @@ Previously, in [CIP-28](https://cips.celestia.org/cip-028.html), there was a 2 M
 
 While individual transactions are limited to 8 MiB as of v6, a block can contain multiple transactions and has a much larger capacity. The maximum block size is determined by the effective maximum square size.
 
-The governance square capacity on Arabica and Mocha is 128 MiB, while Mainnet
-is 32 MiB. The consensus encoded-block limit is 32 MiB across all networks.
+The current maximum block capacity on Mocha and Mainnet Beta is 32 MiB. On
+Mainnet Beta, the governance square size is 256 (a 32 MiB square) and the
+consensus encoded-block limit is also 32 MiB; the effective capacity is the
+smaller of the two.
 
-The following provides an approximation of the maximum blob capacity on Arabica:
+The following provides an approximation of the maximum blob capacity:
 
-- The maximum square size is 512x512, which gives us 262,144 shares.
-- One share is reserved for the PFB transaction, leaving us with 262,143 shares available for blob data.
+- The maximum square size is 256x256, which gives us 65,536 shares.
+- One share is reserved for the PFB transaction, leaving us with 65,535 shares available for blob data.
 - The first sparse share has 478 bytes available, and the remaining sparse shares have 482 bytes each.
 
 Approximate capacity:
 
 ```
 First share:       1 x 478 bytes
-Remaining shares:  262,142 x 482 bytes
-Total bytes:       126,352,922 bytes
+Remaining shares:  65,534 x 482 bytes
+Total bytes:       31,587,866 bytes
 ```
 
 There is no precise, static upper bound on the maximum total
@@ -9170,7 +8942,7 @@ block to vary.
 See the code in
 [celestia-app](https://github.com/celestiaorg/celestia-app/blob/v9.0.4/pkg/appconsts/initial_consts.go#L13).
 
-Full network parameters, such as [max bytes](https://github.com/celestiaorg/celestia-app/blob/v9.0.4/specs/src/parameters_v9.md?plain=1#L27),
+Full network parameters, such as [max bytes](https://github.com/celestiaorg/celestia-app/blob/v9.0.4/specs/src/parameters_v9.md?plain=1#L41),
 can be found in the
 [celestia-app specifications](https://celestiaorg.github.io/celestia-app/parameters_v9.html).
 
@@ -9335,9 +9107,7 @@ Source: app/operate/networks/mocha-testnet/page.mdx
 This guide contains the relevant sections for how to connect to Mocha,
 depending on the type of node you are running. Mocha testnet is designed
 to help validators test out their infrastructure and node software.
-Developers are encouraged to deploy their
-sovereign rollups on Mocha, but we also recommend [Arabica devnet](/operate/networks/arabica-devnet)
-for that as it is designed for development purposes.
+Developers can also deploy sovereign rollups on Mocha.
 
 Mocha is a milestone in Celestia, allowing everyone to test out
 core functionalities on the network. Read [the announcement](https://blog.celestia.org/celestia-testnet-introduces-alpha-data-availability-api).
@@ -9595,30 +9365,14 @@ reduced performance.
 
 ## Testnets
 
-Celestia currently has two existing testnets that you can participate in:
-
-### Arabica Devnet
-
-[Arabica devnet](/operate/networks/arabica-devnet) is a devnet focused on developers who
-want to deploy sovereign rollups on the latest changes from Celestia's codebase.
-Arabica will be updated frequently and might be unstable at times given new updates.
-Validators won't be able to validate on Arabica as it is not designed for
-validators to participate.
-
-#### Compatible software versions for Arabica devnet
-
-| Software       | Version                                                                  |
-| -------------- | ------------------------------------------------------------------------ |
-| celestia-node  | [v0.31.4-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.4-arabica) |
-| celestia-app   | [v9.0.5-arabica](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.5-arabica)     |
+Celestia currently has one public testnet that you can participate in:
 
 ### Mocha testnet
 
 [Mocha testnet](/operate/networks/mocha-testnet) is a testnet focused on enabling validators
 to test out their infrastructure by running nodes connected to the network. Developers
-can also deploy sovereign rollups on Mocha, it just will always be behind Arabica
-as Mocha upgrades are slower given they need to be done via breaking network upgrades
-in coordination with the validator community on Mocha.
+can also deploy sovereign rollups on Mocha. Breaking network upgrades are coordinated
+with the validator community.
 
 ### Compatible software versions for Mocha testnet
 
