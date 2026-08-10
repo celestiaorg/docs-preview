@@ -1,3 +1,0 @@
-:HL["/docs-preview/pr-2555/_next/static/css/a3459a0fb9ce4386.css","style"]
-:HL["/docs-preview/pr-2555/_next/static/css/59683e49e5570b96.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"learn","param":null,"prefetchHints":0,"slots":{"children":{"name":"celestia-101","param":null,"prefetchHints":0,"slots":{"children":{"name":"data-availability-faq","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}}}}}},"staleTime":300,"buildId":"pzHjIC5nctn-k2-BuFren"}
