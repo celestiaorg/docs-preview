@@ -6242,7 +6242,7 @@ To upgrade your binary, install the latest version using the instructions above.
 When upgrading from a version earlier than celestia-node v0.31.3 to v0.31.3 or later, update the node configuration after replacing the binary and before starting the node:
 
 ```bash
-celestia <node-type> config-update --p2p.network <network>
+celestia <node_type> config-update --p2p.network <network>
 ```
 
 The [v0.31.3 release](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3) adds support for Mainnet Beta v9 and introduces new config fields. The command merges those fields into the existing configuration while preserving custom values. Review your configuration after the update, then start the node. If you run into any issues, refer to the [troubleshooting section](/operate/maintenance/troubleshooting#resetting-your-config).
@@ -8106,13 +8106,13 @@ Version links point to Celenium upgrade status pages for signaling upgrades (v3+
 | [v6](https://celenium.io/upgrade/6?tab=signals&page=1)                          | Matcha     | [CIP-42](https://cips.celestia.org/cip-042.html)                        | 2025/11/24 12:33:12 UTC               | [8662012](https://celenium.io/block/8662012?tab=transactions) | 7 days       | [v6](https://celestiaorg.github.io/celestia-app/parameters_v6.html) |
 | [v7](https://celenium.io/upgrade/7?tab=signals&page=1)                          | Hibiscus   | [CIP-47](https://cips.celestia.org/cip-047.html)                        | N/A (skipped, see v8)                 | N/A                                                           | —            | —                                                                   |
 | [v8](https://celenium.io/upgrade/8?tab=signals&page=1)                          | —          | [CIP-49](https://cips.celestia.org/cip-049.html)                        | 2026/05/05 16:37:35 UTC               | [10960599](https://celenium.io/block/10960599?tab=transactions) | 7 days       | [v8](https://celestiaorg.github.io/celestia-app/parameters_v8.html) |
-| [v9](https://celenium.io/upgrade/9?tab=signals&page=1)                          | —          | [CIP-50](https://cips.celestia.org/cip-050.html)                        | Signaling began 2026/06/02 14:54:21 UTC | [Monitor status](https://celenium.io/upgrade/9?tab=signals&page=1) | 7 days       | [v9](https://celestiaorg.github.io/celestia-app/parameters_v9.html) |
+| [v9](https://celenium.io/upgrade/9?tab=signals&page=1)                          | —          | [CIP-50](https://cips.celestia.org/cip-050.html)                        | 2026/07/01 18:53:25 UTC            | [11771699](https://celenium.io/block/11771699)              | 7 days       | [v9](https://celestiaorg.github.io/celestia-app/parameters_v9.html) |
 
 ## Upcoming upgrades
 
 > **Warning:** You do not need to use a tool like [cosmovisor](https://docs.cosmos.network/sdk/v0.53/build/tooling/cosmovisor) to upgrade the binary. Please upgrade your binary before signaling support for the new version.
 
-Mainnet Beta v9, defined in [CIP-50](https://cips.celestia.org/cip-050.html), is in progress. Monitor the upgrade status on [Celenium](https://celenium.io/upgrade/9?tab=signals&page=1).
+The next upgrade (v10) has not yet been scheduled. This page will be updated when a new upgrade is announced.
 
 ---
 Title: Node snapshots
@@ -8894,6 +8894,10 @@ functional, users may encounter occasional instability or reduced performance.
 | Genesis file  | https://github.com/celestiaorg/networks/blob/master/celestia/genesis.json        |
 | Peers file    | https://github.com/celestiaorg/networks/blob/master/celestia/peers.txt           |
 | Validators    | 100                                                                                                |
+| Block time    | [Approximately 3 seconds](https://cips.celestia.org/cip-048.html)                                      |
+
+The happy-path cadence is approximately 2.6 seconds, so integrations should
+treat 3 seconds as an approximate target rather than an exact interval.
 
 ## Software version numbers
 
@@ -8920,7 +8924,10 @@ Previously, in [CIP-28](https://cips.celestia.org/cip-028.html), there was a 2 M
 
 While individual transactions are limited to 8 MiB as of v6, a block can contain multiple transactions and has a much larger capacity. The maximum block size is determined by the effective maximum square size.
 
-The current max square size on Mocha and Mainnet Beta is 32 MiB.
+The current maximum block capacity on Mocha and Mainnet Beta is 32 MiB. On
+Mainnet Beta, the governance square size is 256 (a 32 MiB square) and the
+consensus encoded-block limit is also 32 MiB; the effective capacity is the
+smaller of the two.
 
 The following provides an approximation of the maximum blob capacity:
 
@@ -8949,11 +8956,11 @@ These factors can cause the maximum total blob size that can be included in one
 block to vary.
 
 See the code in
-[celestia-app](https://github.com/celestiaorg/celestia-app/blob/52a3cfadbf4439e5e1bd89a8c47e14d3209ca525/pkg/appconsts/initial_consts.go#L9).
+[celestia-app](https://github.com/celestiaorg/celestia-app/blob/v9.0.4/pkg/appconsts/initial_consts.go#L13).
 
-Full network parameters, such as [max bytes](https://github.com/celestiaorg/celestia-app/blob/52a3cfadbf4439e5e1bd89a8c47e14d3209ca525/specs/src/parameters_v6.md?plain=1#L35),
+Full network parameters, such as [max bytes](https://github.com/celestiaorg/celestia-app/blob/v9.0.4/specs/src/parameters_v9.md?plain=1#L41),
 can be found in the
-[celestia-app specifications](https://celestiaorg.github.io/celestia-app/parameters_v6.html).
+[celestia-app specifications](https://celestiaorg.github.io/celestia-app/parameters_v9.html).
 
 ## Network constants
 
