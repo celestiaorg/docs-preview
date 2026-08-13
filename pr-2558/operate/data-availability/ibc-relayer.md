@@ -116,7 +116,7 @@ derivation = "cosmos"
 [[chains]]
 id = "mocha-4"
 type = "CosmosSdk"
-rpc_addr = "https://rpc-celestia-mocha.architectnodes.com"
+rpc_addr = "https://public-endpoint.celestia-mocha.quiknode.pro"
 grpc_addr = "https://grpc.celestia-mocha.com:443"
 rpc_timeout = "10s"
 trusted_node = false
