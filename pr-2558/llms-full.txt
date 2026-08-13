@@ -790,7 +790,9 @@ The Celestia Go client lets you submit and retrieve data from the Celestia netwo
 
 ## Prerequisites
 
-- Go 1.25.1 or later
+- Go 1.25.x (Go 1.26 is not yet supported by a transitive dependency,
+  `bytedance/sonic`; if your default toolchain is newer, run the tutorial with
+  `GOTOOLCHAIN=go1.25.1 go run main.go`)
 - A Celestia account (created automatically)
 - Testnet tokens from the [Mocha faucet](/operate/networks/mocha-testnet#mocha-testnet-faucet)
 
@@ -9008,6 +9010,7 @@ endpoint:
 | HTTP RPC and REST | `https://public-endpoint.celestia-mainnet.quiknode.pro` |
 | WebSocket | `wss://public-endpoint.celestia-mainnet.quiknode.pro/websocket` |
 | gRPC over TLS | `public-endpoint.celestia-mainnet.quiknode.pro:9090` |
+| DA JSON-RPC | `https://public-endpoint.celestia-mainnet.quiknode.pro` |
 
 This shared endpoint does not provide a production SLA. Use a [production
 provider](#production-rpc-endpoints) or your own node for production workloads.
@@ -9228,6 +9231,7 @@ endpoint:
 | HTTP RPC and REST | `https://public-endpoint.celestia-mocha.quiknode.pro` |
 | WebSocket | `wss://public-endpoint.celestia-mocha.quiknode.pro/websocket` |
 | gRPC over TLS | `public-endpoint.celestia-mocha.quiknode.pro:9090` |
+| DA JSON-RPC | `https://public-endpoint.celestia-mocha.quiknode.pro` |
 
 This shared endpoint is pruned and does not provide a production SLA. Do not
 use it for historical queries or bridge node sync from genesis.
