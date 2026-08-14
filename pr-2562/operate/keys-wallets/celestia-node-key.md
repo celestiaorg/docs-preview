@@ -223,7 +223,9 @@ celestia <node-type> start --p2p.network <network> --keyring.keyname <key-name> 
 For example:
 
 ```bash
-celestia light start --p2p.network mocha --keyring.keyname my_celes_key --core.ip rpc-mocha.pops.one
+celestia light start --p2p.network mocha --keyring.keyname my_celes_key \
+  --core.ip public-endpoint.celestia-mocha.quiknode.pro \
+  --core.port 9090 --core.tls
 ```
 
 This ensures your node uses the specified key for all operations, including those reported by `celestia state account-address`.
@@ -244,7 +246,8 @@ testnet):
 ```bash
 docker run --name celestia-node -e NODE_TYPE=light -e P2P_NETWORK=mocha -p 26659:26659 \
 ghcr.io/celestiaorg/celestia-node:v0.31.4-mocha celestia light start \
---core.ip rpc-mocha.pops.one --core.port 9090 --p2p.network mocha
+--core.ip public-endpoint.celestia-mocha.quiknode.pro --core.port 9090 \
+--core.tls --p2p.network mocha
 ```
 
 List active containers in another window with:
@@ -292,7 +295,7 @@ services:
     image: celestia-node
     environment:
       - NODE_TYPE=light
-    command: celestia light start --core.ip rpc-mocha.pops.one --core.port 9090 --p2p.network mocha --keyring.keyname my_celes_key
+    command: celestia light start --core.ip public-endpoint.celestia-mocha.quiknode.pro --core.port 9090 --core.tls --p2p.network mocha --keyring.keyname my_celes_key
     volumes:
       - ${PWD}/keys:/root/.celestia-light-mocha-4/keys
     ports:

@@ -128,6 +128,21 @@ If you are using QuickNode or another provider with authenticated endpoints,
 see [the light node guide](/operate/data-availability/light-node/advanced#optional-start-light-node-with-consensus-endpoint-authentication)
 to learn how to use an endpoint with x-token.
 
+### Public RPC endpoint
+
+For development, testing, and documentation examples, use the public QuickNode
+endpoint:
+
+| Interface | Endpoint |
+| --------- | -------- |
+| HTTP RPC and REST | `https://public-endpoint.celestia-mainnet.quiknode.pro` |
+| WebSocket | `wss://public-endpoint.celestia-mainnet.quiknode.pro/websocket` |
+| gRPC over TLS | `public-endpoint.celestia-mainnet.quiknode.pro:9090` |
+| DA JSON-RPC | `https://public-endpoint.celestia-mainnet.quiknode.pro` |
+
+This shared endpoint does not provide a production SLA. Use a [production
+provider](#production-rpc-endpoints) or your own node for production workloads.
+
 ### Node setup and tools
 
 Several community providers offer comprehensive node setup tools, installation scripts, and monitoring services to help node operators get started quickly:
@@ -162,12 +177,17 @@ The following table lists community-provided consensus node endpoints that you c
 
 Data availability (DA) nodes need to connect to consensus nodes to sync blocks and access state. When starting a DA node, you'll need to provide a consensus node endpoint using the `--core.ip` parameter and the port.
 
-You can use any of the RPC endpoints from the [community consensus endpoints](#community-consensus-endpoints) table above. The default port is 9090, where gRPC is used for both block sync and state access.
+You can use the [public endpoint](#public-rpc-endpoint) or any of the RPC
+endpoints from the [community consensus endpoints](#community-consensus-endpoints)
+table above. The default port is 9090, where gRPC is used for both block sync
+and state access.
 
-For example, to connect to the P-OPS endpoint:
+For example, to connect to the public QuickNode endpoint:
 
 ```bash
-celestia light start --core.ip rpc.celestia.pops.one --core.port 9090
+celestia light start \
+  --core.ip public-endpoint.celestia-mainnet.quiknode.pro \
+  --core.port 9090 --core.tls
 ```
 
 ### Bridge node requirements

@@ -602,7 +602,7 @@ The `min` and `max` are `Namespace` type which is:
 
 ```solidity
 /// @notice A representation of the Celestia-app namespace ID and its version.
-/// See: https://celestiaorg.github.io/celestia-app/specs/namespace.html
+/// See: https://celestiaorg.github.io/celestia-app/namespace.html
 struct Namespace {
     // The namespace version.
     bytes1 version;
@@ -624,7 +624,7 @@ Which is the namespace used by the rollup when submitting data to Celestia. As d
 
 ```solidity
 /// @notice A representation of the Celestia-app namespace ID and its version.
-/// See: https://celestiaorg.github.io/celestia-app/specs/namespace.html
+/// See: https://celestiaorg.github.io/celestia-app/namespace.html
 struct Namespace {
     // The namespace version.
     bytes1 version;
@@ -790,7 +790,9 @@ The Celestia Go client lets you submit and retrieve data from the Celestia netwo
 
 ## Prerequisites
 
-- Go 1.25.1 or later
+- Go 1.25.x (Go 1.26 is not yet supported by a transitive dependency,
+  `bytedance/sonic`; if your default toolchain is newer, run the tutorial with
+  `GOTOOLCHAIN=go1.25.1 go run main.go`)
 - A Celestia account (created automatically)
 - Testnet tokens from the [Mocha faucet](/operate/networks/mocha-testnet#mocha-testnet-faucet)
 
@@ -4262,7 +4264,7 @@ Example usage:
 
 ```sh
 celestia-appd q bank balances celestia1czpgn3hdh9sodm06d5qk23xzgpq2uyc8ggdqgw \
-    --node https://rpc-mocha.pops.one:443
+    --node https://public-endpoint.celestia-mocha.quiknode.pro
 ```
 
 Transfer tokens from one wallet to another:
@@ -4276,7 +4278,8 @@ Example usage:
 
 ```sh
 celestia-appd tx bank send <FROM_ADDRESS> <TO_ADDRESS> \
-    19000000utia --node https://rpc-mocha.pops.one:443 --chain-id mocha
+    19000000utia --node https://public-endpoint.celestia-mocha.quiknode.pro \
+    --chain-id mocha-4
 ```
 
 To see options:
@@ -6060,7 +6063,7 @@ derivation = "cosmos"
 [[chains]]
 id = "mocha-4"
 type = "CosmosSdk"
-rpc_addr = "https://rpc-celestia-mocha.architectnodes.com"
+rpc_addr = "https://public-endpoint.celestia-mocha.quiknode.pro"
 grpc_addr = "https://grpc.celestia-mocha.com:443"
 rpc_timeout = "10s"
 trusted_node = false
@@ -6082,7 +6085,7 @@ sequential_batch_tx = false
 
 [chains.event_source]
 mode = "push"
-url = "ws://rpc-mocha.pops.one:26657/websocket"
+url = "wss://public-endpoint.celestia-mocha.quiknode.pro/websocket"
 batch_delay = "500ms"
 
 [chains.trust_threshold]
@@ -7416,7 +7419,9 @@ celestia <node-type> start --p2p.network <network> --keyring.keyname <key-name> 
 For example:
 
 ```bash
-celestia light start --p2p.network mocha --keyring.keyname my_celes_key --core.ip rpc-mocha.pops.one
+celestia light start --p2p.network mocha --keyring.keyname my_celes_key \
+  --core.ip public-endpoint.celestia-mocha.quiknode.pro \
+  --core.port 9090 --core.tls
 ```
 
 This ensures your node uses the specified key for all operations, including those reported by `celestia state account-address`.
@@ -7437,7 +7442,8 @@ testnet):
 ```bash
 docker run --name celestia-node -e NODE_TYPE=light -e P2P_NETWORK=mocha -p 26659:26659 \
 ghcr.io/celestiaorg/celestia-node:v0.31.4-mocha celestia light start \
---core.ip rpc-mocha.pops.one --core.port 9090 --p2p.network mocha
+--core.ip public-endpoint.celestia-mocha.quiknode.pro --core.port 9090 \
+--core.tls --p2p.network mocha
 ```
 
 List active containers in another window with:
@@ -7485,7 +7491,7 @@ services:
     image: celestia-node
     environment:
       - NODE_TYPE=light
-    command: celestia light start --core.ip rpc-mocha.pops.one --core.port 9090 --p2p.network mocha --keyring.keyname my_celes_key
+    command: celestia light start --core.ip public-endpoint.celestia-mocha.quiknode.pro --core.port 9090 --core.tls --p2p.network mocha --keyring.keyname my_celes_key
     volumes:
       - ${PWD}/keys:/root/.celestia-light-mocha-4/keys
     ports:
@@ -7992,7 +7998,7 @@ keyring-backend = "test"
 # CLI output format (text|json)
 output = "text"
 # <host>:<port> to Tendermint RPC interface for this chain
-node = "tcp://rpc-mocha.pops.one:443"
+node = "https://public-endpoint.celestia-mocha.quiknode.pro"
 # Transaction broadcasting mode (sync|async|block)
 broadcast-mode = "sync"
 ```
@@ -8542,7 +8548,7 @@ celestia <node-type> init --node.store /home/user/celestia-<node-type>-location/
 Next, start your node:
 
 ```bash
-celestia bridge start --core.ip rpc-mocha.pops.one --p2p.network mocha \
+celestia bridge start --core.ip <archival-consensus-endpoint> --p2p.network mocha \
     --node.store /home/user/celestia-bridge-location/ --core.port <port>
 ```
 
@@ -8995,6 +9001,21 @@ If you are using QuickNode or another provider with authenticated endpoints,
 see [the light node guide](/operate/data-availability/light-node/advanced#optional-start-light-node-with-consensus-endpoint-authentication)
 to learn how to use an endpoint with x-token.
 
+### Public RPC endpoint
+
+For development, testing, and documentation examples, use the public QuickNode
+endpoint:
+
+| Interface | Endpoint |
+| --------- | -------- |
+| HTTP RPC and REST | `https://public-endpoint.celestia-mainnet.quiknode.pro` |
+| WebSocket | `wss://public-endpoint.celestia-mainnet.quiknode.pro/websocket` |
+| gRPC over TLS | `public-endpoint.celestia-mainnet.quiknode.pro:9090` |
+| DA JSON-RPC | `https://public-endpoint.celestia-mainnet.quiknode.pro` |
+
+This shared endpoint does not provide a production SLA. Use a [production
+provider](#production-rpc-endpoints) or your own node for production workloads.
+
 ### Node setup and tools
 
 Several community providers offer comprehensive node setup tools, installation scripts, and monitoring services to help node operators get started quickly:
@@ -9029,12 +9050,17 @@ The following table lists community-provided consensus node endpoints that you c
 
 Data availability (DA) nodes need to connect to consensus nodes to sync blocks and access state. When starting a DA node, you'll need to provide a consensus node endpoint using the `--core.ip` parameter and the port.
 
-You can use any of the RPC endpoints from the [community consensus endpoints](#community-consensus-endpoints) table above. The default port is 9090, where gRPC is used for both block sync and state access.
+You can use the [public endpoint](#public-rpc-endpoint) or any of the RPC
+endpoints from the [community consensus endpoints](#community-consensus-endpoints)
+table above. The default port is 9090, where gRPC is used for both block sync
+and state access.
 
-For example, to connect to the P-OPS endpoint:
+For example, to connect to the public QuickNode endpoint:
 
 ```bash
-celestia light start --core.ip rpc.celestia.pops.one --core.port 9090
+celestia light start \
+  --core.ip public-endpoint.celestia-mainnet.quiknode.pro \
+  --core.port 9090 --core.tls
 ```
 
 ### Bridge node requirements
@@ -9195,6 +9221,21 @@ history, such as:
 | QuickNode | [https://www.quicknode.com/chains/celestia](https://www.quicknode.com/chains/celestia) ([docs](https://quicknode.com/docs/celestia)) |
 
 > **Warning:** Do not rely on the free community endpoints listed below for production deployments. Production deployments should rely on [service providers with SLAs](#production-rpc-endpoints) or your own node.
+
+### Public RPC endpoint
+
+For development, testing, and documentation examples, use the public QuickNode
+endpoint:
+
+| Interface | Endpoint |
+| --------- | -------- |
+| HTTP RPC and REST | `https://public-endpoint.celestia-mocha.quiknode.pro` |
+| WebSocket | `wss://public-endpoint.celestia-mocha.quiknode.pro/websocket` |
+| gRPC over TLS | `public-endpoint.celestia-mocha.quiknode.pro:9090` |
+| DA JSON-RPC | `https://public-endpoint.celestia-mocha.quiknode.pro` |
+
+This shared endpoint is pruned and does not provide a production SLA. Do not
+use it for historical queries or bridge node sync from genesis.
 
 ### Node setup and tools
 
