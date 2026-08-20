@@ -377,7 +377,7 @@ keyring-backend = "test"
 # CLI output format (text|json)
 output = "text"
 # <host>:<port> to Tendermint RPC interface for this chain
-node = "tcp://rpc-mocha.pops.one:443"
+node = "https://public-endpoint.celestia-mocha.quiknode.pro"
 # Transaction broadcasting mode (sync|async|block)
 broadcast-mode = "sync"
 ```

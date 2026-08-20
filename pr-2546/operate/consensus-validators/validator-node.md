@@ -51,10 +51,9 @@ is properly configured in your consensus node's `app.toml` file. The `[grpc]`
 section should have `enable = true` and the appropriate address setting for the
 bridge node to connect successfully.
 
-Using an RPC of your own, or one from
-[Mainnet Beta](/operate/networks/mainnet-beta#integrations),
-[Mocha testnet](/operate/networks/mocha-testnet#community-consensus-endpoints) or
-[Arabica devnet](/operate/networks/arabica-devnet#integrations),
+Using an RPC of your own, or one listed for
+[Mainnet Beta](/operate/networks/mainnet-beta#integrations) or
+[Mocha testnet](/operate/networks/mocha-testnet#community-consensus-endpoints),
 initialize your node.
 
 ### Run the bridge node
@@ -97,23 +96,6 @@ In order to create a validator on-chain, follow the steps below.
 
    # Set VALIDATOR_PUBKEY to the pubkey of your validator wallet.
    export VALIDATOR_PUBKEY=$(celestia-appd tendermint show-validator)
-   ```
-
-1. If you want to create a validator on a testnet that is on app version 4 (currently only Arabica), you will need to create a `validator.json` file.
-
-   **Arabica:**
-   ```bash
-   cat <<EOF > validator.json
-   {
-     "pubkey": $VALIDATOR_PUBKEY,
-     "amount": "1000000utia",
-     "moniker": "$MONIKER",
-     "commission-rate": "0.1",
-     "commission-max-rate": "0.2",
-     "commission-max-change-rate": "0.01",
-     "min-self-delegation": "1"
-   }
-   EOF
    ```
 
 1. Create a validator
