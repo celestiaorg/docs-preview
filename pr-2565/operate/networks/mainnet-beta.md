@@ -25,8 +25,8 @@ functional, users may encounter occasional instability or reduced performance.
 | ------------- | -------------------------------------------------------------------------------------------------- |
 | Chain ID      | `celestia`                                                                       |
 | Genesis hash  | `6BE39EFD10BA412A9DB5288488303F5DD32CF386707A5BEF33617F4C43301872`                                 |
-| Genesis file  | https://github.com/celestiaorg/networks/blob/master/celestia/genesis.json        |
-| Peers file    | https://github.com/celestiaorg/networks/blob/master/celestia/peers.txt           |
+| Genesis file  | <a href={`https://github.com/celestiaorg/networks/blob/main/$celestia/genesis.json`}>genesis.json</a> |
+| Peers file    | <a href={`https://github.com/celestiaorg/networks/blob/main/$celestia/peers.txt`}>peers.txt</a>       |
 | Validators    | 100                                                                                                |
 | Block time    | [Approximately 3 seconds](https://cips.celestia.org/cip-048.html)                                      |
 

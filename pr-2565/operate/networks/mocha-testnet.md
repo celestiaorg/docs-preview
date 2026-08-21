@@ -120,8 +120,8 @@ to the correct instructions on this page on how to connect to Mocha.
 | ------------- | -------------------------------------------------------------------------------------------------- |
 | Chain ID      | `mocha-5`                                                                                     |
 | Genesis hash  | `82DB3AC5AB8485E4784054BD10457533A64563F055C0D234A3134603A9C85D33`                                 |
-| Genesis file  | https://github.com/celestiaorg/networks/blob/main/mocha-5/genesis.json                      |
-| Peers file    | https://github.com/celestiaorg/networks/blob/main/mocha-5/peers.txt                         |
+| Genesis file  | <a href={`https://github.com/celestiaorg/networks/blob/main/$mocha-5/genesis.json`}>genesis.json</a> |
+| Peers file    | <a href={`https://github.com/celestiaorg/networks/blob/main/$mocha-5/peers.txt`}>peers.txt</a>       |
 | Validators    | 100 (max)                                                                                                |
 
 ## Software version numbers
@@ -213,6 +213,9 @@ querying the node's state and broadcasting transactions on the
 Celestia network. The default port is 26657.
 
 - `rpc-mocha.pops.one`
+- `rpc-1.testnet.celestia.nodes.guru`
+- `rpc-2.testnet.celestia.nodes.guru`
+- `celestia-testnet-rpc.itrocket.net:443`
 
 ## Community API endpoints
 
@@ -223,6 +226,9 @@ calls, which can be useful if the client does not support gRPC or HTTP2.
 The default port is 1317.
 
 - `https://api-mocha.pops.one`
+- `https://api-1.testnet.celestia.nodes.guru`
+- `https://api-2.testnet.celestia.nodes.guru`
+- `https://celestia-testnet-api.itrocket.net`
 
 ## Community gRPC endpoints
 
@@ -232,6 +238,9 @@ port is 9090. In the Cosmos SDK, gRPC is used to define state queries and
 broadcast transactions.
 
 - `grpc-mocha.pops.one`
+- `grpc-1.testnet.celestia.nodes.guru:10790`
+- `grpc-2.testnet.celestia.nodes.guru:10790`
+- `celestia-testnet-grpc.itrocket.net:443`
 
 ## Community bridge node endpoints
 
