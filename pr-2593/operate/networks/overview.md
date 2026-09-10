@@ -32,7 +32,7 @@ with the validator community.
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
 | celestia-node  | [v0.33.0-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.33.0-mocha) |
-| celestia-app   | [v9.0.6-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.6-mocha)   |
+| celestia-app   | [v9.0.8-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.8-mocha)   |
 
 ## Network upgrades
 
