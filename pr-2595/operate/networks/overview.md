@@ -14,7 +14,7 @@ reduced performance.
 | Software       | Version                                                             |
 | -------------- | ------------------------------------------------------------------- |
 | celestia-node  | [v0.33.0](https://github.com/celestiaorg/celestia-node/releases/tag/v0.33.0) |
-| celestia-app   | [v9.0.6](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.6)   |
+| celestia-app   | [v9.0.8](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.8)   |
 
 ## Testnets
 
