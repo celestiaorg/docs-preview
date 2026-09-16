@@ -7547,7 +7547,7 @@ testnet):
 
 ```bash
 docker run --name celestia-node -e NODE_TYPE=light -e P2P_NETWORK=mocha -p 26659:26659 \
-ghcr.io/celestiaorg/celestia-node:v0.33.1-mocha celestia light start \
+ghcr.io/celestiaorg/celestia-node:v0.33.2-mocha celestia light start \
 --core.ip public-endpoint.celestia-mocha.quiknode.pro --core.port 9090 \
 --core.tls --p2p.network mocha
 ```
@@ -9381,7 +9381,7 @@ to the correct instructions on this page on how to connect to Mocha.
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [v0.33.1-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.33.1-mocha) |
+| celestia-node  | [v0.33.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.33.2-mocha) |
 | celestia-app   | [v9.0.8-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.8-mocha)   |
 
 ## Network status
@@ -9595,7 +9595,7 @@ with the validator community.
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [v0.33.1-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.33.1-mocha) |
+| celestia-node  | [v0.33.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.33.2-mocha) |
 | celestia-app   | [v9.0.8-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.8-mocha)   |
 
 ## Network upgrades
