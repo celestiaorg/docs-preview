@@ -5010,10 +5010,8 @@ celestia-app. This guide covers Mocha using the celestia-app release
 - A running, synced [validator node](/operate/consensus-validators/validator-node)
   in the bonded validator set. Fibre derives its storage budget from your stake.
 - The v10 multiplexer celestia-app binary installed before activation. Follow the
-  [Mocha release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.1.0-mocha).
-  Keep the existing node home and database when upgrading from v9.
-- For the Linux multiplexer, glibc 2.38 or newer, such as Ubuntu 24.04 LTS.
-  Ubuntu 22.04 is unsupported for that binary.
+  [Mocha release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.1.0-mocha)
+  and check the [celestia-app installation requirements](/operate/consensus-validators/install-celestia-app#linux-requirements).
 - Separate disks for Fibre data and celestia-app data. Review the
   [connection limits and memory requirements](#connection-limits-and-memory).
 - If using an external key management system, support for `SignRawBytes` and
@@ -5059,13 +5057,11 @@ a commit. Place the binary on your executable path before using `fibre` below.
 
 ## Configure the node connections
 
-Fibre needs the application and signing services. Core RPC gRPC is a separate
-listener that existing clients may already use.
+Fibre needs the application's gRPC service and the validator's signing service.
 
 | Service | Node setting | Example address | Fibre option |
 |---|---|---|---|
 | Application gRPC | `config/app.toml`, `[grpc] address` | `127.0.0.1:9090` | `--app-grpc-address` |
-| Core RPC gRPC | `config/config.toml`, `[rpc] grpc_laddr` | `tcp://127.0.0.1:9098` | None |
 | Priv-validator gRPC | `config/config.toml`, top-level `priv_validator_grpc_laddr` | `127.0.0.1:26669` | `--signer-grpc-address` |
 
 Paths are relative to your existing node home, normally `~/.celestia-app`.
@@ -5086,9 +5082,9 @@ Enable it explicitly: a freshly generated app config disables application gRPC,
 even though the multiplexer enables it for its embedded v9 application.
 The setting must also be enabled when the chain switches to v10.
 
-Keep the existing `[rpc] grpc_laddr` in `config/config.toml`. Changing its port
-from `9098` to `9090` does not enable application services and can cause a port
-conflict. Preserve the endpoints used by existing bridge nodes and other clients.
+The core RPC gRPC listener (`[rpc] grpc_laddr` in `config/config.toml`) is a
+separate service. Keep its existing address for bridge nodes and other clients;
+Fibre's `--app-grpc-address` must point to the application service above.
 
 ### Configure the signing connection
 
@@ -5105,7 +5101,7 @@ change Fibre's signer address to match. A working custom port can be retained
 when it does not conflict with another listener.
 
 Application and signing addresses, including Fibre's connection options, use
-`host:port` without `tcp://`. The core RPC listener uses `tcp://host:port`.
+`host:port` without `tcp://`.
 
 Restart the node after editing and confirm it resumes syncing and signing.
 Check service-manager flags for overrides. If deployment tooling manages the
@@ -5194,24 +5190,6 @@ Add your usual node, home, and transaction fee flags. The host must be `host:por
 without a URL scheme. Confirm your address appears in the provider list. Register
 only after the server is reachable, so clients do not discover an unavailable
 host. Registration requires active app version 10 and a bonded validator.
-
-## Existing configuration files
-
-New settings use defaults when absent; upgrading does not insert fields or their
-comments into existing files. The deprecated `update-config` command has no v10
-migration. The new RPC and storage settings are:
-
-| Section in `config/config.toml` | Setting | Default |
-|---|---|---|
-| `[rpc]` | `max_concurrent_heavy_requests` | `20` |
-| `[storage]` | `compact` | `false` |
-| `[storage]` | `compaction_interval` | `10000` |
-
-Use the [existing-config procedure](https://github.com/celestiaorg/celestia-app/blob/main/docs/release-notes/release-notes.md#updating-existing-configuration-files)
-to generate release-matched reference files in a temporary home and merge only
-the settings and comments you need. Preserve local values and validator keys.
-Blockstore compaction is optional and does not enable pruning. Stop the node
-before running one-off compaction of an existing pruned backlog.
 
 ## Troubleshoot startup
 
@@ -5573,6 +5551,7 @@ ldd --version
 ```
 
 See the [celestia-app v9 release notes](https://github.com/celestiaorg/celestia-app/blob/v9.0.4/docs/release-notes/release-notes.md#supported-operating-systems)
+and the [Mocha release requirements](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)
 for the supported operating system details.
 
 ## Building binary from source
@@ -8597,6 +8576,42 @@ The upgrade process can be broken down into a few steps:
 1. Node operators upgrade to the new binary on [Mocha testnet](/operate/networks/mocha-testnet), and finally on Celestia [Mainnet Beta](/operate/networks/mainnet-beta).
    - Upgrades using pre-programmed height (v2) activate at a predetermined block number.
    - Upgrades using in-protocol signaling (v3+) activate one week after 5/6 of the voting power has signaled for a particular version
+
+## Existing configuration files
+
+Replacing celestia-app does not add new settings or comments to existing
+configuration files. Missing settings use the binary's defaults.
+
+Starting with celestia-app v10.2, use `config sync` to add missing fields and
+their documentation to `config/config.toml`. Preview the additions first:
+
+```bash
+celestia-appd config sync --home ~/.celestia-app --dry-run
+celestia-appd config sync --home ~/.celestia-app
+```
+
+Use your node's home directory if different. The command preserves existing
+values and creates a backup before writing changes. It does not run
+automatically on startup. Use it instead of the deprecated `update-config`
+command for v10 configuration maintenance.
+
+### RPC and storage settings in v10
+
+These settings apply to celestia-app consensus nodes:
+
+| Section in `config/config.toml` | Setting | Default |
+|---|---|---|
+| `[rpc]` | `max_concurrent_heavy_requests` | `20` |
+| `[storage]` | `compact` | `false` |
+| `[storage]` | `compaction_interval` | `10000` |
+
+The RPC setting limits concurrent heavy requests. Blockstore compaction is
+optional and does not enable pruning. Stop the node before running one-off
+compaction of an existing pruned backlog.
+
+See the [Mocha release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)
+for details. Follow the upgrade announcement for your network before replacing
+its binary.
 
 ## Network upgrade history
 
