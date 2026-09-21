@@ -128,7 +128,7 @@ to the correct instructions on this page on how to connect to Mocha.
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [v0.33.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.33.2-mocha) |
+| celestia-node  | [v0.34.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha) |
 | celestia-app   | [v10.2.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)   |
 
 ## Network status
