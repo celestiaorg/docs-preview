@@ -38,7 +38,7 @@ treat 3 seconds as an approximate target rather than an exact interval.
 | Software       | Version                                                             |
 | -------------- | ------------------------------------------------------------------- |
 | celestia-node  | [v0.33.0](https://github.com/celestiaorg/celestia-node/releases/tag/v0.33.0) |
-| celestia-app   | [v9.0.8](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.8)   |
+| celestia-app   | [v3.13.0](https://github.com/celestiaorg/celestia-app/releases/tag/v3.13.0)   |
 
 ## Network status
 
