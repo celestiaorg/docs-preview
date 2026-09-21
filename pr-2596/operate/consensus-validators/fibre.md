@@ -2,14 +2,14 @@
 
 Fibre is a separate data availability service operated by validators alongside
 celestia-app. This guide covers Mocha using the celestia-app release
-`v10.1.0-mocha` and its matching Fibre binary.
+`v10.2.0-mocha` and its matching Fibre binary.
 
 ## Prerequisites
 
 - A running, synced [validator node](/operate/consensus-validators/validator-node)
   in the bonded validator set. Fibre derives its storage budget from your stake.
 - The v10 multiplexer celestia-app binary installed before activation. Follow the
-  [Mocha release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.1.0-mocha)
+  [Mocha release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)
   and check the [celestia-app installation requirements](/operate/consensus-validators/install-celestia-app#linux-requirements).
 - Separate disks for Fibre data and celestia-app data. Review the
   [connection limits and memory requirements](#connection-limits-and-memory).
@@ -25,7 +25,7 @@ Download the Fibre archive and checksums from the same release as celestia-app.
 For Linux x86_64:
 
 ```bash
-fibre_version=v10.1.0-mocha
+fibre_version=v10.2.0-mocha
 curl -fLO "https://github.com/celestiaorg/celestia-app/releases/download/$fibre_version/fibre_Linux_x86_64.tar.gz"
 curl -fLO "https://github.com/celestiaorg/celestia-app/releases/download/$fibre_version/checksums.txt"
 sha256sum --ignore-missing --check checksums.txt
@@ -40,13 +40,13 @@ Place the verified binary on your executable path before using `fibre` below.
 ### Build from source
 
 Install Git, Make, a C compiler, and the Go version required by the release's
-[`go.mod`](https://github.com/celestiaorg/celestia-app/blob/v10.1.0-mocha/go.mod).
+[`go.mod`](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/go.mod).
 Clone the same release used by your celestia-app node:
 
 ```bash
-git clone --branch v10.1.0-mocha --depth 1 https://github.com/celestiaorg/celestia-app.git celestia-app-fibre
+git clone --branch v10.2.0-mocha --depth 1 https://github.com/celestiaorg/celestia-app.git celestia-app-fibre
 cd celestia-app-fibre
-make build-fibre-server VERSION=v10.1.0-mocha
+make build-fibre-server VERSION=v10.2.0-mocha
 ./build/fibre version
 ```
 
@@ -202,5 +202,5 @@ host. Registration requires active app version 10 and a bonded validator.
 
 For logging, metrics, tracing, and profiling, see
 [Fibre metrics and monitoring](/operate/consensus-validators/fibre/metrics).
-The [Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.1.0-mocha/fibre/cmd/README.md)
+The [Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/fibre/cmd/README.md)
 has further configuration details.

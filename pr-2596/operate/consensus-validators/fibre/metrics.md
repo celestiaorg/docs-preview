@@ -1,6 +1,6 @@
 # Fibre metrics and monitoring
 
-This page covers observability in Fibre `v10.1.0-mocha`.
+This page covers observability in Fibre `v10.2.0-mocha`.
 Complete the [server setup](/operate/consensus-validators/fibre) first. Add the
 flags below to your existing start command, keeping your home and node addresses.
 All observability flags apply to every subcommand.
@@ -94,7 +94,7 @@ alongside server telemetry to measure end-to-end uploads and downloads.
 ### Grafana dashboard
 
 Import the release's
-[Fibre dashboard JSON](https://github.com/celestiaorg/celestia-app/blob/v10.1.0-mocha/observability/docker/grafana/dashboards/fibre.json)
+[Fibre dashboard JSON](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/observability/docker/grafana/dashboards/fibre.json)
 into Grafana. The dashboard expects a Prometheus data source with UID
 `prometheus`; use that UID or update the dashboard to match your data source.
 Client panels need telemetry from Fibre clients as well as the server.
@@ -163,5 +163,5 @@ fibre start \
 | No continuous profiles | Check the Pyroscope endpoint, authentication values, and Fibre logs for export errors. |
 
 See the release's
-[observability reference](https://github.com/celestiaorg/celestia-app/blob/v10.1.0-mocha/fibre/cmd/README.md#observability)
+[observability reference](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/fibre/cmd/README.md#observability)
 for more details.
