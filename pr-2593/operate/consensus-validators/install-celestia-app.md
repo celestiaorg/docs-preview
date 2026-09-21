@@ -27,6 +27,7 @@ ldd --version
 ```
 
 See the [celestia-app v9 release notes](https://github.com/celestiaorg/celestia-app/blob/v9.0.4/docs/release-notes/release-notes.md#supported-operating-systems)
+and the [Mocha release requirements](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)
 for the supported operating system details.
 
 ## Building binary from source
