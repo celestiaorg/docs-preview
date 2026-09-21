@@ -99,6 +99,8 @@ These docs are built with Next.js + Nextra and exported statically. Links below 
 
 - [Cli Reference](https://docs.celestia.org/operate/consensus-validators/cli-reference.md)
 - [Consensus Node](https://docs.celestia.org/operate/consensus-validators/consensus-node.md)
+- [Fibre / Metrics](https://docs.celestia.org/operate/consensus-validators/fibre/metrics.md)
+- [Fibre](https://docs.celestia.org/operate/consensus-validators/fibre.md)
 - [Foundation Delegation Program](https://docs.celestia.org/operate/consensus-validators/foundation-delegation-program.md)
 - [Install Celestia App](https://docs.celestia.org/operate/consensus-validators/install-celestia-app.md)
 - [Metrics](https://docs.celestia.org/operate/consensus-validators/metrics.md)
