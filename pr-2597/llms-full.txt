@@ -10,7 +10,7 @@ Source: app/build/blobstream/proof-queries/page.mdx
 
 # Blobstream proof queries (legacy)
 
-> **Legacy reference:** Succinct stopped operating its Blobstream operator and relayer in September 2026. Celenium has also removed its Blobstream service. This page preserves the proof-query and contract-format reference; it does not imply that a maintained deployment is available or receiving new commitments.
+> **Legacy reference:** As of September 2026, the Succinct-operated SP1 Blobstream deployments are no longer maintained and do not receive new commitments, and Celenium no longer offers its Blobstream explorer. This page preserves the proof-query and contract-format reference. It does not imply that a maintained deployment is available.
 
 ## Prerequisites
 
@@ -1234,7 +1234,7 @@ Nitro's batch poster coordinates with the Celestia DAS server to store batch dat
    - Returns a `BlobPointer` containing block height, share indices, and data commitments
 3. **Verification dependency**: The dispute-verification design uses Blobstream (default: SP1 Blobstream) to confirm batch availability on Celestia through the hash oracle trick.
 
-> **Blobstream service shutdown:** Succinct stopped operating its Blobstream operator and relayer in September 2026. Do not rely on the former Succinct-operated deployments for new batch commitments. A working Blobstream verification path must be established before relying on this integration for disputes.
+> **Blobstream service status:** As of September 2026, the Succinct-operated SP1 Blobstream deployments are no longer maintained and do not receive new commitments. Do not rely on them for new batch commitments. Establish a working Blobstream verification path before relying on this integration for disputes.
 
 ## Key features
 
@@ -1415,6 +1415,26 @@ This page provides a comprehensive list of audits conducted on various Celestia 
 | Blobstream X               | Zellic           | [Link](https://docs.celestia.org/audits/Blobstream_X-Zellic_Audit.pdf)                                                     |
 | Shwap                      | OtterSec         | [Link](https://docs.celestia.org/audits/celestia_shwap_audit_final.pdf)                                                    |
 | High throughput recovery   | Informal Systems | [Link](https://github.com/celestiaorg/celestia-app/blob/main/docs/audit/informal-systems-recovery.pdf)                     |
+
+---
+Title: Blobstream (legacy)
+URL: https://docs.celestia.org/learn/blobstream.md
+Source: app/learn/blobstream/page.mdx
+---
+
+# Blobstream (legacy)
+
+Blobstream was a data availability attestation bridge that let EVM chains verify that data was published to Celestia. It relayed commitments to Celestia data roots to a smart contract on the target EVM chain, where rollup contracts could verify inclusion proofs against them.
+
+> **Legacy notice:** As of September 2026, the Succinct-operated SP1 Blobstream deployments are no longer maintained and do not receive new commitments, and Celenium no longer offers its Blobstream explorer. The integration and operator guides that previously lived in these docs have been removed.
+
+## What remains
+
+- [Blobstream proof queries (legacy)](/build/blobstream/proof-queries) documents how to query inclusion proofs from a Celestia consensus node and how they map to the Blobstream contract format.
+- [Audits](/learn/audits) lists the historical Blobstream X and SP1 Blobstream audit reports.
+- The [blobstream-contracts](https://github.com/celestiaorg/blobstream-contracts) and [sp1-blobstream](https://github.com/succinctlabs/sp1-blobstream) repositories remain available on GitHub.
+
+If you depend on Blobstream for dispute verification, such as with [Arbitrum Nitro with Celestia DA](/build/stacks/nitro-das-server), you must operate or source your own Blobstream verification path.
 
 ---
 Title: Data availability FAQ
@@ -5338,7 +5358,7 @@ You can install the latest version or specify a particular version:
 bash -c "$(curl -sL https://docs.celestia.org/celestia-node.sh)"
 
 # Install specific version, Mainnet Beta in this example
-bash -c "$(curl -sL https://docs.celestia.org/celestia-node.sh)" -- -v v0.32.1
+bash -c "$(curl -sL https://docs.celestia.org/celestia-node.sh)" -- -v v0.33.2
 ```
 
 The script will:
@@ -6594,7 +6614,7 @@ testnet):
 
 ```bash
 docker run --name celestia-node -e NODE_TYPE=light -e P2P_NETWORK=mocha -p 26659:26659 \
-ghcr.io/celestiaorg/celestia-node:v0.32.1-mocha celestia light start \
+ghcr.io/celestiaorg/celestia-node:v0.34.2-mocha celestia light start \
 --core.ip public-endpoint.celestia-mocha.quiknode.pro --core.port 9090 \
 --core.tls --p2p.network mocha
 ```
@@ -8099,8 +8119,8 @@ treat 3 seconds as an approximate target rather than an exact interval.
 
 | Software       | Version                                                             |
 | -------------- | ------------------------------------------------------------------- |
-| celestia-node  | [v0.32.1](https://github.com/celestiaorg/celestia-node/releases/tag/v0.32.1) |
-| celestia-app   | [v9.0.6](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.6)   |
+| celestia-node  | [v0.33.2](https://github.com/celestiaorg/celestia-node/releases/tag/v0.33.2) |
+| celestia-app   | [v9.0.8](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.8)   |
 
 ## Network status
 
@@ -8225,7 +8245,6 @@ The following table lists community-provided consensus node endpoints that you c
 | --------------- | --------------------------------------- | --------------------------------------- | ----------------------------------------- | -------------------------------------------------------- |
 | AlphaB          | `rpc-celestia.alphab.ai`               | `api-celestia.alphab.ai`               | `rpc-celestia.alphab.ai:9090`             | -                                                        |
 | CitizenWeb3     | `rpc.celestia.citizenweb3.com`          | `api.celestia.citizenweb3.com`          | `grpc.celestia.citizenweb3.com:443`       | -                                                        |
-| Easy2Stake      | `celestia-rpc.easy2stake.com`           | `celestia-lcd.easy2stake.com`           | -                                         | -                                                        |
 | ITRocket        | `celestia-mainnet-rpc.itrocket.net:443` | `celestia-mainnet-api.itrocket.net:443` | `celestia-mainnet-grpc.itrocket.net:443`  | -                                                        |
 | kjnodes         | `celestia.rpc.kjnodes.com`              | `celestia.api.kjnodes.com`              | `celestia.grpc.kjnodes.com:443`           | -                                                        |
 | lunaroasis      | `rpc.lunaroasis.net`                    | -                                       | `grpc.lunaroasis.net:443`                 | -                                                        |
@@ -8464,7 +8483,7 @@ to the correct instructions on this page on how to connect to Mocha.
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [v0.32.1-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.32.1-mocha) |
+| celestia-node  | [v0.34.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha) |
 | celestia-app   | [v10.2.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)   |
 
 ## Network status
@@ -8660,8 +8679,8 @@ reduced performance.
 
 | Software       | Version                                                             |
 | -------------- | ------------------------------------------------------------------- |
-| celestia-node  | [v0.32.1](https://github.com/celestiaorg/celestia-node/releases/tag/v0.32.1) |
-| celestia-app   | [v9.0.6](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.6)   |
+| celestia-node  | [v0.33.2](https://github.com/celestiaorg/celestia-node/releases/tag/v0.33.2) |
+| celestia-app   | [v9.0.8](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.8)   |
 
 ## Testnets
 
@@ -8678,7 +8697,7 @@ with the validator community.
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [v0.32.1-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.32.1-mocha) |
+| celestia-node  | [v0.34.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha) |
 | celestia-app   | [v10.2.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)   |
 
 ## Network upgrades

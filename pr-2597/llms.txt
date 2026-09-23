@@ -55,6 +55,10 @@ These docs are built with Next.js + Nextra and exported statically. Links below 
 
 - [Audits](https://docs.celestia.org/learn/audits.md)
 
+## Learn: Blobstream
+
+- [Blobstream](https://docs.celestia.org/learn/blobstream.md)
+
 ## Learn: Celestia 101
 
 - [Data Availability Faq](https://docs.celestia.org/learn/celestia-101/data-availability-faq.md)

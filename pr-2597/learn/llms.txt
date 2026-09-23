@@ -9,6 +9,10 @@
 
 - [Audits](https://docs.celestia.org/learn/audits.md)
 
+## Blobstream
+
+- [Blobstream](https://docs.celestia.org/learn/blobstream.md)
+
 ## Celestia 101
 
 - [Data Availability Faq](https://docs.celestia.org/learn/celestia-101/data-availability-faq.md)
