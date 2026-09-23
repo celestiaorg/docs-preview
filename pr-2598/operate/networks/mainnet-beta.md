@@ -37,8 +37,8 @@ treat 3 seconds as an approximate target rather than an exact interval.
 
 | Software       | Version                                                             |
 | -------------- | ------------------------------------------------------------------- |
-| celestia-node  | [v0.32.1](https://github.com/celestiaorg/celestia-node/releases/tag/v0.32.1) |
-| celestia-app   | [v9.0.6](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.6)   |
+| celestia-node  | [v0.33.2](https://github.com/celestiaorg/celestia-node/releases/tag/v0.33.2) |
+| celestia-app   | [v9.0.8](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.8)   |
 
 ## Network status
 
@@ -163,7 +163,6 @@ The following table lists community-provided consensus node endpoints that you c
 | --------------- | --------------------------------------- | --------------------------------------- | ----------------------------------------- | -------------------------------------------------------- |
 | AlphaB          | `rpc-celestia.alphab.ai`               | `api-celestia.alphab.ai`               | `rpc-celestia.alphab.ai:9090`             | -                                                        |
 | CitizenWeb3     | `rpc.celestia.citizenweb3.com`          | `api.celestia.citizenweb3.com`          | `grpc.celestia.citizenweb3.com:443`       | -                                                        |
-| Easy2Stake      | `celestia-rpc.easy2stake.com`           | `celestia-lcd.easy2stake.com`           | -                                         | -                                                        |
 | ITRocket        | `celestia-mainnet-rpc.itrocket.net:443` | `celestia-mainnet-api.itrocket.net:443` | `celestia-mainnet-grpc.itrocket.net:443`  | -                                                        |
 | kjnodes         | `celestia.rpc.kjnodes.com`              | `celestia.api.kjnodes.com`              | `celestia.grpc.kjnodes.com:443`           | -                                                        |
 | lunaroasis      | `rpc.lunaroasis.net`                    | -                                       | `grpc.lunaroasis.net:443`                 | -                                                        |

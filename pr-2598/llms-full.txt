@@ -5168,14 +5168,14 @@ fibre start \
 ```
 
 Use your actual node addresses if different. On first start, Fibre creates
-`server_config.toml` under its home. The corresponding keys are `app_grpc_address`,
+`<fibre_home>/config/server_config.toml`. The corresponding keys are `app_grpc_address`,
 `signer_grpc_address`, and `server_listen_address`; command-line flags override
 the file. Check the startup log for the chain ID and connected addresses.
 
 ### Connection limits
 
 To change the limits sized in [Plan capacity](#plan-capacity), edit
-`<fibre_home>/server_config.toml`:
+`<fibre_home>/config/server_config.toml`:
 
 ```toml
 max_connections = 16
@@ -6740,7 +6740,7 @@ You can install the latest version or specify a particular version:
 bash -c "$(curl -sL https://docs.celestia.org/celestia-node.sh)"
 
 # Install specific version, Mainnet Beta in this example
-bash -c "$(curl -sL https://docs.celestia.org/celestia-node.sh)" -- -v v0.32.1
+bash -c "$(curl -sL https://docs.celestia.org/celestia-node.sh)" -- -v v0.33.2
 ```
 
 The script will:
@@ -7996,7 +7996,7 @@ testnet):
 
 ```bash
 docker run --name celestia-node -e NODE_TYPE=light -e P2P_NETWORK=mocha -p 26659:26659 \
-ghcr.io/celestiaorg/celestia-node:v0.32.1-mocha celestia light start \
+ghcr.io/celestiaorg/celestia-node:v0.34.2-mocha celestia light start \
 --core.ip public-endpoint.celestia-mocha.quiknode.pro --core.port 9090 \
 --core.tls --p2p.network mocha
 ```
@@ -9505,8 +9505,8 @@ treat 3 seconds as an approximate target rather than an exact interval.
 
 | Software       | Version                                                             |
 | -------------- | ------------------------------------------------------------------- |
-| celestia-node  | [v0.32.1](https://github.com/celestiaorg/celestia-node/releases/tag/v0.32.1) |
-| celestia-app   | [v9.0.6](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.6)   |
+| celestia-node  | [v0.33.2](https://github.com/celestiaorg/celestia-node/releases/tag/v0.33.2) |
+| celestia-app   | [v9.0.8](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.8)   |
 
 ## Network status
 
@@ -9631,7 +9631,6 @@ The following table lists community-provided consensus node endpoints that you c
 | --------------- | --------------------------------------- | --------------------------------------- | ----------------------------------------- | -------------------------------------------------------- |
 | AlphaB          | `rpc-celestia.alphab.ai`               | `api-celestia.alphab.ai`               | `rpc-celestia.alphab.ai:9090`             | -                                                        |
 | CitizenWeb3     | `rpc.celestia.citizenweb3.com`          | `api.celestia.citizenweb3.com`          | `grpc.celestia.citizenweb3.com:443`       | -                                                        |
-| Easy2Stake      | `celestia-rpc.easy2stake.com`           | `celestia-lcd.easy2stake.com`           | -                                         | -                                                        |
 | ITRocket        | `celestia-mainnet-rpc.itrocket.net:443` | `celestia-mainnet-api.itrocket.net:443` | `celestia-mainnet-grpc.itrocket.net:443`  | -                                                        |
 | kjnodes         | `celestia.rpc.kjnodes.com`              | `celestia.api.kjnodes.com`              | `celestia.grpc.kjnodes.com:443`           | -                                                        |
 | lunaroasis      | `rpc.lunaroasis.net`                    | -                                       | `grpc.lunaroasis.net:443`                 | -                                                        |
@@ -9870,7 +9869,7 @@ to the correct instructions on this page on how to connect to Mocha.
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [v0.32.1-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.32.1-mocha) |
+| celestia-node  | [v0.34.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha) |
 | celestia-app   | [v10.2.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)   |
 
 ## Network status
@@ -10066,8 +10065,8 @@ reduced performance.
 
 | Software       | Version                                                             |
 | -------------- | ------------------------------------------------------------------- |
-| celestia-node  | [v0.32.1](https://github.com/celestiaorg/celestia-node/releases/tag/v0.32.1) |
-| celestia-app   | [v9.0.6](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.6)   |
+| celestia-node  | [v0.33.2](https://github.com/celestiaorg/celestia-node/releases/tag/v0.33.2) |
+| celestia-app   | [v9.0.8](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.8)   |
 
 ## Testnets
 
@@ -10084,7 +10083,7 @@ with the validator community.
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [v0.32.1-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.32.1-mocha) |
+| celestia-node  | [v0.34.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha) |
 | celestia-app   | [v10.2.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)   |
 
 ## Network upgrades
