@@ -5027,6 +5027,12 @@ network.
   at or below 10 ms. Fibre talks to the node's signing service, which forwards
   requests to the KMS.
 
+Any KMS may be used if it meets these requirements. Review the release's
+[KMS policy](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/docs/release-notes/release-notes.md#key-management-systems-kms)
+before choosing or upgrading a signer. It describes Horcrux's maintenance
+risks and the risk of double signing and slashing from incorrect KMS
+configuration.
+
 ## Plan capacity
 
 Store Fibre data on a different disk from celestia-app data, so that growth in
@@ -5057,6 +5063,10 @@ and recompute the memory budget. How to change these settings is covered in
 ## Install Fibre
 
 ### Prebuilt binary
+
+Linux Fibre archives require glibc 2.34 or later. The celestia-app multiplexer
+has separate [Linux requirements](/operate/consensus-validators/install-celestia-app#linux-requirements);
+check both when choosing the operating system for your validator.
 
 Download the Fibre archive and checksums from the same release as celestia-app.
 For Linux x86_64:
@@ -5315,6 +5325,15 @@ To verify the pipeline, start Fibre with `--otel-endpoint` set, open the Fibre
 dashboard, and confirm the server panels populate once uploads or downloads
 arrive. If they stay empty, work through the [troubleshooting](#troubleshooting)
 table.
+
+## Monitor signing latency
+
+Nodes using a remote signer expose `cometbft_privval_signing_latency_*`
+Prometheus metrics on celestia-app. Monitor them through the
+[validator metrics setup](/operate/consensus-validators/metrics).
+The node logs a warning when the median latency of the last 50 signatures
+exceeds 10 ms. Keep median signing latency at or below 10 ms; colocate the
+signing infrastructure when needed to stay within that threshold.
 
 ## Metric reference
 
