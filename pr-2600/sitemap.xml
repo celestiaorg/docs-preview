@@ -4,12 +4,6 @@
     <loc>https://docs.celestia.org/</loc>
   </url>
   <url>
-    <loc>https://docs.celestia.org/build/blobstream/integrate-contracts/</loc>
-  </url>
-  <url>
-    <loc>https://docs.celestia.org/build/blobstream/integrate-offchain/</loc>
-  </url>
-  <url>
     <loc>https://docs.celestia.org/build/blobstream/proof-queries/</loc>
   </url>
   <url>
@@ -92,21 +86,6 @@
   </url>
   <url>
     <loc>https://docs.celestia.org/learn/features/private-blockspace/</loc>
-  </url>
-  <url>
-    <loc>https://docs.celestia.org/operate/blobstream/deploy-contract/</loc>
-  </url>
-  <url>
-    <loc>https://docs.celestia.org/operate/blobstream/install-binary/</loc>
-  </url>
-  <url>
-    <loc>https://docs.celestia.org/operate/blobstream/key-management/</loc>
-  </url>
-  <url>
-    <loc>https://docs.celestia.org/operate/blobstream/orchestrator/</loc>
-  </url>
-  <url>
-    <loc>https://docs.celestia.org/operate/blobstream/relayer/</loc>
   </url>
   <url>
     <loc>https://docs.celestia.org/operate/consensus-validators/cli-reference/</loc>
