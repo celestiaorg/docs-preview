@@ -3711,6 +3711,13 @@ before choosing or upgrading a signer. It describes Horcrux's maintenance
 risks and the risk of double signing and slashing from incorrect KMS
 configuration.
 
+The 10 ms requirement is measured on celestia-app, not on Fibre. Nodes using a
+remote signer expose `cometbft_privval_signing_latency_*` Prometheus metrics,
+and the node logs a warning when the median of the last 50 signatures exceeds
+10 ms. Collect these through the
+[validator metrics setup](/operate/consensus-validators/metrics) and colocate
+the signing infrastructure if needed to stay within the threshold.
+
 ## Plan capacity
 
 Store Fibre data on a different disk from celestia-app data, so that growth in
@@ -4004,15 +4011,6 @@ dashboard, and confirm the server panels populate once uploads or downloads
 arrive. If they stay empty, work through the [troubleshooting](#troubleshooting)
 table.
 
-## Monitor signing latency
-
-Nodes using a remote signer expose `cometbft_privval_signing_latency_*`
-Prometheus metrics on celestia-app. Monitor them through the
-[validator metrics setup](/operate/consensus-validators/metrics).
-The node logs a warning when the median latency of the last 50 signatures
-exceeds 10 ms. Keep median signing latency at or below 10 ms; colocate the
-signing infrastructure when needed to stay within that threshold.
-
 ## Metric reference
 
 ### Traces
@@ -4049,6 +4047,12 @@ may convert dots to underscores and add unit suffixes.
 | `fibre.server.sign.duration` | Histogram (s) | `success` | Payment promise signing latency |
 | `fibre.server.prune.entries` | Counter | — | Entries pruned |
 | `fibre.server.prune.duration` | Histogram (s) | `success` | Prune cycle duration |
+
+`fibre.server.sign.duration` measures how long Fibre waits for payment promise
+endorsements. It is not the metric behind the 10 ms signing latency
+requirement; that is celestia-app's `cometbft_privval_signing_latency_*`, see
+[signing latency](/operate/consensus-validators/fibre#prerequisites) on the
+setup page.
 
 #### Client metrics
 
@@ -7379,7 +7383,7 @@ its binary.
 
 v7 (Hibiscus) was skipped on Mainnet Beta due to a bug discovered after testnet activation; v8 (defined in [CIP-49](https://cips.celestia.org/cip-049.html)) was activated instead.
 
-Version links point to Celenium upgrade status pages for signaling upgrades (v3+). v2 used a pre-programmed height and does not have a Celenium signaling page.
+In the Mainnet Beta table, version links point to Celenium upgrade status pages for signaling upgrades (v3+). v2 used a pre-programmed height and does not have a Celenium signaling page.
 
 ### Mocha testnet
 
