@@ -7,8 +7,6 @@
 
 ## Blobstream
 
-- [Integrate Contracts](https://docs.celestia.org/build/blobstream/integrate-contracts.md)
-- [Integrate Offchain](https://docs.celestia.org/build/blobstream/integrate-offchain.md)
 - [Proof Queries](https://docs.celestia.org/build/blobstream/proof-queries.md)
 
 ## Post Retrieve Blob

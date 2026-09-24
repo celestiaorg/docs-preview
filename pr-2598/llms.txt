@@ -26,8 +26,6 @@ These docs are built with Next.js + Nextra and exported statically. Links below 
 
 ## Build: Blobstream
 
-- [Integrate Contracts](https://docs.celestia.org/build/blobstream/integrate-contracts.md)
-- [Integrate Offchain](https://docs.celestia.org/build/blobstream/integrate-offchain.md)
 - [Proof Queries](https://docs.celestia.org/build/blobstream/proof-queries.md)
 
 ## Build: Post Retrieve Blob
@@ -86,14 +84,6 @@ These docs are built with Next.js + Nextra and exported statically. Links below 
 - [Staking Governance Supply](https://docs.celestia.org/learn/TIA/staking-governance-supply.md)
 - [Staking](https://docs.celestia.org/learn/TIA/staking.md)
 - [Submit Data](https://docs.celestia.org/learn/TIA/submit-data.md)
-
-## Operate: Blobstream
-
-- [Deploy Contract](https://docs.celestia.org/operate/blobstream/deploy-contract.md)
-- [Install Binary](https://docs.celestia.org/operate/blobstream/install-binary.md)
-- [Key Management](https://docs.celestia.org/operate/blobstream/key-management.md)
-- [Orchestrator](https://docs.celestia.org/operate/blobstream/orchestrator.md)
-- [Relayer](https://docs.celestia.org/operate/blobstream/relayer.md)
 
 ## Operate: Consensus Validators
 
