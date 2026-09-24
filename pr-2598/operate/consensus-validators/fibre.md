@@ -12,6 +12,10 @@ The examples use the Mocha release `v10.2.0-mocha`, its
 matching Fibre binary, and the Mocha chain ID. Substitute the values for your
 network.
 
+Mocha has activated app version 10. Bonded Mocha validators can now start Fibre
+and register their public address. See the
+[Mocha-5 upgrade history](/operate/maintenance/network-upgrades#mocha-5).
+
 ## Prerequisites
 
 - A running, synced [validator node](/operate/consensus-validators/validator-node)
