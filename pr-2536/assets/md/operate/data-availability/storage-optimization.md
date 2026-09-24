@@ -110,7 +110,7 @@ zfs set compression=zstd-3 $ZFS_POOL_NAME/$ZFS_DATASET_NAME
 
 Set the custom path to the bridge data folder:
 
-<Tabs items={['Mainnet Beta', 'Mocha', 'Arabica']}>
+<Tabs items={['Mainnet Beta', 'Mocha']}>
   <Tabs.Tab>
     ```sh
     # Add flag --node.store /celestia/bridge/.celestia-bridge to your command, example:
@@ -120,15 +120,8 @@ Set the custom path to the bridge data folder:
 
   <Tabs.Tab>
     ```sh
-    # Add flag --node.store /celestia/bridge/.celestia-bridge-mocha-4 to your command, example:
-    celestia bridge start --metrics.tls=true --metrics --metrics.endpoint otel.mocha.celestia.observer --p2p.metrics --node.store /celestia/bridge/.celestia-bridge-mocha-4 --p2p.network mocha
-    ```
-  </Tabs.Tab>
-
-  <Tabs.Tab>
-    ```sh
-    # Add flag --node.store /celestia/bridge/.celestia-bridge-arabica-11 to your command, example:
-    celestia bridge start --node.store /celestia/bridge/.celestia-bridge-arabica-11 --p2p.network arabica
+    # Add flag --node.store /celestia/bridge/.celestia-bridge-mocha-5 to your command, example:
+    celestia bridge start --metrics.tls=true --metrics --metrics.endpoint otel.mocha.celestia.observer --p2p.metrics --node.store /celestia/bridge/.celestia-bridge-mocha-5 --p2p.network mocha
     ```
   </Tabs.Tab>
 </Tabs>

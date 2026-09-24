@@ -55,7 +55,6 @@ Only these four architectures are officially tested and supported.
 
   * Mainnet Beta: `ver="1.24.1"`
   * Mocha: `ver="1.24.1"`
-  * Arabica: `ver="1.24.1"`
 
   Download and install Golang:
 

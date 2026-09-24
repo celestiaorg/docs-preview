@@ -16,7 +16,7 @@ A Celestia bridge node has the following properties:
 2. Validate and erasure code the “raw” blocks
 3. Supply block shares with data availability headers to light nodes in the DA network.
 
-![bridge-node-diagram](/img/nodes/BridgeNodes.png)
+![bridge-node-diagram](/docs-preview/pr-2536/img/nodes/BridgeNodes.png)
 
 From an implementation perspective, Bridge nodes run two separate processes:
 
@@ -77,8 +77,7 @@ Deploy the Celestia bridge node with the following steps.
   for information on which ports are required to be open on your machine.
 
   Using an RPC of your own, or one from the
-  [list on the Mocha testnet page](/operate/networks/mocha-testnet#community-rpc-endpoints) or
-  [list on the Arabica devnet page](/operate/networks/arabica-devnet#community-rpc-endpoints),
+  [list on the Mocha testnet page](/operate/networks/mocha-testnet#community-rpc-endpoints),
   start your node.
 
   Connecting to a consensus node endpoint (flag: `--core.ip string`)
@@ -87,7 +86,7 @@ Deploy the Celestia bridge node with the following steps.
 
   Here is an example of initializing the bridge node:
 
-  <Tabs items={['Mainnet Beta', 'Mocha', 'Arabica']}>
+  <Tabs items={['Mainnet Beta', 'Mocha']}>
     <Tabs.Tab>
       ```sh
       celestia bridge init --core.ip <URI> --core.port <port>
@@ -98,13 +97,6 @@ Deploy the Celestia bridge node with the following steps.
       ```sh
       celestia bridge init --core.ip <URI> --core.port <port> \
           --p2p.network mocha
-      ```
-    </Tabs.Tab>
-
-    <Tabs.Tab>
-      ```sh
-      celestia bridge init --core.ip <URI> --core.port <port> \
-          --p2p.network arabica
       ```
     </Tabs.Tab>
   </Tabs>
@@ -120,15 +112,12 @@ Deploy the Celestia bridge node with the following steps.
   Here is an example of starting the bridge node on Mocha:
 
   ```sh
-  celestia bridge start --core.ip rpc-mocha.pops.one --core.port 9090 --p2p.network mocha
+  celestia bridge start --core.ip <archival-consensus-endpoint> --core.port 9090 --p2p.network mocha
   ```
 
-  And on Arabica:
-
-  ```sh
-  celestia bridge start --core.ip validator-1.celestia-arabica-11.com \
-    --p2p.network arabica --core.port 9090
-  ```
+  <Callout type="warning">
+    Bridge nodes sync headers from genesis and require an archival consensus node. Public RPC endpoints are typically pruned and will not work for initial sync. Use your own archival consensus node or an archival endpoint from an infrastructure provider.
+  </Callout>
 
   <Callout type="info">
     If you're connecting your bridge node to a localhost consensus node (`--core.ip localhost` or `--core.ip 127.0.0.1`), ensure that gRPC is enabled in your consensus node's `app.toml` configuration file. Look for the `[grpc]` section and verify that `enable = true` is set:
@@ -164,7 +153,6 @@ You can find the address by running the following command:
 You can get testnet tokens from:
 
 * [Mocha](/operate/networks/mocha-testnet)
-* [Arabica](/operate/networks/arabica-devnet)
 
 > **Note:** If you are running a bridge node for your validator, it is highly recommended to request Mocha testnet tokens as this is the testnet used to test out validator operations.
 
@@ -176,7 +164,7 @@ In order to run a bridge node using a custom key:
    correct path (default: `~/.celestia-bridge/keys/keyring-test`)
 2. The name of the custom key must be passed upon `start`, like so:
 
-<Tabs items={['Mainnet Beta', 'Mocha', 'Arabica']}>
+<Tabs items={['Mainnet Beta', 'Mocha']}>
   <Tabs.Tab>
     ```sh
     celestia bridge start --core.ip <URI> --keyring.keyname <name-of-custom-key> \
@@ -188,13 +176,6 @@ In order to run a bridge node using a custom key:
     ```sh
     celestia bridge start --core.ip <URI> --keyring.keyname <name-of-custom-key> \
         --p2p.network mocha --core.port <port>
-    ```
-  </Tabs.Tab>
-
-  <Tabs.Tab>
-    ```sh
-    celestia bridge start --core.ip <URI> --keyring.keyname <name-of-custom-key> \
-        --p2p.network arabica --core.port <port>
     ```
   </Tabs.Tab>
 </Tabs>

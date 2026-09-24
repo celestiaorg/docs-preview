@@ -13,42 +13,26 @@ reduced performance.
 
 | Software       | Version                                                             |
 | -------------- | ------------------------------------------------------------------- |
-| celestia-node  | [v0.31.3](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3) |
-| celestia-app   | [v9.0.4](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.4)   |
+| celestia-node  | [v0.33.2](https://github.com/celestiaorg/celestia-node/releases/tag/v0.33.2) |
+| celestia-app   | [v9.0.8](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.8)   |
 
 ## Testnets
 
-Celestia currently has two existing testnets that you can participate in:
-
-### Arabica Devnet
-
-[Arabica devnet](/operate/networks/arabica-devnet) is a devnet focused on developers who
-want to deploy sovereign rollups on the latest changes from Celestia's codebase.
-Arabica will be updated frequently and might be unstable at times given new updates.
-Validators won't be able to validate on Arabica as it is not designed for
-validators to participate.
-
-#### Compatible software versions for Arabica devnet
-
-| Software       | Version                                                                  |
-| -------------- | ------------------------------------------------------------------------ |
-| celestia-node  | [v0.31.3-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3-arabica) |
-| celestia-app   | [v9.0.4-arabica](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.4-arabica)     |
+Celestia currently has one public testnet that you can participate in:
 
 ### Mocha testnet
 
 [Mocha testnet](/operate/networks/mocha-testnet) is a testnet focused on enabling validators
 to test out their infrastructure by running nodes connected to the network. Developers
-can also deploy sovereign rollups on Mocha, it just will always be behind Arabica
-as Mocha upgrades are slower given they need to be done via breaking network upgrades
-in coordination with the validator community on Mocha.
+can also deploy sovereign rollups on Mocha. Breaking network upgrades are coordinated
+with the validator community.
 
 ### Compatible software versions for Mocha testnet
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [v0.31.3-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3-mocha) |
-| celestia-app   | [v9.0.4-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.4-mocha)   |
+| celestia-node  | [v0.34.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha) |
+| celestia-app   | [v10.2.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)   |
 
 ## Network upgrades
 

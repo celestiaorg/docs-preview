@@ -27,7 +27,6 @@ no need to declare a chain ID, as the default is `celestia`,
 | ------------ | -------------------------- | --------------------------------------- |
 | Mainnet Beta | {constants.mainnetChainId} | not required (`--p2p.network celestia`) |
 | Mocha        | {constants.mochaChainId}   | `--p2p.network mocha`                   |
-| Arabica      | {constants.arabicaChainId} | `--p2p.network arabica`                 |
 
 ## Ports
 
@@ -66,7 +65,7 @@ manually specify the `--node.store` flag for each RPC request.
 **Assumptions:**
 
 * The presence of a lock signifies a running node.
-* Networks are ordered as Mainnet Beta, Mocha, Arabica, private, custom.
+* Networks are ordered as Mainnet Beta, Mocha, private, custom.
 * Node types are ordered as bridge and light.
 * Each network has only one running node type.
 * Multiple nodes of the same network and type are prohibited
@@ -99,7 +98,7 @@ celestia <node-type> init --node.store /home/user/celestia-<node-type>-location/
 Next, start your node:
 
 ```bash
-celestia bridge start --core.ip rpc-mocha.pops.one --p2p.network mocha \
+celestia bridge start --core.ip <archival-consensus-endpoint> --p2p.network mocha \
     --node.store /home/user/celestia-bridge-location/ --core.port <port>
 ```
 
@@ -137,26 +136,6 @@ The request will go to the Mainnet Beta node, and a 401 will show in
 this node's logs. Note that a 401 is expected because this blob was
 posted to Mocha and neither the namespace nor the blob exist on Mainnet Beta.
 
-#### Mocha bridge and Arabica light
-
-This example uses a Mocha bridge node and an Arabica light node. When
-making the request:
-
-```bash
-❯ celestia blob get 1318129 0x42690c204d39600fddd3 0MFhYKQUi2BU+U1jxPzG7QY2BVV1lb3kiU+zAK7nUiY=
-{
-  "result": {
-    "namespace": "AAAAAAAAAAAAAAAAAAAAAAAAAEJpDCBNOWAP3dM=",
-    "data": "0x676d",
-    "share_version": 0,
-    "commitment": "0MFhYKQUi2BU+U1jxPzG7QY2BVV1lb3kiU+zAK7nUiY=",
-    "index": 23
-  }
-}
-```
-
-The request will go to the Mocha bridge node, and result shown as expected.
-
 #### Using a custom rpc.config address
 
 When using a custom RPC config address `0.0.0.1` and port `25231`,
@@ -171,6 +150,8 @@ node is running. It fails as expected:
 ```
 
 ## Resetting your config
+
+> **Warning:** When upgrading from a version earlier than celestia-node v0.31.3 to v0.31.3 or later, run `config-update` after replacing the binary and before starting the node. The [v0.31.3 release](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3) adds support for Mainnet Beta v9 and introduces new config fields, including RPC rate limiting. Skipping this step leaves the new options at their defaults and may cause config warnings.
 
 If you encounter an error, it is likely that an old config file is present:
 
@@ -290,7 +271,7 @@ sudo systemctl restart celestia-bridge
 When a bridge node runs on `ext4` file system, there will be errors like the following due to large folder size:
 
 ```bash
-ERROR   header/sync     sync/sync.go:227        syncing headers {"from": 5074102, "to": 5161144, "err": "creating file: creating ODSQ4 file: creating Q4 file: creating Q4 file: open /root/.celestia-bridge-mocha-4/blocks/C9ADF6D9F862D92993D67977DE407D17ECF7F1DACE5FB7FE9A6845F4BD0172CE.q4: no space left on device"}
+ERROR   header/sync     sync/sync.go:227        syncing headers {"from": 5074102, "to": 5161144, "err": "creating file: creating ODSQ4 file: creating Q4 file: creating Q4 file: open /root/.celestia-bridge-mocha-5/blocks/C9ADF6D9F862D92993D67977DE407D17ECF7F1DACE5FB7FE9A6845F4BD0172CE.q4: no space left on device"}
 ```
 
 You may also observe similar errors from the `tar` command when extracting a snapshot of an archival bridge node.

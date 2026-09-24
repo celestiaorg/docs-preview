@@ -20,7 +20,7 @@ Learn
 | Delegation support   | Yes            |
 
 Learn how to
-[stake on your own at the community dashboards](/learn/tia/staking).
+[stake on your own at the community dashboards](/learn/TIA/staking).
 
 ## Inflation
 
@@ -34,7 +34,7 @@ TIA inflation started at 8% annually.
 
 The diagram below illustrates both the initial inflation rates and those after the v6 upgrade.
 
-![inflation diagram](/img/learn/TIA_inflation_post-cip41.jpg)
+![inflation diagram](/docs-preview/pr-2536/img/learn/TIA_inflation_post-cip41.jpg)
 
 For an in-depth understanding, refer to
 [ADR019](https://github.com/celestiaorg/celestia-app/blob/main/docs/architecture/adr-019-strict-inflation-schedule.md).
@@ -64,7 +64,7 @@ Learn how to
 Celestia will have a total supply of 1,000,000,000 TIA at genesis,
 split across five categories described in the chart and table below.
 
-![allocation diagram](/img/learn/Celestia_TIA_Allocation_at_Genesis.png)
+![allocation diagram](/docs-preview/pr-2536/img/learn/Celestia_TIA_Allocation_at_Genesis.png)
 
 | Category                  | Description                                                                                                                                                                                                                                   | %      |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
@@ -91,7 +91,7 @@ of the R\&D & Ecosystem tokens and the tokens set aside for future initiatives.
 *The definitions for circulating and available supply were adapted from
 [Optimism’s definitions](https://community.optimism.io/docs/governance/allocations/#token-distribution-details).*
 
-![supply diagram](/img/learn/Celestia_TIA_Available_Supply.png)
+![supply diagram](/docs-preview/pr-2536/img/learn/Celestia_TIA_Available_Supply.png)
 
 Unlock schedule by category is described in the table below.
 

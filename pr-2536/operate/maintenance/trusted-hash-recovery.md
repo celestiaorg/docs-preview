@@ -1,12 +1,12 @@
 # Syncing a light node from a trusted hash
 
 This guide goes over how to sync a DA light node from a trusted hash.
-The example uses the Mocha testnet. You will need to adjust the commands accordingly for Mainnet Beta, Arabica, or a custom network.
+The example uses the Mocha testnet. You will need to adjust the commands accordingly for Mainnet Beta or a custom network.
 
 If you already have a data store for your node, you need to remove it before syncing from a trusted hash:
 
 ```sh
-rm -rf ~/.celestia-light-mocha-4/data
+rm -rf ~/.celestia-light-mocha-5/data
 ```
 
 You also cannot sync to a height earlier than the data availability sampling (DAS) start height.
@@ -32,8 +32,8 @@ By configuring these fields, your light node will maintain history from the spec
 You can automate the process of setting the trusted height and hash using the following commands for Mocha testnet:
 
 > **Tip (Linux):** Remove the empty string (`''`) after `-i` in the `sed` commands:  
-> `sed -i "s/SyncFromHeight = .*/SyncFromHeight = $TRUSTED_HEIGHT/" ~/.celestia-light-mocha-4/config.toml`  
-> `sed -i "s/SyncFromHash = .*/SyncFromHash = \"$TRUSTED_HASH\"/" ~/.celestia-light-mocha-4/config.toml`
+> `sed -i "s/SyncFromHeight = .*/SyncFromHeight = $TRUSTED_HEIGHT/" ~/.celestia-light-mocha-5/config.toml`  
+> `sed -i "s/SyncFromHash = .*/SyncFromHash = \"$TRUSTED_HASH\"/" ~/.celestia-light-mocha-5/config.toml`
 
 ## For service operators
 

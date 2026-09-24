@@ -17,7 +17,7 @@ Check the [latest celestia-app release's `go.mod`](https://github.com/celestiaor
 
 After installing Hermes, edit `config.toml` to add your chains. This tutorial uses:
 
-- Celestia `mocha-4` testnet
+- Celestia `mocha-5` testnet
 - Cosmos Hub `theta-testnet-001` testnet
 
 Edit the Hermes configuration:
@@ -114,9 +114,9 @@ list = [["transfer", "channel-3108"]]
 derivation = "cosmos"
 
 [[chains]]
-id = "mocha-4"
+id = "mocha-5"
 type = "CosmosSdk"
-rpc_addr = "https://rpc-celestia-mocha.architectnodes.com"
+rpc_addr = "https://public-endpoint.celestia-mocha.quiknode.pro"
 grpc_addr = "https://grpc.celestia-mocha.com:443"
 rpc_timeout = "10s"
 trusted_node = false
@@ -138,7 +138,7 @@ sequential_batch_tx = false
 
 [chains.event_source]
 mode = "push"
-url = "ws://rpc-mocha.pops.one:26657/websocket"
+url = "wss://public-endpoint.celestia-mocha.quiknode.pro/websocket"
 batch_delay = "500ms"
 
 [chains.trust_threshold]
@@ -175,7 +175,7 @@ hermes keys add --key-name key-cosmos --chain theta-testnet-001 --mnemonic-file 
 Add Celestia wallet:
 
 ```bash
-hermes keys add --key-name celestia-key --chain mocha-4 --mnemonic-file $HOME/.hermes/key-celestia-mnemonic.txt
+hermes keys add --key-name celestia-key --chain mocha-5 --mnemonic-file $HOME/.hermes/key-celestia-mnemonic.txt
 ```
 
 ### Create a channel
@@ -183,7 +183,7 @@ hermes keys add --key-name celestia-key --chain mocha-4 --mnemonic-file $HOME/.h
 With both chains configured and wallets funded, create a channel:
 
 ```bash
-hermes create channel --a-chain theta-testnet-001 --b-chain mocha-4 --a-port transfer --b-port transfer --new-client-connection
+hermes create channel --a-chain theta-testnet-001 --b-chain mocha-5 --a-port transfer --b-port transfer --new-client-connection
 ```
 
 This command creates:

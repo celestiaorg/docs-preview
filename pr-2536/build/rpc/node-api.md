@@ -1,8 +1,21 @@
 # Node API
 
 The Celestia Node API is the collection of RPC methods that can be used to
-interact with the services provided by Celestia Data Availability Nodes. Node
-API uses auth tokens to control access to this API.
+interact with the services provided by Celestia data availability nodes.
+Node API uses auth tokens to control access to this API.
 
-Use this reference to browse the OpenRPC schema for blob, blobstream, DA, DAS,
-fraud, header, node, P2P, share, and state packages.
+## celestia-node v0.31.3 breaking changes
+
+Starting with celestia-node v0.31.3:
+
+- The `fraud` RPC namespace was removed. Calls to `fraud.Get` and
+  `fraud.Subscribe` are no longer supported.
+- The `type` field returned by `node.Info` is a string such as `"Bridge"` or
+  `"Light"` instead of an integer.
+- RPC request bodies are limited to 16 MiB. Larger requests are rejected.
+- In the Go API, `blob.Commitment.String()` returns a hexadecimal string
+  instead of raw bytes. This does not change the JSON encoding of commitment
+  fields returned by RPC methods.
+
+See the [celestia-node v0.31.3 release notes](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3)
+for the complete list of changes.

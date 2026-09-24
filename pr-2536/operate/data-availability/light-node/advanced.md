@@ -132,7 +132,7 @@ parallel submission by setting `TxWorkerAccounts` to a value greater than 1.
 The node store is created during `celestia light init` and lives under
 `~/.celestia-<node-type>-<network>`.
 
-For example, a Mocha light node store at `~/.celestia-light-mocha-4` contains:
+For example, a Mocha light node store at `~/.celestia-light-mocha-5` contains:
 
 - `config.toml`: Node configuration settings
 - `data/`: Database files

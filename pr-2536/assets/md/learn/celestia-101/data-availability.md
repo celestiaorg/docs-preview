@@ -38,7 +38,7 @@ Then, $4k$ separate Merkle roots are computed for the rows and columns
 of the extended matrix; the Merkle root of these Merkle roots is used
 as the block data commitment in the block header.
 
-![2D Reed-Soloman (RS) Encoding](/img/learn/reed-solomon-encoding.png)
+![2D Reed-Soloman (RS) Encoding](/docs-preview/pr-2536/img/learn/reed-solomon-encoding.png)
 
 To verify that the data is available, Celestia light nodes are sampling
 the $2k \times 2k$ data shares.
@@ -121,7 +121,7 @@ range of namespaces of all its descendants. The following figure shows an
 example of an NMT with height three (*i.e.*, eight data shares). The data is
 partitioned into three namespaces.
 
-![Namespaced Merkle Tree](/img/learn/nmt.png)
+![Namespaced Merkle Tree](/docs-preview/pr-2536/img/learn/nmt.png)
 
 When an application requests the data for namespace 2, the DA layer must
 provide the data shares `D3`, `D4`, `D5`, and `D6` and the nodes `N2`, `N8`
@@ -148,7 +148,7 @@ an application that provides transactions to facilitate the DA layer and is buil
 using [Cosmos SDK](https://docs.cosmos.network/sdk/v0.53). The following figure
 shows the main components of celestia-app.
 
-![Main components of celestia-app](/img/learn/celestia-app.png)
+![Main components of celestia-app](/docs-preview/pr-2536/img/learn/celestia-app.png)
 
 celestia-app is built on top of [celestia-core](https://github.com/celestiaorg/celestia-core),
 a modified version of the [Tendermint consensus algorithm](https://arxiv.org/abs/1807.04938).
@@ -208,7 +208,7 @@ monolithic blockchains is that the consensus layer must perform numerous
 different tasks, and it cannot be optimized for only one of these functions.
 As a result, the monolithic paradigm limits the throughput of the system.
 
-![Modular VS Monolithic](/img/learn/monolithic-modular.png)
+![Modular VS Monolithic](/docs-preview/pr-2536/img/learn/monolithic-modular.png)
 
 As a solution, modular blockchains decouple these functions among
 multiple specialized layers as part of a modular stack. Due to the

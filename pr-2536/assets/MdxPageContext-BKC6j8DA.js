@@ -1,0 +1,1 @@
+import{p as e,s as t,u as n}from"./index-Cz4le8zW.js";var r=t(),i=e(n(),1),a=i.createContext({frontmatter:void 0});function o(e){let{children:t,frontmatter:n}=e;return(0,r.jsx)(a.Provider,{value:{frontmatter:n},children:t})}function s(){return i.useContext(a)}export{s as n,o as t};

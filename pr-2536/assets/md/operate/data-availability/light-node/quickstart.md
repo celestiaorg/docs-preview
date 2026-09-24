@@ -8,7 +8,7 @@ retrieve blobs (data) from the Celestia network.
 
 Light nodes are the most common way to interact with Celestia networks.
 
-![light-node](/img/nodes/LightNodes.png)
+![light-node](/docs-preview/pr-2536/img/nodes/LightNodes.png)
 
 Light nodes:
 
@@ -17,15 +17,10 @@ Light nodes:
 
 ## Optional: run a light node in your browser
 
-The easiest way to try a light node is with [Lumina.rs](https://lumina.rs) in
-your browser.
-
-<img width="1000" alt="Lumina.rs in browser" src="https://github.com/user-attachments/assets/5c6ae717-503e-4b83-844f-8716f33ec76c" />
-
-You can also run Lumina on the decentralized explorer,
+You can run Lumina in your browser on the decentralized explorer,
 [Celenium](https://celenium.io).
 
-<img width="1000" alt="Celenium running a light node with Lumina.rs" src="https://github.com/user-attachments/assets/28183a24-8bb1-4f77-850c-d0528de075c7" />
+<img width="1000" alt="Celenium running a light node with Lumina" src="https://github.com/user-attachments/assets/28183a24-8bb1-4f77-850c-d0528de075c7" />
 
 ## Run a light node (CLI)
 
@@ -49,7 +44,7 @@ This guide assumes you've completed:
     [Fast sync with a trusted hash](/operate/data-availability/light-node/advanced#fast-sync-with-a-trusted-hash).
   </Callout>
 
-  <Tabs items={['Mainnet Beta', 'Mocha', 'Arabica']}>
+  <Tabs items={['Mainnet Beta', 'Mocha']}>
     <Tabs.Tab>
       ```bash
       celestia light init
@@ -61,12 +56,6 @@ This guide assumes you've completed:
       celestia light init --p2p.network mocha
       ```
     </Tabs.Tab>
-
-    <Tabs.Tab>
-      ```bash
-      celestia light init --p2p.network arabica
-      ```
-    </Tabs.Tab>
   </Tabs>
 
   ### Start the light node
@@ -74,34 +63,28 @@ This guide assumes you've completed:
   Light nodes connect to a consensus node **gRPC** endpoint (usually port `9090`)
   for state access (balances, submitting `PayForBlobs`, etc.).
 
-  <Tabs items={['Mainnet Beta', 'Mocha', 'Arabica']}>
+  <Tabs items={['Mainnet Beta', 'Mocha']}>
     <Tabs.Tab>
       ```bash
-      celestia light start --core.ip rpc.celestia.pops.one \
-        --core.port 9090 --p2p.network celestia
+      celestia light start \
+        --core.ip public-endpoint.celestia-mainnet.quiknode.pro \
+        --core.port 9090 --core.tls --p2p.network celestia
       ```
     </Tabs.Tab>
 
     <Tabs.Tab>
       ```bash
-      celestia light start --core.ip rpc-mocha.pops.one \
-        --core.port 9090 --p2p.network mocha
-      ```
-    </Tabs.Tab>
-
-    <Tabs.Tab>
-      ```bash
-      celestia light start --core.ip validator-1.celestia-arabica-11.com \
-        --core.port 9090 --p2p.network arabica
+      celestia light start \
+        --core.ip public-endpoint.celestia-mocha.quiknode.pro \
+        --core.port 9090 --core.tls --p2p.network mocha
       ```
     </Tabs.Tab>
   </Tabs>
 
   <Callout type="info">
     You can use any consensus node gRPC endpoint listed on
-    [Mainnet Beta](/operate/networks/mainnet-beta#integrations),
-    [Mocha testnet](/operate/networks/mocha-testnet#community-data-availability-da-grpc-endpoints-for-state-access),
-    or [Arabica devnet](/operate/networks/arabica-devnet#integrations).
+    either [Mainnet Beta](/operate/networks/mainnet-beta#integrations) or
+    [Mocha testnet](/operate/networks/mocha-testnet#community-data-availability-da-grpc-endpoints-for-state-access).
   </Callout>
 
   If you're running on a server, make sure required ports are open. See
@@ -118,7 +101,6 @@ This guide assumes you've completed:
   Then use a faucet:
 
   * [Mocha faucet](/operate/networks/mocha-testnet#mocha-testnet-faucet)
-  * [Arabica faucet](/operate/networks/arabica-devnet#arabica-devnet-faucet)
 
   On Mainnet Beta, fund this address with TIA to submit blobs.
 

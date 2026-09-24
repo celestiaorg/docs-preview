@@ -63,14 +63,14 @@ This will load the key `<key-name>` into the directory of the node.
 
 Further flags you can use to customize your key are the following:
 
-- `--p2p.network`: Specifies which network you want the key for. Values
-  are `arabica` and `mocha`. Please note the default network will be `mocha`.
+- `--p2p.network`: Specifies which network you want the key for. Use `mocha`
+  to target Mocha.
 
 Keep in mind that your celestia-node will only pick up keys that
 are inside the default directory under `/keys` so you should make
 sure to point `cel-key` utility to the correct directory via the
 `p2p.network` or `home` flags if you have specified a custom
-directory or network other than Arabica, Mocha, or Mainnet Beta.
+directory or network other than Mocha or Mainnet Beta.
 
 Also keep in mind that if you do not specify a network with `--p2p.network`,
 the default one will always be `celestia` (Mainnet Beta).
@@ -123,7 +123,7 @@ When you run a Celestia node and use the command `celestia state account-address
 
 The key reported by `celestia state account-address` is stored in your node's keyring directory:
 
-- For Mocha testnet: `~/.celestia-<node-type>-mocha-4/keys/keyring-test/`
+- For Mocha testnet: `~/.celestia-<node-type>-mocha-5/keys/keyring-test/`
 - For Mainnet Beta: `~/.celestia-<node-type>/keys/keyring-test/`
 
 You can verify this by listing your keys with `cel-key`:
@@ -164,7 +164,7 @@ You can also directly back up the entire keyring directory:
 
 ```bash
 # For Mocha testnet
-cp -r ~/.celestia-<node-type>-mocha-4/keys/keyring-test /secure/backup/location
+cp -r ~/.celestia-<node-type>-mocha-5/keys/keyring-test /secure/backup/location
 
 # For Mainnet Beta
 cp -r ~/.celestia-<node-type>/keys/keyring-test /secure/backup/location
@@ -200,7 +200,7 @@ If you backed up the keyring directory:
 
 ```bash
 # For Mocha testnet
-cp -r /secure/backup/location/* ~/.celestia-<node-type>-mocha-4/keys/keyring-test/
+cp -r /secure/backup/location/* ~/.celestia-<node-type>-mocha-5/keys/keyring-test/
 
 # For Mainnet Beta
 cp -r /secure/backup/location/* ~/.celestia-<node-type>/keys/keyring-test/
@@ -223,7 +223,9 @@ celestia <node-type> start --p2p.network <network> --keyring.keyname <key-name> 
 For example:
 
 ```bash
-celestia light start --p2p.network mocha --keyring.keyname my_celes_key --core.ip rpc-mocha.pops.one
+celestia light start --p2p.network mocha --keyring.keyname my_celes_key \
+  --core.ip public-endpoint.celestia-mocha.quiknode.pro \
+  --core.port 9090 --core.tls
 ```
 
 This ensures your node uses the specified key for all operations, including those reported by `celestia state account-address`.
@@ -243,8 +245,9 @@ testnet):
 
 ```bash
 docker run --name celestia-node -e NODE_TYPE=light -e P2P_NETWORK=mocha -p 26659:26659 \
-ghcr.io/celestiaorg/celestia-node:v0.31.3-mocha celestia light start \
---core.ip rpc-mocha.pops.one --core.port 9090 --p2p.network mocha
+ghcr.io/celestiaorg/celestia-node:v0.34.2-mocha celestia light start \
+--core.ip public-endpoint.celestia-mocha.quiknode.pro --core.port 9090 \
+--core.tls --p2p.network mocha
 ```
 
 List active containers in another window with:
@@ -292,9 +295,9 @@ services:
     image: celestia-node
     environment:
       - NODE_TYPE=light
-    command: celestia light start --core.ip rpc-mocha.pops.one --core.port 9090 --p2p.network mocha --keyring.keyname my_celes_key
+    command: celestia light start --core.ip public-endpoint.celestia-mocha.quiknode.pro --core.port 9090 --core.tls --p2p.network mocha --keyring.keyname my_celes_key
     volumes:
-      - ${PWD}/keys:/root/.celestia-light-mocha-4/keys
+      - ${PWD}/keys:/root/.celestia-light-mocha-5/keys
     ports:
       - 26659:26659
 ```
@@ -329,7 +332,7 @@ expect with the key you mounted:
 
 ```bash
 root@<container-id>:/# ./cel-key list --keyring-backend test --node.type light
-using directory:  ~/.celestia-light-mocha-4/keys
+using directory:  ~/.celestia-light-mocha-5/keys
 - address: celestia1wkhyhr7ngf0ayqlpnsnxg4d72hfs5453dvunm9
   name: my_celes_key
   pubkey: '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"A1/NsoY0RGL7Hqt4VWLg441GQKJsZ2fBUnZXipgns8oV"}'

@@ -39,7 +39,7 @@ To use a non-default key, make sure the key exists in your node store and pass
   [Create a wallet with celestia-node](/operate/keys-wallets/celestia-node-key).
 </Callout>
 
-<Tabs items={['Mainnet Beta', 'Mocha', 'Arabica']}>
+<Tabs items={['Mainnet Beta', 'Mocha']}>
   <Tabs.Tab>
     ```bash
     celestia light start --core.ip <URI> --core.port <port> \
@@ -51,13 +51,6 @@ To use a non-default key, make sure the key exists in your node store and pass
     ```bash
     celestia light start --core.ip <URI> --core.port <port> \
       --keyring.keyname <name-of-custom-key> --p2p.network mocha
-    ```
-  </Tabs.Tab>
-
-  <Tabs.Tab>
-    ```bash
-    celestia light start --core.ip <URI> --core.port <port> \
-      --keyring.keyname <name-of-custom-key> --p2p.network arabica
     ```
   </Tabs.Tab>
 </Tabs>
@@ -89,15 +82,15 @@ Celestia also supports initializing from a trusted hash via
 <Steps>
   ### Get a trusted height and hash
 
-  This example uses the P-OPS Mocha endpoint:
+  This example uses the public QuickNode Mocha endpoint:
 
   ```bash
-  read -r TRUSTED_HEIGHT TRUSTED_HASH <<<"$(curl -s https://rpc-mocha.pops.one/header | jq -r '.result.header | "\(.height) \(.last_block_id.hash)"')" && export TRUSTED_HEIGHT TRUSTED_HASH
+  read -r TRUSTED_HEIGHT TRUSTED_HASH <<<"$(curl -s https://public-endpoint.celestia-mocha.quiknode.pro/header | jq -r '.result.header | "\(.height) \(.last_block_id.hash)"')" && export TRUSTED_HEIGHT TRUSTED_HASH
   ```
 
   ### Set `SyncFromHeight` and `SyncFromHash`
 
-  Edit your config file at `~/.celestia-light-mocha-4/config.toml` and set:
+  Edit your config file at `~/.celestia-light-mocha-5/config.toml` and set:
 
   ```toml
   SyncFromHeight = 123456
@@ -109,7 +102,9 @@ Celestia also supports initializing from a trusted hash via
   ### Start the node
 
   ```bash
-  celestia light start --p2p.network mocha --core.ip rpc-mocha.pops.one --core.port 9090
+  celestia light start --p2p.network mocha \
+    --core.ip public-endpoint.celestia-mocha.quiknode.pro \
+    --core.port 9090 --core.tls
   ```
 </Steps>
 
@@ -143,7 +138,7 @@ your `config.toml`.
   #### Open your config file
 
   ```bash
-  nano ~/.celestia-light-mocha-4/config.toml
+  nano ~/.celestia-light-mocha-5/config.toml
   ```
 
   #### Set TxWorkerAccounts to 1
@@ -158,7 +153,9 @@ your `config.toml`.
   #### Restart your node
 
   ```bash
-  celestia light start --p2p.network mocha --core.ip rpc-mocha.pops.one --core.port 9090
+  celestia light start --p2p.network mocha \
+    --core.ip public-endpoint.celestia-mocha.quiknode.pro \
+    --core.port 9090 --core.tls
   ```
 </Steps>
 
@@ -180,7 +177,7 @@ parallel submission by setting `TxWorkerAccounts` to a value greater than 1.
   #### Open your config file
 
   ```bash
-  nano ~/.celestia-light-mocha-4/config.toml
+  nano ~/.celestia-light-mocha-5/config.toml
   ```
 
   #### Set TxWorkerAccounts to desired number of lanes
@@ -195,7 +192,9 @@ parallel submission by setting `TxWorkerAccounts` to a value greater than 1.
   #### Restart your node
 
   ```bash
-  celestia light start --p2p.network mocha --core.ip rpc-mocha.pops.one --core.port 9090
+  celestia light start --p2p.network mocha \
+    --core.ip public-endpoint.celestia-mocha.quiknode.pro \
+    --core.port 9090 --core.tls
   ```
 </Steps>
 
@@ -244,7 +243,7 @@ parallel submission by setting `TxWorkerAccounts` to a value greater than 1.
 The node store is created during `celestia light init` and lives under
 `~/.celestia-<node-type>-<network>`.
 
-For example, a Mocha light node store at `~/.celestia-light-mocha-4` contains:
+For example, a Mocha light node store at `~/.celestia-light-mocha-5` contains:
 
 * `config.toml`: Node configuration settings
 * `data/`: Database files

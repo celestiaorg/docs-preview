@@ -62,7 +62,6 @@ You can find the address by running the following command:
 You can get testnet tokens from:
 
 - [Mocha](/operate/networks/mocha-testnet)
-- [Arabica](/operate/networks/arabica-devnet)
 
 > **Note:** If you are running a bridge node for your validator, it is highly recommended to request Mocha testnet tokens as this is the testnet used to test out validator operations.
 

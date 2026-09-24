@@ -3,396 +3,14 @@
 > Full cleaned markdown export of the Celestia documentation for LLM and agent ingestion.
 
 ---
-Title: Integrate with Blobstream contracts
-URL: https://docs.celestia.org/build/blobstream/integrate-contracts.md
-Source: app/build/blobstream/integrate-contracts/page.mdx
----
-
-# Integrate with Blobstream contracts
-
-## Getting started
-
-### Prerequisites
-
-Make sure to have the following installed:
-
-- [Foundry](https://github.com/foundry-rs/foundry)
-
-### Installing Blobstream contracts
-
-Install the Blobstream contracts repo as a dependency:
-
-```bash
-forge install celestiaorg/blobstream-contracts --no-commit
-```
-
-> **Note:** The minimum Solidity compiler version for using the Blobstream contracts is `0.8.19`.
-
-### Example usage
-
-Example minimal Solidity contract for a stub ZK rollup that leverages the Blobstream contract to check that data has been posted to Celestia:
-
-```solidity
-// SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.19;
-
-import "blobstream-contracts/IDAOracle.sol";
-import "blobstream-contracts/DataRootTuple.sol";
-import "blobstream-contracts/lib/tree/binary/BinaryMerkleProof.sol";
-
-contract MyRollup {
-    IDAOracle immutable blobstream;
-    bytes32[] public rollup_block_hashes;
-
-    constructor(IDAOracle _blobstream) {
-        blobstream = _blobstream;
-    }
-
-    function submitRollupBlock(
-        bytes32 _rollup_block_hash,
-        bytes calldata _zk_proof,
-        uint256 _blobstream_nonce,
-        DataRootTuple calldata _tuple,
-        BinaryMerkleProof calldata _proof
-    ) public {
-        // Verify that the data root tuple (analog. block header) has been
-        // attested to by the Blobstream contract.
-        require(
-            blobstream.verifyAttestation(_blobstream_nonce, _tuple, _proof)
-        );
-
-        // Verify the ZKP.
-        // _tuple.dataRoot is a public input, leaves (shares) are private inputs.
-        require(verifyZKP(_rollup_block_hash, _zk_proof, _tuple.dataRoot));
-
-        // Everything checks out, append rollup block hash to list.
-        rollup_block_hashes.push(_rollup_block_hash);
-    }
-
-    function verifyZKP(
-        bytes32 _rollup_block_hash,
-        bytes calldata _zk_proof,
-        bytes32 _data_root
-    ) private pure returns (bool) {
-        return true;
-    }
-}
-```
-
-## Data structures
-
-Each [`DataRootTuple`](https://github.com/celestiaorg/blobstream-contracts/blob/master/src/DataRootTuple.sol) is a tuple of block height and data root. It is analogous to a Celestia block header. `DataRootTuple`s are relayed in batches, committed to as a `DataRootTuple`s root (i.e. a Merkle root of `DataRootTuple`s).
-
-The [`BinaryMerkleProof`](https://github.com/celestiaorg/blobstream-contracts/blob/master/src/lib/tree/binary/BinaryMerkleProof.sol) is an [RFC-6962](https://www.rfc-editor.org/rfc/rfc6962.html)-compliant Merkle proof. Since `DataRootTuple`s are Merkleized in a binary Merkle tree, verifying the inclusion of a `DataRootTuple` against a `DataRootTuple`s root requires verifying a Merkle inclusion proof.
-
-## Interface
-
-The [`IDAOracle`](https://github.com/celestiaorg/blobstream-contracts/blob/master/src/IDAOracle.sol) (**D**ata **A**vailability **O**racle Interface) interface allows L2 contracts on Ethereum to query the Blobstream contract for relayed `DataRootTuple`s. The single interface method `verifyAttestation` verifies a Merkle inclusion proof that a `DataRootTuple` is included under a specific batch (indexed by batch nonce). In other words, analogously it verifies that a specific block header is included in the canonical Celestia chain.
-
-## Querying the proof
-
-To prove that the data was published to Celestia, check out the [proof queries documentation](/build/blobstream/proof-queries) to understand how to query the proofs from Celestia consensus nodes and make them usable in the Blobstream verifier contract.
-
-## Verifying data inclusion for fraud proofs
-
-A high-level overview of how a fraud-proof based L2 would interact with Blobstream can be found in the [inclusion proofs documentation](https://github.com/celestiaorg/blobstream-contracts/blob/master/docs/inclusion-proofs.md).
-
-The [`DAVerifier`](https://github.com/celestiaorg/blobstream-contracts/blob/master/src/lib/verifier/DAVerifier.sol) library is available at `blobstream-contracts/lib/verifier/DAVerifier.sol`, and provides functions to verify the inclusion of individual (or multiple) shares against a `DataRootTuple`. The library is stateless, and allows to pass an `IDAOracle` interface as a parameter to verify inclusion against it.
-
-In the `DAVerifier` library, we find functions that help with data inclusion verification and calculating the square size of a Celestia block. These functions work with the Blobstream smart contract, using different proofs to check and confirm the data's availability. Let's take a closer look at these functions:
-
-- [`verifySharesToDataRootTupleRoot`](https://github.com/celestiaorg/blobstream-contracts/blob/3a552d8f7bfbed1f3175933260e6e440915d2da4/src/lib/verifier/DAVerifier.sol#L80-L124): This function verifies that the shares, which were posted to Celestia, were committed to by the Blobstream smart contract. It checks that the data root was committed to by the Blobstream smart contract and that the shares were committed to by the rows roots.
-
-- [`verifyRowRootToDataRootTupleRoot`](https://github.com/celestiaorg/blobstream-contracts/blob/3a552d8f7bfbed1f3175933260e6e440915d2da4/src/lib/verifier/DAVerifier.sol#L133-L155): This function verifies that a row/column root, from a Celestia block, was committed to by the Blobstream smart contract. It checks that the data root was committed to by the Blobstream smart contract and that the row root commits to the data root.
-
-- [`verifyMultiRowRootsToDataRootTupleRoot`](https://github.com/celestiaorg/blobstream-contracts/blob/3a552d8f7bfbed1f3175933260e6e440915d2da4/src/lib/verifier/DAVerifier.sol#L164-L194): This function verifies that a set of rows/columns, from a Celestia block, were committed to by the Blobstream smart contract. It checks that the data root was committed to by the Blobstream smart contract and that the rows roots commit to the data root.
-
-- [`computeSquareSizeFromRowProof`](https://github.com/celestiaorg/blobstream-contracts/blob/3a552d8f7bfbed1f3175933260e6e440915d2da4/src/lib/verifier/DAVerifier.sol#L204-L215): This function computes the Celestia block square size from a row/column root to data root binary Merkle proof. It is the user's responsibility to verify that the proof is valid and was successfully committed to using the `verifyRowRootToDataRootTupleRoot()` method.
-
-- [`computeSquareSizeFromShareProof`](https://github.com/celestiaorg/blobstream-contracts/blob/3a552d8f7bfbed1f3175933260e6e440915d2da4/src/lib/verifier/DAVerifier.sol#L224-L229): This function computes the Celestia block square size from a shares to row/column root proof. It is the user's responsibility to verify that the proof is valid and that the shares were successfully committed to using the `verifySharesToDataRootTupleRoot()` method.
-
-For an overview of a demo rollup implementation, head to [the next section](/build/blobstream/integrate-offchain).
-
-## Deployed contracts
-
-You can interact with the SP1 Blobstream contracts today. The
-SP1 Blobstream Solidity smart contracts are currently deployed on
-the following chains:
-
-| Contract       | EVM network            | Contract address                                                                                                                                 | Attested data on Celestia                        | Link to Celenium                                                                       |
-| -------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| SP1 Blobstream | Ethereum Mainnet       | [`0x7Cf3876F681Dbb6EdA8f6FfC45D66B996Df08fAe`](https://etherscan.io/address/0x7Cf3876F681Dbb6EdA8f6FfC45D66B996Df08fAe#events)                   | [Mainnet Beta](/operate/networks/mainnet-beta)        | [Deployment on Celenium](https://celenium.io/blobstream?network=ethereum&page=1)       |
-| SP1 Blobstream | Arbitrum One           | [`0xA83ca7775Bc2889825BcDeDfFa5b758cf69e8794`](https://arbiscan.io/address/0xA83ca7775Bc2889825BcDeDfFa5b758cf69e8794#events)                    | [Mainnet Beta](/operate/networks/mainnet-beta)        | [Deployment on Celenium](https://celenium.io/blobstream?network=arbitrum&page=1)       |
-| SP1 Blobstream | Base                   | [`0xA83ca7775Bc2889825BcDeDfFa5b758cf69e8794`](https://basescan.org/address/0xA83ca7775Bc2889825BcDeDfFa5b758cf69e8794#events)                   | [Mainnet Beta](/operate/networks/mainnet-beta)        | [Deployment on Celenium](https://celenium.io/blobstream?network=base&page=1)           |
-| SP1 Blobstream | Sepolia                | [`0xf0c6429ebab2e7dc6e05dafb61128be21f13cb1e`](https://sepolia.etherscan.io/address/0xf0c6429ebab2e7dc6e05dafb61128be21f13cb1e#events)           | [Mocha testnet](/operate/networks/mocha-testnet) | [Deployment on Celenium](https://mocha.celenium.io/blobstream?network=ethereum&page=1) |
-| SP1 Blobstream | Arbitrum Sepolia       | [`0xc3e209eb245Fd59c8586777b499d6A665DF3ABD2`](https://sepolia.arbiscan.io/address/0xc3e209eb245Fd59c8586777b499d6A665DF3ABD2#events)            | [Mocha testnet](/operate/networks/mocha-testnet) | [Deployment on Celenium](https://mocha.celenium.io/blobstream?network=arbitrum&page=1) |
-| SP1 Blobstream | Base Sepolia           | [`0xc3e209eb245Fd59c8586777b499d6A665DF3ABD2`](https://sepolia.basescan.org/address/0xc3e209eb245Fd59c8586777b499d6A665DF3ABD2#events)           | [Mocha testnet](/operate/networks/mocha-testnet) | [Deployment on Celenium](https://mocha.celenium.io/blobstream?network=base&page=1)     |
-| SP1 Blobstream | Holesky                | [`0x315A044cb95e4d44bBf6253585FbEbcdB6fb41ef`](https://holesky.etherscan.io/address/0x315A044cb95e4d44bBf6253585FbEbcdB6fb41ef)                  | [Mocha testnet](/operate/networks/mocha-testnet) | N/A                                                                                    |
-| SP1 Blobstream | ZKSync Gateway Staging | [`0x3a038D77A9b4eBBc8A7482B438BCff11c3591792`](https://explorer.era-gateway-stage.zksync.dev/address/0x3a038D77A9b4eBBc8A7482B438BCff11c3591792) | [Mocha testnet](/operate/networks/mocha-testnet) | N/A                                                                                    |
-
----
-Title: Integrate with Blobstream client
-URL: https://docs.celestia.org/build/blobstream/integrate-offchain.md
-Source: app/build/blobstream/integrate-offchain/page.mdx
----
-
-# Integrate with Blobstream client
-
-## Blobstream demo rollup
-
-Rollups can use the Blobstream for DA by posting their data to Celestia and then proving that it was posted on Ethereum. This is done identically to how any rollup or user would post data to Celestia, and then the validators sign over additional commitments that are relayed to Ethereum via a light client relay (aka Blobstream!). This demo will outline a very simple Blobstream rollup to illustrate at a high level what this could look like.
-
-> **Note:** This is an outline, not an implementation! Please do not expect to copy and paste this code.
-
-## Defining a chain
-
-The first step to starting a new chain is to define the structure of the commitments that each block consists of.
-
-```go
-type Block struct {
-    // Data is the data of a block that is submitted to Celestia.
-    Data `json:"Data"`
-    // Header is the set of commitments over a block that is submitted to
-    // Ethereum.
-    Header `json:"Header"`
-}
-
-// Data is the data of a block that is submitted to Celestia.
-type Data struct {
-    Txs []json.RawMessage `json:"txs"`
-}
-
-// Header is the set of commitments over a block that is submitted to Ethereum.
-type Header struct {
-    Height             uint64    `json:"height"`
-    Namespace          []byte    `json:"namespace"`
-    PreviousHash       []byte    `json:"previous_hash"`
-    Span               Span      `json:"span"`
-    SequencerSignature Signature `json:"sequencer_signature,omitempty"`
-}
-```
-
-Note the Celestia-specific structures in the header such as the `Namespace` and the Blobstream-specific structure called the `Span`. The goal of these structures is to locate the data in the Celestia block so that we can prove that data's inclusion via Blobstream if needed. Read more in the [namespace specifications](https://celestiaorg.github.io/celestia-app/namespace.html), and you can think of this like a chain ID. Learn more [information about `shares`](https://celestiaorg.github.io/celestia-app/shares.html), which are small chunks of the encoded Celestia block. We use the same encoding here so that the commitments to the rollup block match those committed to by validators in the Celestia data root.
-
-The `Span` could take many forms, but in this demo we will use the following:
-
-```go
-// Span describes the location of the rollup block data that is posted to
-// Celestia. This is important for other nodes to be able to prove that data in
-// the Celestia block. This can be thought of as a pointer to some data in the
-// Celestia block.
-type Span struct {
-    // CelestiaHeight is the height of the Celestia block that contains the
-    // rollup block data.
-    CelestiaHeight uint64 `json:"celestia_height"`
-    // DataShareStart is the index of the first share of the rollup block data.
-    DataShareStart uint64 `json:"share_start"`
-    // DataShareLen is length in shares of the rollup block data. This is used
-    // to identify all of the rollup block data in a Celestia block.
-    DataShareLen uint64 `json:"share_end"`
-}
-```
-
-We can then define the blockchain as a collection of blocks and some additional information about the chain such as the sequencer address.
-
-```go
-type Blockchain struct {
-    Blocks           []Block
-    SequencerAddress []byte
-    Namespace        []byte
-}
-```
-
-## Rollup sequencer
-
-The rollup sequencer is responsible for creating blocks and, in this demo, writing that data to Celestia and Ethereum. The rollup full node is responsible for reading that data from Celestia and Ethereum and verifying that it follows the protocol rules of that rollup.
-
-Therefore, we can start by first defining the reading and writing interactions rollup nodes will have with both the Celestia and Ethereum networks. The actual implementations of these interfaces are left as exercises to the reader. Assume that those implementations of these interfaces are verifying the respective chain. For the connection to Celestia, this would likely mean connecting to a Celestia light node, which can detect faults in consensus such as hidden data. For the connection to Ethereum, this would likely mean running and connecting to a full node.
-
-More information on the RPC that is exposed by a Celestia light node can be found [in the Node API docs](/build/rpc/node-api/). Additionally, if you need more information on how to run a light node, you can [check out the documentation](/operate/data-availability/light-node/quickstart).
-
-```go
-// CelestiaLightNodeClient summarizes the actions that a rollup that uses
-// Blobstream for DA would need from a Celestia light node. Note that the actual
-// connection to this light node is arbitrary, but would likely involve an RPC
-// connection to a Celestia light node.
-type CelestiaLightNodeClient interface {
-    GetBlockData(Span) (Data, error)
-    SubmitBlockData(Data) (Span, error)
-}
-
-// EthereumClient summarizes the actions that a rollup that uses Blobstream for
-// DA would need from an Ethereum client.
-type EthereumClient interface {
-    // GetLatestRollupHeight returns the height of the latest rollup block by
-    // querying the appropriate contract on Ethereum.
-    LatestRollupHeight() (uint64, error)
-    // GetHeader returns the rollup header of a specific height.
-    GetHeader(uint64) (Header, error)
-    // SubmitHeader submits a header to the rollup bridge contract on Ethereum.
-    SubmitHeader(Header) error
-}
-```
-
-Note that here we are waiting for the head to be posted to Ethereum, however it would likely be better to simply download that header from p2p network or directly from the sequencer instead.
-
-For the purposes of this demo, we will be using a single centralized sequencer, which can be defined by simply wrapping the fullnode to isolate the logic to create blocks.
-
-A rollup fullnode will just consist of some representation of a blockchain along with clients to read from with Celestia and Ethereum.
-
-```go
-type Fullnode struct {
-    Blockchain
-    CelestiaLightNodeClient
-    EthereumClient
-}
-
-// Sequencer wraps the demo Fullnode struct to add specific functionality for
-// producing blocks.
-type Sequencer struct {
-    Fullnode
-}
-```
-
-### Committing to data
-
-Typical blockchains commit to the transactions included in each block using a Merkle root. Rollups that use Blobstream for DA need to use the commitments that are relayed to the Blobstream contracts.
-
-For optimistic rollups, this could be as simple as referencing the data in the Celestia block, not unlike using a pointer in memory. This is what is done below via a `Span` in the [creating blocks](#creating-blocks) section. We keep track of where the data is located in the Celestia block and the sequencer signs over that location in the header. If the sequencer commits to non-existent data or an invalid state root, then the invalid transaction is first proved to be included in the `Span` before the rest of the fraud proof process is followed. Find more information [in the inclusion proofs documentation](https://github.com/celestiaorg/blobstream-contracts/blob/v3.0.0/docs/inclusion-proofs.md#blobstream-fraud-proofs).
-
-For zk rollups, this would involve creating an inclusion proof to the data root tuple root in the Blobstream contracts, and then verifying that proof in the zk proof used to verify state. Find more information in the [data root inclusion proof documentation](https://github.com/celestiaorg/blobstream-contracts/blob/master/docs/inclusion-proofs.md#1-data-root-inclusion-proof).
-
-Also see the documentation for the [data square layout](https://github.com/celestiaorg/celestia-app/blob/v1.1.0/specs/src/specs/data_square_layout.md) and the [shares](https://github.com/celestiaorg/celestia-app/blob/main/specs/src/shares.md) of the Celestia block to see how the data is encoded in Celestia.
-
-### Creating blocks
-
-The first step in creating a block is to post the block data to Celestia. Upon confirmation of the data being included in a block, the actual location of the data in Celestia can be determined. This data is used to create a `Span` which is included in the header and signed over by the sequencer. This `Span` can be used by contracts on Ethereum that use the Blobstream contracts to prove some specific data was included.
-
-```go
-func (s *Sequencer) ProduceBlock(txs []json.RawMessage) (Block, error) {
-    data := Data{Txs: txs}
-
-    span, err := s.CelestiaLightNodeClient.SubmitBlockData(data)
-    if err != nil {
-        return Block{}, err
-    }
-
-    var lastBlock Block
-    if len(s.Blocks) > 0 {
-        lastBlock = s.Blocks[len(s.Blocks)-1]
-    }
-
-    header := Header{
-        Height:       uint64(len(s.Blocks) + 1),
-        PreviousHash: lastBlock.Header.Hash(),
-        Namespace:    s.Namespace,
-        Span: span,
-    }
-
-    signature := s.key.Sign(header.SignBytes())
-
-    header.SequencerSignature = signature
-
-    block := Block{
-        Data:   data,
-        Header: header,
-    }
-
-    s.AddBlock(block)
-
-    return block, nil
-}
-```
-
-Note that the sequencer here is not yet posting headers to Ethereum. This is because the sequencer is waiting for the commitments from the Celestia validator set (the data root tuple roots) to be relayed to the contracts. Once the contracts are updated, the sequencer can post the header to Ethereum.
-
-```go
-func (s *Sequencer) UpdateHeaders() error {
-    latestRollupHeight, err := s.EthereumClient.LatestRollupHeight()
-    if err != nil {
-        return err
-    }
-
-    for i := latestRollupHeight; i <= uint64(len(s.Blocks)+1); i++ {
-        err := s.EthereumClient.SubmitHeader(s.Blocks[i].Header)
-        if err != nil {
-            return err
-        }
-    }
-
-    return nil
-}
-```
-
-## Rollup fullnode
-
-### Downloading the block
-
-There are a few different mechanisms that could be used to download blocks. The simplest solution and what is outlined above is for `Fullnodes` to wait until the blocks and the headers are posted to the respective chains, and then download each as they are posted. It would also be possible to gossip the headers ahead of time, and download the rollup blocks from Celestia instead of waiting for the headers to be posted to Ethereum. It's also possible to download the headers and the block data like a normal blockchain via a gossiping network and only fall back to downloading the data and headers from Celestia and Ethereum if the gossiping network is unavailable or the sequencer is malicious.
-
-```go
-func (f *Fullnode) AddBlock(b Block) error {
-    // Perform validation of the block
-    if b.Header.Height != uint64(len(f.Blocks)+1) {
-        return fmt.Errorf("failure to add block: expected block height %d, got %d", len(f.Blocks)+1, b.Header.Height)
-    }
-    // Check the sequencer's signature
-    if !b.Header.SequencerSignature.IsValid(f.SequencerAddress) {
-        return fmt.Errorf("failure to add block: invalid sequencer signature")
-    }
-
-    f.Blocks = append(f.Blocks, b)
-    return nil
-}
-
-func (f *Fullnode) GetLatestBlock() error {
-    nextHeight := uint64(len(f.Blocks) + 1)
-
-    // Download the next header from Ethereum before we download the block data
-    // from Celestia. Note that we could alternatively download the header
-    // directly from the sequencer instead of waiting.
-    header, err := f.EthereumClient.GetHeader(nextHeight)
-    if err != nil {
-        return err
-    }
-
-    data, err := f.CelestiaLightNodeClient.GetBlockData(header.Span)
-    if err != nil {
-        return err
-    }
-
-    return f.AddBlock(
-        Block{
-            Data:   data,
-            Header: header,
-        },
-    )
-}
-```
-
-This outline of a Blobstream rollup isn't doing execution or state transitions induced by the transactions, however that step would occur here. If fraud is detected, the fraud proof process would begin. The only difference between the fraud proof process of a normal optimistic rollup and a rollup that uses Blobstream for DA is that the full node would first prove the fraudulent transaction was committed to by the Sequencer using the `Span` in the header before proceeding with the normal process.
-
-## More documentation
-
-### Proving inclusion via Blobstream
-
-[Blobstream inclusion proof docs](https://github.com/celestiaorg/blobstream-contracts/blob/v3.0.0/docs/inclusion-proofs.md) and the [verifier helper](https://github.com/celestiaorg/blobstream-contracts/blob/v3.0.0/src/lib/verifier/DAVerifier.sol) contracts.
-
-### Submitting block data to Celestia using client tx
-
-As linked above, use the [Celestia Node API](/build/rpc/node-api) or [check out the tutorial](/build/post-retrieve-blob/client/go/) to submit the data to Celestia.
-
-### Posting headers to Ethereum
-
-How headers are posted to Ethereum is entirely dependent upon how the rollup light client contracts work. For examples of interacting with the Ethereum blockchain programmatically, please see resources for [submitting transactions](https://github.com/ethereumbook/ethereumbook/blob/first_edition_first_print/06transactions.asciidoc) or [writing contracts](https://github.com/ethereumbook/ethereumbook/blob/first_edition_first_print/07smart-contracts-solidity.asciidoc).
-
----
-Title: Blobstream proofs queries
+Title: Blobstream proof queries (legacy)
 URL: https://docs.celestia.org/build/blobstream/proof-queries.md
 Source: app/build/blobstream/proof-queries/page.mdx
 ---
 
-# Blobstream proofs queries
+# Blobstream proof queries (legacy)
+
+> **Legacy reference:** As of September 2026, the Succinct-operated SP1 Blobstream deployments are no longer maintained and do not receive new commitments, and Celenium no longer offers its Blobstream explorer. This page preserves the proof-query and contract-format reference. It does not imply that a maintained deployment is available.
 
 ## Prerequisites
 
@@ -602,7 +220,7 @@ The `min` and `max` are `Namespace` type which is:
 
 ```solidity
 /// @notice A representation of the Celestia-app namespace ID and its version.
-/// See: https://celestiaorg.github.io/celestia-app/specs/namespace.html
+/// See: https://celestiaorg.github.io/celestia-app/namespace.html
 struct Namespace {
     // The namespace version.
     bytes1 version;
@@ -624,7 +242,7 @@ Which is the namespace used by the rollup when submitting data to Celestia. As d
 
 ```solidity
 /// @notice A representation of the Celestia-app namespace ID and its version.
-/// See: https://celestiaorg.github.io/celestia-app/specs/namespace.html
+/// See: https://celestiaorg.github.io/celestia-app/namespace.html
 struct Namespace {
     // The namespace version.
     bytes1 version;
@@ -790,7 +408,9 @@ The Celestia Go client lets you submit and retrieve data from the Celestia netwo
 
 ## Prerequisites
 
-- Go 1.25.1 or later
+- Go 1.25.x (Go 1.26 is not yet supported by a transitive dependency,
+  `bytedance/sonic`; if your default toolchain is newer, run the tutorial with
+  `GOTOOLCHAIN=go1.25.1 go run main.go`)
 - A Celestia account (created automatically)
 - Testnet tokens from the [Mocha faucet](/operate/networks/mocha-testnet#mocha-testnet-faucet)
 
@@ -903,7 +523,7 @@ cfg := client.Config{
     },
     SubmitConfig: client.SubmitConfig{
         DefaultKeyName: "my_key",
-        Network:        p2p.Network("mocha-4"),
+        Network:        p2p.Network("mocha-5"),
         CoreGRPCConfig: client.CoreGRPCConfig{
             Addr:       coreGRPC,
             TLSEnabled: coreTLS,
@@ -1442,11 +1062,138 @@ Source: app/build/rpc/node-api/page.mdx
 # Node API
 
 The Celestia Node API is the collection of RPC methods that can be used to
-interact with the services provided by Celestia Data Availability Nodes. Node
-API uses auth tokens to control access to this API.
+interact with the services provided by Celestia data availability nodes.
+Node API uses auth tokens to control access to this API.
 
-Use this reference to browse the OpenRPC schema for blob, blobstream, DA, DAS,
-fraud, header, node, P2P, share, and state packages.
+## celestia-node v0.31.3 breaking changes
+
+Starting with celestia-node v0.31.3:
+
+- The `fraud` RPC namespace was removed. Calls to `fraud.Get` and
+  `fraud.Subscribe` are no longer supported.
+- The `type` field returned by `node.Info` is a string such as `"Bridge"` or
+  `"Light"` instead of an integer.
+- RPC request bodies are limited to 16 MiB. Larger requests are rejected.
+- In the Go API, `blob.Commitment.String()` returns a hexadecimal string
+  instead of raw bytes. This does not change the JSON encoding of commitment
+  fields returned by RPC methods.
+
+See the [celestia-node v0.31.3 release notes](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3)
+for the complete list of changes.
+
+---
+Title: Select a Celestia account in integrations
+URL: https://docs.celestia.org/build/stacks/account-selection.md
+Source: app/build/stacks/account-selection/page.mdx
+---
+
+# Select a Celestia account in integrations
+
+## Overview
+
+One DA node can submit blobs for multiple execution environments, but each
+blob submission still needs a specific Celestia signer. Use the OpenRPC
+options on `blob.Submit` to select the account per request.
+
+## OpenRPC methods to use
+
+- `blob.Submit(blobs, options)`:
+  `options.key_name` or `options.signer_address` selects the signer for that
+  submission.
+- `state.BalanceForAddress(addr)`:
+  checks the balance for the selected signer before submission.
+- `state.AccountAddress()`:
+  returns the node's default signer, useful for fallback behavior.
+
+Both account selectors refer to a key that is already available in the
+Celestia node's keyring. `signer_address` does not provide an external signer.
+If both `key_name` and `signer_address` are set, `signer_address` takes
+precedence. If neither is set, the node uses its default signer.
+
+## JSON-RPC examples
+
+Submit using a key name:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "blob.Submit",
+  "params": [
+    [
+      {
+        "namespace": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAMJ/xGlNMdE=",
+        "data": "aGVsbG8gY2VsZXN0aWE=",
+        "share_version": 0
+      }
+    ],
+    {
+      "key_name": "rollup-a"
+    }
+  ]
+}
+```
+
+Submit using an explicit signer address:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "blob.Submit",
+  "params": [
+    [
+      {
+        "namespace": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAMJ/xGlNMdE=",
+        "data": "aGVsbG8gY2VsZXN0aWE=",
+        "share_version": 0
+      }
+    ],
+    {
+      "signer_address": "celestia1..."
+    }
+  ]
+}
+```
+
+Pre-flight balance check for a signer:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "state.BalanceForAddress",
+  "params": ["celestia1..."]
+}
+```
+
+## Integration notes
+
+Not every integration forwards `blob.Submit` options. Use the configuration
+supported by the integration:
+
+| Integration | How to select the Celestia account |
+| --- | --- |
+| Direct Node API client | Pass `key_name` or `signer_address` in the `blob.Submit` options. |
+| OP Stack (`op-alt-da`) | The DA server signs submissions directly. Set `key_name` under `[celestia.signer.local]` in the config file or use `--celestia.tx-client.key-name`. This selects one signer for the DA server, not a signer per Node API request. |
+| Arbitrum (`nitro-das-celestia`) | The sidecar does not currently set a signer in `blob.Submit` options, so the Celestia node's default signer is used. Start the node with `--keyring.keyname` to select it. |
+| Rollkit / ev-node | Set `--evnode.da.signing_addresses` to a comma-separated list of funded addresses in the Celestia node's keyring. ev-node rotates through the addresses for submissions. |
+
+RollApps and Sovereign SDK deployments can use different Celestia DA adapters.
+Check whether the adapter forwards `blob.Submit` options. If it does not,
+configure the signer in the adapter or use the Celestia node's default signer.
+
+## Key management and node defaults
+
+If your integration uses only the node default signer, set that default account
+at node startup:
+
+```bash
+celestia <node-type> start --p2p.network <network> --keyring.keyname <key-name>
+```
+
+For wallet/key setup, see
+[Create a wallet with celestia-node](/operate/keys-wallets/celestia-node-key).
 
 ---
 Title: Arbitrum Nitro with Celestia DA
@@ -1469,7 +1216,9 @@ Nitro's batch poster coordinates with the Celestia DAS server to store batch dat
    - Creates a blob from the batch data
    - Submits it to Celestia with retry logic and gas price adjustment
    - Returns a `BlobPointer` containing block height, share indices, and data commitments
-3. **Verification**: During disputes, Blobstream (default: SP1 Blobstream) confirms batch availability on Celestia, supporting fraud proofs through the hash oracle trick
+3. **Verification dependency**: The dispute-verification design uses Blobstream (default: SP1 Blobstream) to confirm batch availability on Celestia through the hash oracle trick.
+
+> **Blobstream service status:** As of September 2026, the Succinct-operated SP1 Blobstream deployments are no longer maintained and do not receive new commitments. Do not rely on them for new batch commitments. Establish a working Blobstream verification path before relying on this integration for disputes.
 
 ## Key features
 
@@ -1482,6 +1231,7 @@ Nitro's batch poster coordinates with the Celestia DAS server to store batch dat
 
 - [Nitro fork repository](https://github.com/celestiaorg/nitro)
 - [Celestia DAS server](https://github.com/celestiaorg/nitro-das-celestia)
+- [Select a Celestia account in integrations](/build/stacks/account-selection)
 
 ---
 Title: How to run op-alt-da with AWS KMS
@@ -1576,6 +1326,7 @@ The [Celestia fork](https://github.com/celestiaorg/optimism/blob/celestia-develo
 
 - [op-alt-da repository](https://github.com/celestiaorg/op-alt-da)
 - [Celestia OP Stack fork](https://github.com/celestiaorg/optimism)
+- [Select a Celestia account in integrations](/build/stacks/account-selection)
 
 ---
 Title: App
@@ -1650,87 +1401,24 @@ This page provides a comprehensive list of audits conducted on various Celestia 
 | High throughput recovery   | Informal Systems | [Link](https://github.com/celestiaorg/celestia-app/blob/main/docs/audit/informal-systems-recovery.pdf)                     |
 
 ---
-Title: Blobstream
+Title: Blobstream (legacy)
 URL: https://docs.celestia.org/learn/blobstream.md
 Source: app/learn/blobstream/page.mdx
 ---
 
-# Blobstream
+# Blobstream (legacy)
 
-[Blobstream](https://blog.celestia.org/introducing-blobstream/)
-allows Ethereum developers to build high-throughput L2s using Celestia,
-the first DA layer with Data Availability Sampling.
+Blobstream was a data availability attestation bridge that let EVM chains verify that data was published to Celestia. It relayed commitments to Celestia data roots to a smart contract on the target EVM chain, where rollup contracts could verify inclusion proofs against them.
 
-This section covers Blobstream and how validators on Celestia can run it.
+> **Legacy notice:** As of September 2026, the Succinct-operated SP1 Blobstream deployments are no longer maintained and do not receive new commitments, and Celenium no longer offers its Blobstream explorer. The integration and operator guides that previously lived in these docs have been removed.
 
-If you're looking to learn more, you can view
-[the `orchestrator-relayer` repository](https://github.com/celestiaorg/orchestrator-relayer),
-and [read more about Blobstream](https://github.com/celestiaorg/blobstream-contracts#how-it-works).
+## What remains
 
-## Overview
+- [Blobstream proof queries (legacy)](/build/blobstream/proof-queries) documents how to query inclusion proofs from a Celestia consensus node and how they map to the Blobstream contract format.
+- [Audits](/learn/audits) lists the historical Blobstream X and SP1 Blobstream audit reports.
+- The [blobstream-contracts](https://github.com/celestiaorg/blobstream-contracts) and [sp1-blobstream](https://github.com/succinctlabs/sp1-blobstream) repositories remain available on GitHub.
 
-Blobstream consists of two components: an [orchestrator](/operate/blobstream/orchestrator)
-and a [relayer](/operate/blobstream/relayer).
-
-In the following diagram, we show how a layer 2 would post data to
-Celestia and then verify that it was published in the target EVM chain.
-
-![Blobstream Architecture](/img/blobstream/Blobstream.png)
-
-Data is first attested to by the Celestia validator set—they sign commitments to the data. Then, these signatures are relayed to the target EVM chain (in this case, Ethereum). Finally, the layer 2, or any party, can verify that the data was published to Celestia directly on the EVM chain via the Blobstream smart contract. You can reference [the Blobstream smart contract](https://github.com/celestiaorg/blobstream-contracts/blob/v3.0.0/src/Blobstream.sol).
-
-The specification of Blobstream `Valset`s, which track the Celestia validator set changes, can be found in [ADR 002](https://github.com/celestiaorg/celestia-app/blob/main/docs/architecture/adr-002-qgb-valset.md).
-
-Blobstream data commitments, which represent commitments over sets of blocks defined by a data commitment window, are discussed more in-depth in [ADR 003](https://github.com/celestiaorg/celestia-app/blob/main/docs/architecture/adr-003-qgb-data-commitments.md).
-
-The orchestrator is part of the validator setup and works as follows:
-
-- **Celestia App**: Creates an attestation on the state machine level that needs to be signed
-- **The orchestrator**: Queries the attestation, signs it, then submits the signature to the Blobstream P2P network
-
-The diagram below illustrates this process:
-
-![Blobstream Orchestrator](/img/blobstream/blobstream-orchestrator.png)
-
-The relayer submits the attestations' signatures from the Blobstream P2P network to the target EVM chain.
-
-> **Note:** If the contract is still not deployed, it needs to be deployed before it's used by the relayer. Check the [deployment documentation](/operate/blobstream/deploy-contract) for more details.
-
-The diagram below illustrates the relayer process:
-
-![Blobstream Relayer](/img/blobstream/blobstream-relayer.png)
-
-You can learn more about the mechanics behind the relayer in [ADR 004](https://github.com/celestiaorg/celestia-app/blob/main/docs/architecture/adr-004-qgb-relayer-security.md).
-
-## Blobstream vs Data Availability Committees (DACs)
-
-### Decentralization and security
-
-Blobstream is built on Celestia, which uses a CometBFT-based proof-of-stake system. An incorrect data availability attestation in this system will ultimately be penalized (currently not implemented), ensuring validators act in good faith. Thus, Blobstream shares the same security assumptions as Celestia.
-
-In contrast, data availability committees (DACs) are typically centralized or semi-centralized, relying on a specific set of entities or individuals to vouch for data availability.
-
-### Mechanism of verification
-
-Blobstream uses data availability attestations, which are Merkle roots of the batched L2 data, to confirm that the necessary data is present on Celestia. The L2 contract on Ethereum can check directly with Blobstream if the data is published on Celestia.
-
-Similarly, a DAC would rely on attestations or confirmations from its permissioned members.
-
-### Flexibility and scalability
-
-Blobstream is designed to offer high-throughput data availability for Ethereum L2s, aiming to strike a balance between scalability and security. It operates independently of Ethereum's gas costs, as Celestia's resource pricing is more byte-focused rather than computation-centric.
-
-On the other hand, the scalability and flexibility of a DAC would depend on its specific design and implementation.
-
-In summary, both Blobstream and DACs aim to ensure offchain data availability, but Blobstream offers a more decentralized, secure, and scalable solution compared to the potential centralized nature of DACs.
-
-## Build with Blobstream
-
-If you are a developer looking to build on top of Blobstream, check out the [Build section](/build/blobstream/integrate-contracts).
-
-## Operate Blobstream
-
-If you are a validator or node operator looking to run Blobstream, check out the [Operate section](/operate/blobstream/install-binary) to learn how to deploy your own instance.
+If you depend on Blobstream for dispute verification, such as with [Arbitrum Nitro with Celestia DA](/build/stacks/nitro-das-server), you must operate or source your own Blobstream verification path.
 
 ---
 Title: Data availability FAQ
@@ -2055,7 +1743,7 @@ A collection of useful tools, dashboards, and analytics platforms for exploring 
 | **Celenium**      | Blockchain explorer and analytics platform for Celestia      | [celenium.io](https://celenium.io/)                                            |
 | **Celestia Data** | Comprehensive analytics and metrics for the Celestia network | [celestiadata.com](https://celestiadata.com/)                                  |
 | **L2 Beat**       | Data availability tracking and metrics by L2BEAT             | [l2beat.com](https://l2beat.com/data-availability/projects/celestia/no-bridge) |
-| **Validao**       | Validator and network visualization tools                    | [validao.xyz](https://validao.xyz/#maps-celestia-da)                           |
+| **ProbeLab**      | Network monitoring and topology analytics for Celestia       | [probelab.io](https://probelab.io/celestia/)                                   |
 
 ## Bridge & node data
 
@@ -2620,7 +2308,7 @@ governance over key parts of Celestia, such as voting on network parameters
 through governance proposals, and governing the community pool, which receives
 2% of block rewards.
 
-Learn more about [Celestia’s decentralised governance model](/learn/tia/staking-governance-supply#decentralised-governance).
+Learn more about [Celestia’s decentralised governance model](/learn/TIA/staking-governance-supply#decentralised-governance).
 
 ### Denominations
 
@@ -2711,7 +2399,7 @@ Learn
 | Delegation support   | Yes            |
 
 Learn how to
-[stake on your own at the community dashboards](/learn/tia/staking).
+[stake on your own at the community dashboards](/learn/TIA/staking).
 
 ## Inflation
 
@@ -2819,7 +2507,6 @@ Mainnet Beta.
 Just connect your wallet to get started!
 
 - [https://wallet.keplr.app/chains/celestia?tab=staking](https://wallet.keplr.app/chains/celestia?tab=staking)
-- [https://app.leapwallet.io/transact/stake/plain?chain=celestia](https://app.leapwallet.io/transact/stake/plain?chain=celestia)
 - [https://alphab.ai/s/m/celestia/](https://alphab.ai/s/m/celestia/)
 
 ## Mocha testnet
@@ -2855,7 +2542,7 @@ The _exact_ maximum total blob size in a transaction depends on:
 - the share version and layout rules,
 - and the fact that the **first sparse share has 478 bytes**, while **all subsequent sparse shares have 482 bytes**.
 
-The current max square size on Arabica is 128 MiB, Mocha is 32 MiB, and Mainnet is 8 MiB.
+The current max square size on Mocha and Mainnet Beta is 32 MiB.
 
 Under v6 and future upgrades, networks will use larger square sizes, so the absolute maximum blob capacity per transaction will increase correspondingly—up to the global **8 MiB transaction size limit**, which is now the binding constraint.
 
@@ -2995,7 +2682,7 @@ state config in `config.toml`. Each mode has different throughput characteristic
 ### Default behavior (TxWorkerAccounts = 0)
 
 By default, `TxWorkerAccounts` is set to `0`, which means queued submission is disabled. All PayForBlobs transactions are submitted
-immediately to the mempool without waiting for confirmations. This is the same behavior as versions prior to [v0.28.2-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.28.2-arabica).
+immediately to the mempool without waiting for confirmations. This is the same behavior as versions before queued submission was introduced.
 
 The mempool maintains a fork of the canonical state each block, updating the sequence number (nonce) for each account that submits a
 transaction. If you wish to submit multiple transactions from the same account in quick succession, you must specify the nonce
@@ -3131,884 +2818,6 @@ Once the blob is submitted, you will see its hash on the screen.
 You can also use Celenium’s search bar to search for the blob's hash and view its details.
 
 ---
-Title: Deploy the Blobstream contract
-URL: https://docs.celestia.org/operate/blobstream/deploy-contract.md
-Source: app/operate/blobstream/deploy-contract/page.mdx
----
-
-# Deploy the Blobstream contract
-
-The `deploy` is a helper command that allows deploying the Blobstream smart contract to a new EVM chain:
-
-```bash
-blobstream deploy --help
-
-Deploys the Blobstream contract and initializes it using the provided Celestia chain
-
-Usage:
-  blobstream deploy <flags> [flags]
-  blobstream deploy [command]
-
-Available Commands:
-  keys        Blobstream keys manager
-```
-
-## How to run
-
-### Install the Blobstream binary
-
-Make sure to have the Blobstream binary installed. Check [the Blobstream binary page](/operate/blobstream/install-binary) for more details.
-
-### Add keys
-
-In order to deploy a Blobstream smart contract, you will need a funded EVM address and its private key. The `keys` command will help you set up this key:
-
-```bash
-blobstream deploy keys --help
-```
-
-To import your EVM private key, there is the `import` subcommand to assist you with that:
-
-```bash
-blobstream deploy keys evm import --help
-```
-
-This subcommand allows you to either import a raw ECDSA private key provided as plaintext, or import it from a file. The files are JSON keystore files encrypted using a passphrase like in [this example](https://geth.ethereum.org/docs/developers/dapp-developer/native-accounts).
-
-After adding the key, you can check that it's added via running:
-
-```bash
-blobstream deploy keys evm list
-```
-
-For more information about the `keys` command, check [the keys documentation](/operate/blobstream/key-management).
-
-### Deploy the contract
-
-Now, you can deploy the Blobstream contract to a new EVM chain:
-
-```bash
-blobstream deploy \
-  --evm.chain-id 4 \
-  --evm.contract-address 0x27a1F8CE94187E4b043f4D57548EF2348Ed556c7 \
-  --core.grpc.host localhost \
-  --core.grpc.port 9090 \
-  --starting-nonce latest \
-  --evm.rpc http://localhost:8545
-```
-
-The `--starting-nonce` can be replaced by the following:
-
-- `latest`: to deploy the Blobstream contract starting from the latest validator set
-- `earliest`: to deploy the Blobstream contract starting from genesis
-- `nonce`: you can provide a custom nonce on where you want Blobstream to start. If the provided nonce is not a `Valset` attestation, then the one before it will be used to deploy the Blobstream smart contract
-
-After deployment, you will see the Blobstream smart contract address in the logs along with the transaction hash.
-
----
-Title: Install the Blobstream binary
-URL: https://docs.celestia.org/operate/blobstream/install-binary.md
-Source: app/operate/blobstream/install-binary/page.mdx
----
-
-# Install the Blobstream binary
-
-The [orchestrator](/operate/blobstream/orchestrator) is the software that signs the
-Blobstream attestations, and the [relayer](/operate/blobstream/relayer) is the one that
-relays them to the target EVM chain.
-
-## Install
-
-1. [Install Go](https://go.dev/doc/install) (1.21 or later)
-
-2. Clone the `orchestrator-relayer` repository:
-
-```bash
-git clone https://github.com/celestiaorg/orchestrator-relayer.git
-cd orchestrator-relayer
-git checkout v1.2.0
-```
-
-3. Install the Blobstream CLI:
-
-```bash
-make install
-```
-
-## Usage
-
-```bash
-# Print help
-blobstream --help
-```
-
-## How to run
-
-If you are a Celestia-app validator, all you need to do is run the orchestrator. Check out [the Blobstream orchestrator page](/operate/blobstream/orchestrator) for more details.
-
-If you want to post commitments on an EVM chain, you will need to deploy a new Blobstream contract and run a relayer. Check out [the Blobstream relayer page](/operate/blobstream/relayer) for relayer docs and [the Blobstream deployment page](/operate/blobstream/deploy-contract) for how to deploy a new Blobstream contract.
-
-> **Note:** The Blobstream P2P network is a separate network from the consensus or the data availability one. Thus, you will need its specific bootstrappers to be able to connect to it.
-
-## Contributing
-
-### Tools
-
-1. Install [golangci-lint](https://golangci-lint.run/docs/welcome/install/)
-2. Install [markdownlint](https://github.com/DavidAnson/markdownlint)
-
-### Helpful Commands
-
-```bash
-# Build a new orchestrator-relayer binary and output to build/blobstream
-make build
-
-# Run tests
-make test
-
-# Format code with linters (this assumes golangci-lint and markdownlint are installed)
-make fmt
-```
-
-## Useful links
-
-- The smart contract implementation is in [blobstream-contracts](https://github.com/celestiaorg/blobstream-contracts/)
-- The state machine implementation is in [orchestrator-relayer](https://github.com/celestiaorg/orchestrator-relayer)
-- Blobstream ADRs are in [the docs](https://github.com/celestiaorg/celestia-app/tree/main/docs/architecture)
-- Blobstream design explained in [this blog post on layer 2s](https://blog.celestia.org/celestiums/)
-
----
-Title: Key management
-URL: https://docs.celestia.org/operate/blobstream/key-management.md
-Source: app/operate/blobstream/key-management/page.mdx
----
-
-# Key management
-
-The Blobstream `keys` command allows managing EVM private keys and P2P identities. It is defined as a subcommand for multiple commands with the only difference being the directory where the keys are stored. For the remaining functionality, it is the same for all the commands.
-
-## Orchestrator command
-
-The `blobstream orchestrator keys` command manages keys for the orchestrator. By default, it uses the orchestrator default home directory to store the keys: `~/.orchestrator/keystore`. However, the default home can be changed either by specifying a different directory using the `--home` flag or setting the following environment variable:
-
-| Variable            | Explanation                         | Default value     | Required |
-| ------------------- | ----------------------------------- | ----------------- | -------- |
-| `ORCHESTRATOR_HOME` | Home directory for the orchestrator | `~/.orchestrator` | Optional |
-
-## Relayer command
-
-The `blobstream relayer keys` command manages keys for the relayer. By default, it uses the relayer default home directory to store the keys: `~/.relayer/keystore`. However, the default home can be changed either by specifying a different directory using the `--home` flag or setting the following environment variable:
-
-| Variable       | Explanation                    | Default value | Required |
-| -------------- | ------------------------------ | ------------- | -------- |
-| `RELAYER_HOME` | Home directory for the relayer | `~/.relayer`  | Optional |
-
-## Deploy command
-
-The `blobstream deploy keys` command manages keys for the deployer. By default, it uses the deployer default home directory to store the keys: `~/.deployer/keystore`. However, the default home can be changed either by specifying a different directory using the `--home` flag or setting the following environment variable:
-
-| Variable        | Explanation                           | Default value | Required |
-| --------------- | ------------------------------------- | ------------- | -------- |
-| `DEPLOYER_HOME` | Home directory for the deploy command | `~/.deployer` | Optional |
-
-## Store initialization
-
-For the `keys` command, the home directory will be created automatically for commands that `add/import` new keys without having to manually initialize the store. Thus, you should be careful when running those.
-
-However, if it finds an already initialized store, it will only add new keys to it and not overwrite it.
-
-For the remaining subcommands `update/delete/list`, if the store is not initialized, the command will complain and change nothing on the file system.
-
-## Options
-
-Aside from the difference in the default home directory, the `keys` subcommand is similar for all commands and handles the keys in the same way.
-
-The examples will use the orchestrator command to access the keys. However, the same behavior applies to the other commands as well.
-
-```bash
-blobstream orchestrator keys --help
-
-Blobstream keys manager
-
-Usage:
-  blobstream orchestrator keys [command]
-
-Available Commands:
-  evm         Blobstream EVM keys manager
-  p2p         Blobstream p2p keys manager
-
-Flags:
-  -h, --help   help for keys
-
-Use "blobstream orchestrator keys [command] --help" for more information about a command.
-```
-
-## EVM keystore
-
-The first subcommand of the `keys` command is `evm`. This allows managing EVM keys.
-
-The EVM keys are `ECDSA` keys using the `secp256k1` curve. The implementation uses `geth` file system keystore [implementation](https://geth.ethereum.org/docs/developers/dapp-developer/native-accounts). Thus, keys can be used interchangeably with any compatible software.
-
-```bash
-blobstream orchestrator keys evm --help
-
-Blobstream EVM keys manager
-
-Usage:
-  blobstream orchestrator keys evm [command]
-
-Available Commands:
-  add         create a new EVM address
-  delete      delete an EVM addresses from the key store
-  import      import evm keys to the keystore
-  list        list EVM addresses in key store
-  update      update an EVM account passphrase
-
-Flags:
-  -h, --help   help for evm
-
-Use "blobstream orchestrator keys evm [command] --help" for more information about a command.
-```
-
-The store also uses the `accounts.StandardScryptN` and `accounts.StandardScryptP` for the `Scrypt` password-based key derivation algorithm to improve its resistance to parallel hardware attacks:
-
-```go
-evmKs = keystore.NewKeyStore(evmKeyStorePath(path), keystore.StandardScryptN, keystore.StandardScryptP)
-```
-
-### EVM: Add subcommand
-
-The `add` subcommand allows creating a new EVM private key and storing it in the keystore:
-
-```bash
-blobstream orchestrator keys evm add --help
-
-create a new EVM address
-
-Usage:
-  blobstream orchestrator keys evm add [flags]
-```
-
-The passphrase of the key encryption can be passed as a flag. But it is advised not to pass it as plain text and instead enter it when prompted interactively.
-
-After creating a new key, you will see its corresponding address printed:
-
-```bash
-blobstream orchestrator keys evm add
-
-I[2023-04-13|14:16:11.387] successfully opened store                    path=/home/midnight/.orchestrator
-I[2023-04-13|14:16:11.387] please provide a passphrase for your account
-I[2023-04-13|14:16:30.533] account created successfully                 address=0xaF319b70de80232539ad576f88739afD2dF44187
-I[2023-04-13|14:16:30.534] successfully closed store                    path=/home/midnight/.orchestrator
-```
-
-### EVM: Delete subcommand
-
-The `delete` subcommand allows deleting an EVM private key from store via providing its corresponding address:
-
-```bash
-blobstream orchestrator keys evm delete --help
-
-delete an EVM addresses from the key store
-
-Usage:
-  blobstream orchestrator keys evm delete <account address in hex> [flags]
-```
-
-The provided address should be a `0x` prefixed EVM address.
-
-After running the command, you will be prompted to enter the passphrase for the encrypted private key, if not passed as a flag.
-
-Then, you will be prompted to confirm that you want to delete that private key. Make sure to verify if you're deleting the right one because once deleted, it can no longer be recovered!
-
-```bash
-blobstream orchestrator keys evm delete 0x27a1F8CE94187E4b043f4D57548EF2348Ed556c7
-
-I[2023-04-13|15:01:41.308] successfully opened store                    path=/home/midnight/.orchestrator
-I[2023-04-13|15:01:41.309] deleting account                             address=0x27a1F8CE94187E4b043f4D57548EF2348Ed556c7
-I[2023-04-13|15:01:41.309] please provide the address passphrase
-I[2023-04-13|15:01:43.268] Are you sure you want to delete your private key? This action cannot be undone and may result in permanent loss of access to your account.
-Please enter 'yes' or 'no' to confirm your decision: yes
-I[2023-04-13|15:01:45.532] private key has been deleted successfully    address=0x27a1F8CE94187E4b043f4D57548EF2348Ed556c7
-I[2023-04-13|15:01:45.534] successfully closed store                    path=/home/midnight/.orchestrator
-```
-
-### EVM: List subcommand
-
-The `list` subcommand allows listing the existing keys in the keystore:
-
-```bash
-blobstream orchestrator keys evm list
-
-I[2023-04-13|16:08:45.084] successfully opened store                    path=/home/midnight/.orchestrator
-I[2023-04-13|16:08:45.084] listing accounts available in store
-I[2023-04-13|16:08:45.084] 0x7Dd8F9CAfe6D25165249A454F2d0b72FD149Bbba
-I[2023-04-13|16:08:45.084] successfully closed store                    path=/home/midnight/.orchestrator
-```
-
-You could specify a different home using the `--home` flag to list the keys in another home directory.
-
-### EVM: Update subcommand
-
-The `update` subcommand allows changing the EVM private key passphrase to a new one. It takes as argument the `0x` prefixed EVM address corresponding to the private key you want to edit.
-
-```bash
-blobstream orchestrator keys evm update --help
-
-update an EVM account passphrase
-
-Usage:
-  blobstream orchestrator keys evm update <account address in hex> [flags]
-```
-
-Example:
-
-```bash
-blobstream orchestrator keys evm update 0x7Dd8F9CAfe6D25165249A454F2d0b72FD149Bbba
-
-I[2023-04-13|16:21:17.139] successfully opened store                    path=/home/midnight/.orchestrator
-I[2023-04-13|16:21:17.140] updating account                             address=0x7Dd8F9CAfe6D25165249A454F2d0b72FD149Bbba
-I[2023-04-13|16:21:17.140] please provide the address passphrase
-I[2023-04-13|16:21:18.134] please provide the address new passphrase
-I[2023-04-13|16:21:22.403] successfully updated the passphrase          address=0x7Dd8F9CAfe6D25165249A454F2d0b72FD149Bbba
-I[2023-04-13|16:21:22.420] successfully closed store                    path=/home/midnight/.orchestrator
-```
-
-Both passphrases can be provided as flags, but it's better to pass them interactively for more security.
-
-The `--home` can be specified if the store is not in the default directory.
-
-### EVM: Import subcommand
-
-The `import` subcommand allows importing existing private keys into the keystore. It has two subcommands: `ecdsa` and `file`. The first allows importing a private key in plaintext, while the other allows importing a private key from a JSON file secured with a passphrase.
-
-```bash
-blobstream orchestrator keys evm import --help
-
-import evm keys to the keystore
-
-Usage:
-  blobstream orchestrator keys evm import [command]
-
-Available Commands:
-  ecdsa       import an EVM address from an ECDSA private key
-  file        import an EVM address from a file
-
-Flags:
-  -h, --help   help for import
-
-Use "blobstream orchestrator keys evm import [command] --help" for more information about a command.
-```
-
-#### EVM: Import ECDSA
-
-For the first one, it takes as argument the private key in plaintext. Then, it prompts for the passphrase to use when encrypting the key and saving it to the keystore. The passphrase could be passed as a flag using the `--evm.passphrase`, but it's advised not to.
-
-Example:
-
-```bash
-blobstream orchestrator keys evm import ecdsa da6ed55cb2894ac2c9c10209c09de8e8b9d109b910338d5bf3d747a7e1fc9eb7
-
-I[2023-04-13|17:00:48.617] successfully opened store                    path=/home/midnight/.orchestrator
-I[2023-04-13|17:00:48.617] importing account
-I[2023-04-13|17:00:48.617] please provide the address passphrase
-I[2023-04-13|17:00:51.989] successfully imported file                   address=0x6B452Da14195b0aDc3C960E56a078Cf8f50448f8
-I[2023-04-13|17:00:51.990] successfully closed store                    path=/home/midnight/.orchestrator
-```
-
-#### EVM: Import file
-
-For the second, it takes a JSON key file, as defined in [@ethereum/eth-keyfile](https://github.com/ethereum/eth-keyfile), and imports it to your keystore, so it can be used for signatures.
-
-```bash
-blobstream orchestrator keys evm import file --help
-
-import an EVM address from a file
-
-Usage:
-  blobstream orchestrator keys evm import file <path to key file> [flags]
-```
-
-For example, if you have a file in the current directory containing a private key, you could run the following:
-
-```bash
-blobstream orchestrator keys evm import file UTC--2023-04-13T15-00-50.302148204Z--966e6f22781ef6a6a82bbb4db3df8e225dfd9488
-
-I[2023-04-13|17:31:53.307] successfully opened store                    path=/home/midnight/.orchestrator
-I[2023-04-13|17:31:53.307] importing account
-I[2023-04-13|17:31:53.308] please provide the address passphrase
-I[2023-04-13|17:31:54.440] please provide the address new passphrase
-I[2023-04-13|17:31:58.436] successfully imported file                   address=0x966e6f22781EF6a6A82BBB4DB3df8E225DfD9488
-I[2023-04-13|17:31:58.437] successfully closed store                    path=/home/midnight/.orchestrator
-```
-
-With the `passphrase` being the current file passphrase, and the `new passphrase` being the new passphrase that will be used to encrypt the private key in the Blobstream store.
-
-## P2P keystore
-
-Similar to the EVM keystore, the P2P store has similar subcommands for handling the P2P Ed25519 private keys. However, it doesn't use any passphrase to secure them because they aren't that important. Any key could be used, and it is not binding to any identity. Thus, there is no need to secure them.
-
-To access the P2P keystore, run the following:
-
-```bash
-blobstream orchestrator keys p2p
-
-Blobstream p2p keys manager
-
-Usage:
-  blobstream orchestrator keys p2p [command]
-
-Available Commands:
-  add         create a new Ed25519 P2P address
-  delete      delete an Ed25519 P2P private key from store
-  import      import an existing p2p private key
-  list        list existing p2p addresses
-
-Flags:
-  -h, --help   help for p2p
-
-Use "blobstream orchestrator keys p2p [command] --help" for more information about a command.
-```
-
-The `orchestrator` could be replaced by `relayer` and the only difference would be the default home directory. Aside from that, all the methods defined for the orchestrator will also work with the relayer.
-
-### P2P: Add subcommand
-
-The `add` subcommand creates a new p2p key to the p2p store:
-
-```bash
-blobstream orchestrator keys p2p add --help
-
-create a new Ed25519 P2P address
-
-Usage:
-  blobstream orchestrator keys p2p add <nickname> [flags]
-```
-
-It takes as argument an optional `<nickname>` which would be the name that you can use to reference that private key. If not specified, an incremental nickname will be assigned.
-
-```bash
-blobstream orchestrator keys p2p add
-
-I[2023-04-13|17:38:17.289] successfully opened store                    path=/home/midnight/.orchestrator
-I[2023-04-13|17:38:17.290] generating a new Ed25519 private key         nickname=1
-I[2023-04-13|17:38:17.291] key created successfully                     nickname=1
-I[2023-04-13|17:38:17.291] successfully closed store                    path=/home/midnight/.orchestrator
-```
-
-For example, in the above execution, the nickname `1` was given to the newly added key, since no nickname was provided.
-
-The nickname will be needed in case the orchestrator needs to use a specific private key to connect to the P2P network, and that nickname will be provided as a flag. However, if not provided, the orchestrator/relayer will choose the first key in the store and just use it to connect.
-
-### P2P: Delete subcommand
-
-The `delete` subcommand will delete a P2P private key from store referenced by its nickname:
-
-```bash
-blobstream orchestrator keys p2p delete --help
-
-delete an Ed25519 P2P private key from store
-
-Usage:
-  blobstream orchestrator keys p2p delete <nickname> [flags]
-```
-
-### P2P: Import subcommand
-
-The `import` subcommand will import an existing Ed25519 private key to the store. It takes as argument the nickname that you wish to save the private key under, and the actual private key in hex format without `0x`:
-
-```bash
-blobstream orchestrator keys p2p import --help
-
-import an existing p2p private key
-
-Usage:
-  blobstream orchestrator keys p2p import <nickname> <private_key_in_hex_without_0x> [flags]
-```
-
-### P2P: List subcommand
-
-The `list` subcommand lists the existing P2P private keys in the store:
-
-```bash
-blobstream orchestrator keys p2p list --help
-
-list existing p2p addresses
-
-Usage:
-  blobstream orchestrator keys p2p list [flags]
-```
-
----
-Title: Blobstream orchestrator
-URL: https://docs.celestia.org/operate/blobstream/orchestrator.md
-Source: app/operate/blobstream/orchestrator/page.mdx
----
-
-# Blobstream orchestrator
-
-The role of the orchestrator is to sign attestations using its corresponding validator EVM private key. These attestations are generated within the Blobstream module of the Celestia-app state machine. To learn more about what attestations are, you can refer to [the Blobstream overview](https://github.com/celestiaorg/orchestrator-relayer).
-
-## How it works
-
-The orchestrator does the following:
-
-1. Connect to a Celestia-app full node or validator node via RPC and gRPC and wait for new attestations
-2. Once an attestation is created inside the Blobstream state machine, the orchestrator queries it
-3. After getting the attestation, the orchestrator signs it using the provided EVM private key. The private key should correspond to the EVM address provided when creating the validator. Read [more about Blobstream keys](/operate/blobstream/key-management)
-4. Then, the orchestrator pushes its signature to the P2P network it is connected to, via adding it as a DHT value
-5. Listen for new attestations and go back to step 2
-
-The orchestrator connects to a separate P2P network than the consensus or the data availability one. Bootstrappers for that network will be provided.
-
-Bootstrapper for the Mocha testnet is:
-
-```
-/dns/bootstr-incent-1.celestia.tools/tcp/30000/p2p/12D3KooWSGZ2LXW2soQFHgU82uLfN7pNW5gMMkTnu1fhMXG43TvP
-```
-
-Make sure to specify it using the `-b` flag when running the orchestrator.
-
-This means that even if the consensus node is already connected to the consensus network, if the orchestrator doesn't start with a list of bootstrappers for its specific network, then it will not work and will output the following logs:
-
-```text
-I[2023-04-26|00:04:08.175] waiting for routing table to populate        targetnumberofpeers=1 currentcount=0
-I[2023-04-26|00:04:18.175] waiting for routing table to populate        targetnumberofpeers=1 currentcount=0
-I[2023-04-26|00:04:28.175] waiting for routing table to populate        targetnumberofpeers=1 currentcount=0
-```
-
-## How to run
-
-### Requirements
-
-To run an orchestrator, you will need to have access to the following:
-
-- Access to your EVM address private key. This doesn't need to be funded in any network. If yours is not yet set, check the [register an EVM address](#register-evm-address) section
-- A list of bootstrappers for the P2P network. These will be shared by the team for every network supported
-- Access to your consensus node RPC and gRPC ports
-
-### Install the Blobstream binary
-
-Make sure to have the Blobstream binary installed. Check [the Blobstream binary page](/operate/blobstream/install-binary) for more details.
-
-### Init the store
-
-Before starting the orchestrator, you need to init the store:
-
-```bash
-blobstream orchestrator init
-```
-
-By default, the store will be created under `~/.orchestrator`. However, if you want to specify a custom location, you can use the `--home` flag. Or, you can use the following environment variable:
-
-| Variable            | Explanation                         | Default value     | Required |
-| ------------------- | ----------------------------------- | ----------------- | -------- |
-| `ORCHESTRATOR_HOME` | Home directory for the orchestrator | `~/.orchestrator` | Optional |
-
-### Add keys
-
-In order for the orchestrator to start, it will need two private keys:
-
-- EVM private key
-- P2P private key
-
-The EVM private key is the most important one since it needs to correspond to the EVM address provided when creating the validator.
-
-The P2P private key is optional, and a new one will be generated automatically on start if none is provided.
-
-The `keys` command will help you set up these keys:
-
-```bash
-blobstream orchestrator keys --help
-```
-
-To add an EVM private key, check the next section.
-
-#### EVM key
-
-Because EVM keys are important, we provide a keystore that will help manage them. The keystore uses a file system keystore protected by a passphrase to store and open private keys.
-
-To register an EVM address for your validator, check the section [Register EVM Address](#register-evm-address).
-
-To import your EVM private key, there is the `import` subcommand to assist you with that:
-
-```bash
-blobstream orchestrator keys evm import --help
-```
-
-This subcommand allows you to either import a raw ECDSA private key provided as plaintext, or import it from a file. The files are JSON keystore files encrypted using a passphrase like in [this example](https://geth.ethereum.org/docs/developers/dapp-developer/native-accounts).
-
-After adding the key, you can check that it's added via running:
-
-```bash
-blobstream orchestrator keys evm list
-```
-
-For more information about the `keys` command, check [the keys documentation](/operate/blobstream/key-management).
-
-### Start the orchestrator
-
-Now that you have the store initialized, you can start the orchestrator. Make sure you have your Celestia-app node RPC and gRPC accessible, and able to connect to the P2P network bootstrappers.
-
-The orchestrator accepts the following flags:
-
-```bash
-blobstream orchestrator start --help
-
-Starts the Blobstream orchestrator to sign attestations
-
-Usage:
-  blobstream orchestrator start <flags> [flags]
-```
-
-To start the orchestrator in the default home directory, run the following:
-
-```bash
-blobstream orchestrator start \
-    --core.grpc.host localhost \
-    --core.grpc.port 9090 \
-    --core.rpc.host localhost \
-    --core.rpc.port 26657 \
-    --evm.account 0x966e6f22781EF6a6A82BBB4DB3df8E225DfD9488 \
-    --p2p.bootstrappers /ip4/127.0.0.1/tcp/30001/p2p/12D3KooWFFHahpcZcuqnUhpBoX5fJ68Qm5Hc8dxiBcX1oo46fLxh \
-    --p2p.listen-addr /ip4/0.0.0.0/tcp/30000
-```
-
-You will be prompted to enter your EVM key passphrase so that the orchestrator can use it to sign attestations. Make sure that it's the EVM address that was provided when creating the validator. If not, then the orchestrator will not sign, and you will keep seeing a "validator not part of valset" warning message.
-
-If you see such message, first verify that your validator is part of the active validator set. If so, then probably the EVM address provided to the orchestrator is not the right one, and you should check which EVM address is registered to your validator. Check the next section for more information.
-
-If you no longer have access to your EVM address, you could always edit your validator with a new EVM address. This can be done through the `edit-validator` command. Check the next section.
-
-### Open the P2P port
-
-In order for the signature propagation to be successful, you will need to expose the P2P port, which is by default `30000`.
-
-If not, then the signatures may not be available to the network and relayers will not be able to query them.
-
-## Register EVM Address
-
-When creating a validator, a random EVM address corresponding to its operator is set in the Blobstream state. This address is used by the orchestrator to sign attestations. And since validators will generally not have access to its corresponding private key, that address needs to be edited with one whose private key is known to the validator operator.
-
-To edit an EVM address for a certain validator, its corresponding account needs to send a `RegisterEVMAddress` transaction with the new address.
-
-First, you should get your validator `valoper` address. To do so, run the following:
-
-```bash
-celestia-appd keys show <validator_account> --bech val
-```
-
-This assumes that you're using the default home directory, the default keystore, etc. If not, make sure to add the flags that correspond to your situation.
-
-To check which EVM address is registered for your `valoper` address, run the following:
-
-```bash
-celestia-appd query blobstream evm <validator_valoper_address>
-```
-
-Then, to proceed with the edit, run the following command:
-
-```bash
-celestia-appd tx blobstream register \
-    <valoper_address> \
-    <new_evm_address> \
-    --fees 30000utia \
-    --broadcast-mode block \
-    --yes
-```
-
-Now, you can verify that the EVM address has been updated using the following command:
-
-```bash
-celestia-appd query blobstream evm <validator_valoper_address>
-```
-
-Now, you can restart the orchestrator, and it should start signing.
-
-> **Note:** A validator set change is triggered if more than 5% of the total staking power of the network changes (0.5% for BSR). This means that even if you change your EVM address, and you don't see your orchestrator signing, it's alright. Just wait until the validator set changes, and then your orchestrator will automatically start signing.
-
-## Systemd service
-
-If you want to start the orchestrator as a `systemd` service, you can use the following:
-
-1. Make sure you have the store initialized and the EVM address private key imported. Check the above sections for how to do that.
-
-2. Put the following configuration under `/etc/systemd/system/orchestrator.service`:
-
-```text
-[Unit]
-Description=Blobstream orchestrator service
-After=network.target
-
-[Service]
-Type=simple
-ExecStart=<absolute_path_to_blobstream_binary> orchestrator start --evm.account <evm_account> --evm.passphrase <evm_passphrase> --core.grpc.host <grpc_endpoint_host> --core.grpc.port <grpc_endpoint_port> --core.rpc.host <rpc_endpoint_host> --core.rpc.port <rpc_endpoint_port> --p2p.bootstrappers <bootstrappers_list>
-LimitNOFILE=infinity
-LimitCORE=infinity
-Restart=always
-RestartSec=1
-StartLimitBurst=5
-User=<username>
-StandardError=journal
-StandardOutput=journal
-TTYPath=/dev/tty0
-
-[Install]
-WantedBy=multi-user.target
-```
-
-3. Start the orchestrator service using:
-
-```bash
-sudo systemctl start orchestrator
-```
-
-4. Follow the logs to see if everything is running correctly:
-
-```bash
-sudo journalctl -f -u orchestrator
-```
-
-And you should see the orchestrator signing.
-
-### Issue: Journald not outputting the logs
-
-Sometimes, `journald` wouldn't load the logs from the specified service. An easy fix would be to restart it:
-
-```bash
-sudo systemctl restart systemd-journald
-```
-
-Then, you should be able to follow the logs as expected.
-
----
-Title: Blobstream relayer
-URL: https://docs.celestia.org/operate/blobstream/relayer.md
-Source: app/operate/blobstream/relayer/page.mdx
----
-
-# Blobstream relayer
-
-The role of the relayer is to gather attestations' signatures from the orchestrators, and submit them to a target EVM chain. The attestations are generated within the Blobstream module of the Celestia-app state machine. To learn more about what attestations are, you can refer to [the Blobstream overview](https://github.com/celestiaorg/orchestrator-relayer).
-
-While every validator in the Celestia validator set needs to run an orchestrator, only one entity needs to run the relayer, and it can be anyone. Thus, if you're a validator, most likely you want to read [the orchestrator documentation](/operate/blobstream/orchestrator).
-
-Every relayer needs to target a Blobstream smart contract. This can be deployed, if not already, using the `blobstream deploy` command. More details in the [Deploy the Blobstream contract guide](/operate/blobstream/deploy-contract).
-
-## How it works
-
-The relayer works as follows:
-
-1. Connect to a Celestia-app full node or validator node via RPC and gRPC and wait for attestations
-2. Once an attestation is created inside the Blobstream state machine, the relayer queries it
-3. After getting the attestation, the relayer checks if the target Blobstream smart contract's nonce is lower than the attestation
-4. If so, the relayer queries the P2P network for signatures from the orchestrators
-5. Once the relayer finds more than 2/3s signatures, it submits them to the target Blobstream smart contract where they get validated
-6. Listen for new attestations and go back to step 2
-
-The relayer connects to a separate P2P network than the consensus or the data availability one. Bootstrappers for that network will be provided.
-
-This means that even if the consensus node is already connected to the consensus network, if the relayer doesn't start with a list of bootstrappers for its specific network, then it will not work and will output the following logs:
-
-```text
-I[2023-04-26|00:04:08.175] waiting for routing table to populate        targetnumberofpeers=1 currentcount=0
-I[2023-04-26|00:04:18.175] waiting for routing table to populate        targetnumberofpeers=1 currentcount=0
-I[2023-04-26|00:04:28.175] waiting for routing table to populate        targetnumberofpeers=1 currentcount=0
-```
-
-## How to run
-
-### Install the Blobstream binary
-
-Make sure to have the Blobstream binary installed. Check out the [Install the Blobstream binary page](/operate/blobstream/install-binary) for more details.
-
-### Init the store
-
-Before starting the relayer, you need to init the store:
-
-```bash
-blobstream relayer init
-```
-
-By default, the store will be created under `~/.relayer`. However, if you want to specify a custom location, you can use the `--home` flag. Or, you can use the following environment variable:
-
-| Variable       | Explanation                    | Default value | Required |
-| -------------- | ------------------------------ | ------------- | -------- |
-| `RELAYER_HOME` | Home directory for the relayer | `~/.relayer`  | Optional |
-
-### Add keys
-
-In order for the relayer to start, it will need two private keys:
-
-- EVM private key
-- P2P private key
-
-The EVM private key is the most important since it needs to be funded, so it is able to send transactions in the target EVM chain.
-
-The P2P private key is optional, and a new one will be generated automatically on start if none is provided.
-
-The `keys` command will help you set up these keys:
-
-```bash
-blobstream relayer keys --help
-```
-
-To add an EVM private key, check the next section.
-
-#### EVM key
-
-Because EVM keys are important, we provide a keystore that will help manage them. The keystore uses a file system keystore protected by a passphrase to store and open private keys.
-
-To import your EVM private key, there is the `import` subcommand to assist you with that:
-
-```bash
-blobstream relayer keys evm import --help
-```
-
-This subcommand allows you to either import a raw ECDSA private key provided as plaintext, or import it from a file. The files are JSON keystore files encrypted using a passphrase like [in this example](https://geth.ethereum.org/docs/developers/dapp-developer/native-accounts).
-
-After adding the key, you can check that it's added via running:
-
-```bash
-blobstream relayer keys evm list
-```
-
-For more information about the `keys` command, check [the keys documentation](/operate/blobstream/key-management).
-
-### Start the relayer
-
-Now that you have the store initialized, and you have a target Blobstream smart contract address, you can start the relayer. Make sure you have your Celestia-app node RPC and gRPC accessible, and able to connect to the P2P network bootstrappers.
-
-The relayer accepts the following flags:
-
-```bash
-blobstream relayer start --help
-
-Runs the Blobstream relayer to submit attestations to the target EVM chain
-
-Usage:
-  blobstream relayer start <flags> [flags]
-```
-
-To start the relayer using the default home directory, run the following:
-
-```bash
-blobstream relayer start \
-  --evm.contract-address=0x27a1F8CE94187E4b043f4D57548EF2348Ed556c7 \
-  --core.rpc.host=localhost \
-  --core.rpc.port=26657 \
-  --core.grpc.host=localhost \
-  --core.grpc.port=9090 \
-  --evm.chain-id=4 \
-  --evm.rpc=http://localhost:8545 \
-  --evm.account=0x35a1F8CE94187E4b043f4D57548EF2348Ed556c8 \
-  --p2p.bootstrappers=/ip4/127.0.0.1/tcp/30001/p2p/12D3KooWFFHahpcZcuqnUhpBoX5fJ68Qm5Hc8dxiBcX1oo46fLxh \
-  --p2p.listen-addr=/ip4/0.0.0.0/tcp/30001
-```
-
-You will be prompted to enter your EVM key passphrase for the EVM address passed using the `--evm.account` flag, so that the relayer can use it to send transactions to the target Blobstream smart contract. Make sure that it's funded.
-
----
 Title: Helpful CLI commands
 URL: https://docs.celestia.org/operate/consensus-validators/cli-reference.md
 Source: app/operate/consensus-validators/cli-reference/page.mdx
@@ -4047,6 +2856,11 @@ Available Commands:
   location or at the location passed as an arg
   version             Print the application binary version information
 ```
+
+## Updating node configuration
+
+See the [celestia-app v9 release notes](https://github.com/celestiaorg/celestia-app/blob/v9.0.4/docs/release-notes/release-notes.md#update-config-command-deprecated)
+for details.
 
 ## Creating a wallet
 
@@ -4131,7 +2945,7 @@ Example usage:
 
 ```sh
 celestia-appd q bank balances celestia1czpgn3hdh9sodm06d5qk23xzgpq2uyc8ggdqgw \
-    --node https://rpc-mocha.pops.one:443
+    --node https://public-endpoint.celestia-mocha.quiknode.pro
 ```
 
 Transfer tokens from one wallet to another:
@@ -4145,7 +2959,8 @@ Example usage:
 
 ```sh
 celestia-appd tx bank send <FROM_ADDRESS> <TO_ADDRESS> \
-    19000000utia --node https://rpc-mocha.pops.one:443 --chain-id mocha
+    19000000utia --node https://public-endpoint.celestia-mocha.quiknode.pro \
+    --chain-id mocha-5
 ```
 
 To see options:
@@ -4402,14 +3217,22 @@ See [hardware requirements](/operate/getting-started/hardware-requirements).
 
 ## Set up a consensus node
 
-The following tutorial is done on an Ubuntu Linux 20.04 (LTS) x64
+The following tutorial is done on an Ubuntu Linux 24.04 (LTS) x64
 instance machine.
 
 #### Optional: Set persistent peers
 
-You can get the persistent peers from the [@cosmos/chain-registry](https://github.com/cosmos/chain-registry) repository (for Mainnet Beta) or [@celestiaorg/networks repository](https://github.com/celestiaorg/networks) repo (for Mocha and Arabica) with the following commands:
+You can get the persistent peers from the [@cosmos/chain-registry](https://github.com/cosmos/chain-registry) repository (for Mainnet Beta) or [@celestiaorg/networks repository](https://github.com/celestiaorg/networks) repo (for Mocha) with the following commands:
 
 ## Storage and pruning configurations
+
+### Database backend
+
+celestia-app v9 and later use PebbleDB by default for new nodes. Before
+changing an existing node's `db_backend` from `"goleveldb"` to `"pebbledb"`,
+stop the node and use the
+[`migrate-db` tool](https://github.com/celestiaorg/celestia-app/tree/v9.x/tools/migrate-db)
+to migrate its databases.
 
 ### Optional: Connect a consensus node to a bridge node
 
@@ -4450,12 +3273,14 @@ indexer = "kv"
 
 If you want to query the historical state — for example, you might want
 to know the balance of a Celestia wallet at a given height in the past —
-you should run an archive node with `pruning = "nothing"` in your `app.toml`.
-Note that this configuration is resource-intensive and will require
+you should run an archive node. In your `app.toml`, set `pruning = "nothing"`
+to retain application state and `min-retain-blocks = 0` to retain all block
+data. Note that this configuration is resource-intensive and will require
 significant storage:
 
 ```toml
 pruning = "nothing"
+min-retain-blocks = 0
 ```
 
 ### Save on storage requirements
@@ -4498,7 +3323,19 @@ By default, a consensus node will sync using block sync; which will request, val
 and execute every block up to the head of the blockchain. This is the most secure
 mechanism yet the slowest (taking up to weeks depending on the height of the blockchain).
 
-There is an [issue](https://github.com/celestiaorg/celestia-app/issues/4370) that prevents recent celestia-app binaries from block syncing Mainnet Beta. As a temporary workaround, you can use celestia-app [v3.0.2](https://github.com/celestiaorg/celestia-app/releases/tag/v3.0.2) to block sync Mainnet Beta until that issue is resolved. After block syncing, please upgrade to the latest version of celestia-app to pick up recent security fixes.
+Starting with celestia-app v9, `verify_data` defaults to `false` in the
+`[blocksync]` section of `config.toml`. This skips re-running `ProcessProposal`
+on historical blocks to improve block sync speed. Blocks are still verified by
+their validator signatures, and normal validation resumes after the node enters
+consensus mode. To restore the pre-v9 behaviour, set:
+
+```toml
+[blocksync]
+verify_data = true
+```
+
+See the [celestia-app v9 release notes](https://github.com/celestiaorg/celestia-app/blob/v9.0.4/docs/release-notes/release-notes.md#block-sync-verify_data-default-changed-to-false)
+for details.
 
 There are two alternatives for quicker syncing.
 
@@ -4701,7 +3538,7 @@ The available options are:
    transaction status. If you don't need to query transaction data,
    you can choose this option to save space.
 2. `kv`: This is the simplest indexer, backed by
-   key-value storage (defaults to levelDB; see DBBackend).
+   PebbleDB key-value storage.
    When `kv` is chosen, `tx.height` and `tx.hash` will always be
    indexed. This option is suitable for basic queries on transactions.
 3. `psql`: This indexer is backed by PostgreSQL. When psql is chosen,
@@ -4819,6 +3656,487 @@ celestia-appd passthrough [app-version] --help
 ```
 
 ---
+Title: Run a Fibre server
+URL: https://docs.celestia.org/operate/consensus-validators/fibre.md
+Source: app/operate/consensus-validators/fibre/page.mdx
+---
+
+# Run a Fibre server
+
+Fibre is a data availability service that validators run alongside
+celestia-app. Clients upload blob shards to validator-operated Fibre servers
+and download them from there, and each server's storage budget is derived from
+the validator's stake. Starting with app version 10, every bonded validator is
+expected to run one. See the
+[Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/fibre/cmd/README.md)
+for the protocol details.
+
+The examples use the Mocha release `v10.2.0-mocha`, its
+matching Fibre binary, and the Mocha chain ID. Substitute the values for your
+network.
+
+Mocha has activated app version 10. Bonded Mocha validators can now start Fibre
+and register their public address. See the
+[Mocha-5 upgrade history](/operate/maintenance/network-upgrades#mocha-5).
+
+## Prerequisites
+
+- A running, synced [validator node](/operate/consensus-validators/validator-node)
+  in the bonded validator set. Fibre derives its storage budget from your stake.
+- The v10 multiplexer celestia-app binary installed before activation. Follow the
+  [release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)
+  and check the [celestia-app installation requirements](/operate/consensus-validators/install-celestia-app#linux-requirements).
+- Separate disks for Fibre data and celestia-app data, and enough memory for
+  the receive buffers described in [Plan capacity](#plan-capacity).
+- If your consensus key lives in an external key management system (KMS), the
+  KMS must support the `SignRawBytes` request and keep median signing latency
+  at or below 10 ms. Fibre talks to the node's signing service, which forwards
+  requests to the KMS.
+
+Any KMS may be used if it meets these requirements. Review the release's
+[KMS policy](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/docs/release-notes/release-notes.md#key-management-systems-kms)
+before choosing or upgrading a signer. It describes Horcrux's maintenance
+risks and the risk of double signing and slashing from incorrect KMS
+configuration.
+
+The 10 ms requirement is measured on celestia-app, not on Fibre. Nodes using a
+remote signer expose `cometbft_privval_signing_latency_*` Prometheus metrics,
+and the node logs a warning when the median of the last 50 signatures exceeds
+10 ms. Collect these through the
+[validator metrics setup](/operate/consensus-validators/metrics) and colocate
+the signing infrastructure if needed to stay within the threshold.
+
+## Plan capacity
+
+Store Fibre data on a different disk from celestia-app data, so that growth in
+one service cannot exhaust the space available to the other.
+
+Memory is dominated by gRPC receive buffers. Each in-flight upload stream can
+buffer a full message of about 132 MiB, and two settings in Fibre's
+`server_config.toml` bound how many streams can be in flight at once:
+
+| Setting | Default | Limits |
+|---|---|---|
+| `max_connections` | `16` | Client connections to the server |
+| `max_concurrent_streams` | `13` | Concurrent gRPC streams per connection |
+
+```text
+worst-case receive buffers ≈ max_connections × max_concurrent_streams × 132 MiB
+```
+
+With the defaults that is about 27 GiB. Size the host for that figure plus
+celestia-app, Fibre's other work, and the operating system. Raise the limits
+only when the host has memory to spare.
+
+An upload uses all 16 default connection slots, which blocks concurrent
+downloads. To keep slots free for downloads, raise `max_connections` above 16
+and recompute the memory budget. How to change these settings is covered in
+[Connection limits](#connection-limits) below.
+
+## Install Fibre
+
+### Prebuilt binary
+
+Linux Fibre archives require glibc 2.34 or later. The celestia-app multiplexer
+has separate [Linux requirements](/operate/consensus-validators/install-celestia-app#linux-requirements);
+check both when choosing the operating system for your validator.
+
+Download the Fibre archive and checksums from the same release as celestia-app.
+For Linux x86_64:
+
+```bash
+fibre_version=v10.2.0-mocha
+curl -fLO "https://github.com/celestiaorg/celestia-app/releases/download/$fibre_version/fibre_Linux_x86_64.tar.gz"
+curl -fLO "https://github.com/celestiaorg/celestia-app/releases/download/$fibre_version/checksums.txt"
+sha256sum --ignore-missing --check checksums.txt
+tar -xzf fibre_Linux_x86_64.tar.gz
+./fibre version
+```
+
+For Linux arm64, use `fibre_Linux_arm64.tar.gz`. macOS archives use `Darwin`
+instead of `Linux`; verify them with `shasum -a 256 --ignore-missing --check checksums.txt`.
+Place the verified binary on your executable path before using `fibre` below.
+
+### Build from source
+
+Install Git, Make, a C compiler, and the Go version required by the release's
+[`go.mod`](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/go.mod).
+Clone the same release used by your celestia-app node:
+
+```bash
+git clone --branch v10.2.0-mocha --depth 1 https://github.com/celestiaorg/celestia-app.git celestia-app-fibre
+cd celestia-app-fibre
+make build-fibre-server VERSION=v10.2.0-mocha
+./build/fibre version
+```
+
+The binary is written to `build/fibre` with the release version and short commit
+hash. Setting `VERSION` avoids selecting another network's tag when tags share
+a commit. Place the binary on your executable path before using `fibre` below.
+
+## Configure the node connections
+
+Fibre needs the application's gRPC service and the validator's signing service.
+
+| Service | Node setting | Example address | Fibre option |
+|---|---|---|---|
+| Application gRPC | `config/app.toml`, `[grpc] address` | `127.0.0.1:9090` | `--app-grpc-address` |
+| Priv-validator gRPC | `config/config.toml`, top-level `priv_validator_grpc_laddr` | `127.0.0.1:26669` | `--signer-grpc-address` |
+
+Paths are relative to your existing node home, normally `~/.celestia-app`.
+Back up the configuration files before editing. Edit existing keys and sections
+instead of appending duplicate TOML sections.
+
+### Enable application gRPC
+
+In `config/app.toml`, edit the existing `[grpc]` section:
+
+```toml
+[grpc]
+enable = true
+address = "127.0.0.1:9090"
+```
+
+Set `enable = true` even if gRPC already appears to work. The multiplexer
+turns it on for the embedded v9 application regardless of this setting, but
+once the chain switches to v10 the setting in `app.toml` is what counts, and a
+freshly generated config has it disabled.
+
+The core RPC gRPC listener (`[rpc] grpc_laddr` in `config/config.toml`) is a
+separate service. Keep its existing address for bridge nodes and other clients;
+Fibre's `--app-grpc-address` must point to the application service above.
+
+### Configure the signing connection
+
+In `config/config.toml`, edit the top-level setting before the first section:
+
+```toml
+priv_validator_grpc_laddr = "127.0.0.1:26669"
+```
+
+Fresh v10 configs use `26669` to avoid a port clash with TMKMS. Existing
+configs may still have `26659`, a custom address, or an empty value, which
+disables the service. Replacing the binary does not rewrite the saved value.
+You can keep a custom port that already works, as long as it does not collide
+with another listener. Whatever port you use, pass the same address to Fibre's
+`--signer-grpc-address`.
+
+Application and signing addresses, including Fibre's connection options, use
+`host:port` without `tcp://`.
+
+Restart the node after editing and confirm it resumes syncing and signing.
+Check service-manager flags for overrides. If deployment tooling manages the
+configuration, update its source templates too.
+
+## Start after activation
+
+Check the active app version through your node's HTTP RPC endpoint:
+
+```bash
+curl -s http://127.0.0.1:26657/abci_info
+```
+
+Confirm `result.response.app_version` is `10` or later. The installed binary
+version does not tell you this: a v10 multiplexer binary keeps running v9 until
+the chain activates the upgrade.
+
+Start Fibre with its data home on the separate disk:
+
+```bash
+fibre start \
+  --home <fibre_home> \
+  --app-grpc-address 127.0.0.1:9090 \
+  --signer-grpc-address 127.0.0.1:26669 \
+  --server-listen-address 0.0.0.0:7980
+```
+
+Use your actual node addresses if different. On first start, Fibre creates
+`<fibre_home>/config/server_config.toml`. The corresponding keys are `app_grpc_address`,
+`signer_grpc_address`, and `server_listen_address`; command-line flags override
+the file. Check the startup log for the chain ID and connected addresses.
+
+### Connection limits
+
+To change the limits sized in [Plan capacity](#plan-capacity), edit
+`<fibre_home>/config/server_config.toml`:
+
+```toml
+max_connections = 16
+max_concurrent_streams = 13
+```
+
+Add either key if it is missing from an existing file, then restart Fibre for
+the change to take effect.
+
+## Register the public address
+
+Once Fibre is running and reachable, register its public host using your
+validator account:
+
+```bash
+celestia-appd tx valaddr set-host <public_host>:7980 \
+  --from <validator_account_key> --chain-id mocha-5
+```
+
+Add your usual node, home, and transaction fee flags. The host must be
+`host:port`, either an IP address or a DNS name, without a URL scheme or path.
+Registration requires active app version 10 and a bonded validator. Register
+only after the server is reachable, so clients do not discover an unavailable
+host and time out against it.
+
+Verify the registration with your consensus address, which
+`celestia-appd comet show-address` prints:
+
+```bash
+celestia-appd query valaddr provider <celestiavalcons_address>
+```
+
+Confirm that `found` is `true` and that the returned host matches your public
+address. `celestia-appd query valaddr providers` lists the hosts of all bonded
+validators.
+
+Registration persists across restarts, so re-run `set-host` only when the
+address changes. The entry is removed if the validator is removed from staking,
+or stays jailed and unbonded for more than 7 days. If your entry was removed,
+register again after rejoining the active set.
+
+## Transport security (TLS)
+
+Client connections to Fibre are always TLS-encrypted, with no certificates to
+obtain or renew. At startup the server generates a certificate and has the
+node's signing service endorse it with your validator's consensus key, which
+clients verify against the validator set. Because identity is bound to the key
+rather than the address, the registered host can be an IP address or a DNS
+name. Restart Fibre after changing `--signer-grpc-address` so the certificate
+is endorsed with the right key.
+
+The application and signing connections are not encrypted. Keep them on
+loopback or a trusted private network, and expose only the client port. See the
+[Fibre server specification](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/specs/src/fibre_server.md)
+for the endorsement scheme.
+
+## Troubleshoot startup
+
+| Symptom | Check |
+|---|---|
+| `unknown service cosmos.base.tendermint.v1beta1.Service` | Confirm Fibre targets application gRPC, then check the active app version. The error alone does not identify the cause. |
+| Missing Fibre or valaddr services | Wait for app version 10 to activate before starting Fibre or registering. |
+| Application connection refused | Enable `[grpc]` in `app.toml`, restart the node, and check addresses and flag overrides. |
+| Signer connection failed | Match Fibre's signer address to `priv_validator_grpc_laddr`; check for a disabled value or a port conflict. |
+| TLS identity verification failed | Check that the signing service holds your validator's consensus key, then restart Fibre after correcting the signer address. |
+| `derived storage budget is 0` warning | The app node reports no stake for your validator. Check that the validator is bonded and that `--app-grpc-address` points at a synced node on the right network. Fibre keeps running and re-derives the budget periodically. |
+| Server runs but no uploads arrive | Check that `query valaddr provider` finds your host, that the registered `host:port` is reachable from outside your network, and that the validator is bonded. Clients only dial registered, bonded validators. |
+| `payment promise verification failed` | A chain ID mismatch means `--app-grpc-address` points at a different network than the client used. Other causes, such as an underfunded escrow, are on the uploader's side. |
+
+For logging, metrics, tracing, and profiling, see
+[Fibre monitoring](/operate/consensus-validators/fibre/metrics).
+The [Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/fibre/cmd/README.md)
+has further configuration details.
+
+---
+Title: Fibre monitoring
+URL: https://docs.celestia.org/operate/consensus-validators/fibre/metrics.md
+Source: app/operate/consensus-validators/fibre/metrics/page.mdx
+---
+
+# Fibre monitoring
+
+This page covers observability in Fibre `v10.2.0-mocha`.
+Complete the [server setup](/operate/consensus-validators/fibre) first. Add the
+flags below to your existing start command, keeping your home and node addresses.
+All observability flags apply to every subcommand.
+
+## Logging
+
+| Flag | Environment variable | Default | Values |
+|---|---|---|---|
+| `--log-level` | `FIBRE_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
+| `--log-format` | `FIBRE_LOG_FORMAT` | `text` | `text`, `json` |
+
+```bash
+fibre start --log-level debug --log-format json
+```
+
+## Tracing and metrics
+
+Fibre sends traces and metrics over OTLP/HTTP to an OpenTelemetry collector,
+such as Grafana Alloy or the OTel Collector. The collector must accept both
+signals and forward them to your tracing and metrics backends. The celestia-app
+repository ships a reference
+[collector configuration](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/observability/docker/otel-collector/config.yml)
+and a
+[Docker Compose stack](https://github.com/celestiaorg/celestia-app/tree/v10.2.0-mocha/observability/docker)
+with Prometheus, Tempo, and Grafana that you can start from. The stack
+publishes Prometheus on host port `9090`, which the setup guide uses for
+application gRPC. When running it on the validator host, change that mapping
+in `docker-compose.yml`, for example to `9091:9090`.
+
+| Flag | Environment variable | Default |
+|---|---|---|
+| `--otel-endpoint` | `FIBRE_OTEL_ENDPOINT` | Disabled |
+
+```bash
+fibre start --otel-endpoint http://localhost:4318
+```
+
+Use the collector's base URL. Fibre appends `/v1/traces` and `/v1/metrics` itself.
+For example, `https://collector.example.com/otel` sends data to
+`/otel/v1/traces` and `/otel/v1/metrics`.
+
+### Grafana dashboard
+
+Import the release's
+[Fibre dashboard JSON](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/observability/docker/grafana/dashboards/fibre.json)
+into Grafana. The dashboard expects a Prometheus data source with UID
+`prometheus`; use that UID or update the dashboard to match your data source.
+Client panels need telemetry from Fibre clients as well as the server. The same
+directory has a
+[Fibre runtime dashboard](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/observability/docker/grafana/dashboards/fibre-runtime.json)
+for Go runtime metrics such as memory and goroutines.
+
+To verify the pipeline, start Fibre with `--otel-endpoint` set, open the Fibre
+dashboard, and confirm the server panels populate once uploads or downloads
+arrive. If they stay empty, work through the [troubleshooting](#troubleshooting)
+table.
+
+## Community dashboard
+
+For a network-wide view on Mocha, use the community-maintained
+[Valopers Fibre dashboard](https://testnet.celestia.valopers.com/fibre) to inspect
+registered providers, host reachability, and validator endorsements.
+
+## Metric reference
+
+### Traces
+
+Fibre samples 10% of root spans and respects upstream sampling decisions, using
+`ParentBased(TraceIDRatioBased(0.1))`. W3C TraceContext and Baggage propagation
+carry trace context across gRPC and HTTP calls.
+
+Each trace includes `service.name=fibre`, `service.version`, and
+`service.instance.id` (the hostname).
+
+### Metrics
+
+Metrics are exported periodically over OTLP. Duration histograms include a
+`success` attribute, so their counts can be used to calculate error rates.
+Metric exemplars link observations to traces; in Grafana, select an exemplar
+to open its trace.
+
+The tables below list the original OTLP metric names. Your collector or backend
+may convert dots to underscores and add unit suffixes.
+
+#### Server metrics
+
+| Metric | Type | Attributes | Description |
+|---|---|---|---|
+| `fibre.server.upload_shard.in_flight` | UpDownCounter | — | Concurrent UploadShard RPCs |
+| `fibre.server.upload_shard.duration` | Histogram (s) | `success`, `upload_size` | UploadShard RPC latency |
+| `fibre.server.upload_shard.bytes` | Counter (By) | — | Bytes received |
+| `fibre.server.download_shard.in_flight` | UpDownCounter | — | Concurrent DownloadShard RPCs |
+| `fibre.server.download_shard.duration` | Histogram (s) | `success`, `shard_size` | DownloadShard RPC latency |
+| `fibre.server.download_shard.bytes` | Counter (By) | — | Bytes sent |
+| `fibre.server.store.put.duration` | Histogram (s) | `success` | Store write latency |
+| `fibre.server.store.get.duration` | Histogram (s) | `success` | Store read latency |
+| `fibre.server.sign.duration` | Histogram (s) | `success` | Payment promise signing latency |
+| `fibre.server.prune.entries` | Counter | — | Entries pruned |
+| `fibre.server.prune.duration` | Histogram (s) | `success` | Prune cycle duration |
+
+`fibre.server.sign.duration` measures how long Fibre waits for payment promise
+endorsements. It is not the metric behind the 10 ms signing latency
+requirement; that is celestia-app's `cometbft_privval_signing_latency_*`, see
+[signing latency](/operate/consensus-validators/fibre#prerequisites) on the
+setup page.
+
+#### Client metrics
+
+These metrics come from instrumented Fibre clients. Collect client telemetry
+alongside server telemetry to measure end-to-end uploads and downloads.
+
+| Metric | Type | Attributes | Description |
+|---|---|---|---|
+| `fibre.client.upload.in_flight` | UpDownCounter | — | Concurrent uploads |
+| `fibre.client.upload.duration` | Histogram (s) | `success`, `blob_size` | Upload latency |
+| `fibre.client.upload.bytes` | Counter (By) | — | Uploaded bytes, including row padding |
+| `fibre.client.upload.data_bytes` | Counter (By) | — | Original data bytes, without padding or coding overhead |
+| `fibre.client.upload.network_bytes` | Counter (By) | — | Bytes sent to all validators, including shard duplication |
+| `fibre.client.upload.signatures_collected` | Histogram | — | Signatures collected per upload |
+| `fibre.client.upload_to.duration` | Histogram (s) | `success`, `blob_size`, `validator_address` | Upload duration per validator |
+| `fibre.client.upload_to.rpc_latency` | Histogram (s) | `success`, `validator_address` | Upload RPC network latency per validator |
+| `fibre.client.download.in_flight` | UpDownCounter | — | Concurrent downloads |
+| `fibre.client.download.duration` | Histogram (s) | `success`, `blob_size` | Download latency |
+| `fibre.client.download.bytes` | Counter (By) | — | Downloaded bytes |
+| `fibre.client.download_from.duration` | Histogram (s) | `success`, `validator_address` | Download duration per validator |
+| `fibre.client.download_from.rpc_latency` | Histogram (s) | `success`, `validator_address` | Download RPC network latency per validator |
+
+## Profiling with pprof
+
+Enable the HTTP profiling server when you need to inspect CPU use, memory,
+goroutines, or contention:
+
+```bash
+fibre start --pprof
+```
+
+The default address is `localhost:6060`. To use a different local port:
+
+```bash
+fibre start --pprof=localhost:7070
+```
+
+| Endpoint | Description |
+|---|---|
+| `/debug/pprof/` | Profile index |
+| `/debug/pprof/goroutine` | Goroutine stack traces |
+| `/debug/pprof/heap` | Heap memory allocations |
+| `/debug/pprof/allocs` | Past memory allocations |
+| `/debug/pprof/block` | Goroutine blocking events |
+| `/debug/pprof/mutex` | Mutex contention |
+| `/debug/pprof/profile` | 30-second CPU profile |
+| `/debug/pprof/trace` | Execution trace |
+
+Mutex and block profiling start automatically with the pprof server, using
+mutex fraction `5` and block rate `1`.
+
+## Continuous profiling with Pyroscope
+
+Fibre can push profiles to a Pyroscope server. When tracing and Pyroscope are
+both enabled, goroutine labels include span IDs so Grafana can link traces to
+profiles. Profiles have `version` and `hostname` tags for filtering.
+
+| Flag | Environment variable | Default |
+|---|---|---|
+| `--pyroscope-endpoint` | `FIBRE_PYROSCOPE_ENDPOINT` | Disabled |
+| `--pyroscope-basic-auth-user` | `FIBRE_PYROSCOPE_BASIC_AUTH_USER` | None |
+| `--pyroscope-basic-auth-password` | `FIBRE_PYROSCOPE_BASIC_AUTH_PASSWORD` | None |
+
+```bash
+fibre start --pyroscope-endpoint http://localhost:4040
+```
+
+For an endpoint that requires authentication:
+
+```bash
+fibre start \
+  --pyroscope-endpoint https://<pyroscope_host> \
+  --pyroscope-basic-auth-user <user_id> \
+  --pyroscope-basic-auth-password <api_key>
+```
+
+## Troubleshooting
+
+| Symptom | Check |
+|---|---|
+| No metrics or traces | Set `--otel-endpoint` to the collector's base URL, confirm it is reachable, and check that both signal pipelines are configured. |
+| No client metrics on the dashboard | Enable telemetry on the Fibre clients generating traffic; server telemetry only supplies server metrics. |
+| No pprof endpoint | Add `--pprof` to the start command and connect to its configured address on the Fibre host. |
+| No continuous profiles | Check the Pyroscope endpoint, authentication values, and Fibre logs for export errors. |
+
+See the release's
+[observability reference](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/fibre/cmd/README.md#observability)
+for more details.
+
+---
 Title: The Celestia Foundation Delegation Program
 URL: https://docs.celestia.org/operate/consensus-validators/foundation-delegation-program.md
 Source: app/operate/consensus-validators/foundation-delegation-program/page.mdx
@@ -4840,28 +4158,29 @@ The primary objectives of the Celestia Foundation Delegation Program are:
 
 ### Program launch
 
-Prospective validators are welcome to apply to the program. The application is designed to assess a validator’s uptime performance and contributions to the Celestia ecosystem. Of the 100 total slots in Celestia’s active validator set, up to 50 will receive delegations within the program.
+Prospective validators are welcome to apply to the program. The application is designed to assess a validator’s uptime performance and contributions to the Celestia ecosystem. Of the 100 total slots in Celestia’s active validator set, up to 35 will receive delegations within the program.
 
 Application submissions will be reviewed by the Celestia Foundation. More details about the application and eligibility criteria are described below.
 
 ### Cohort process
 
-![cohort timeline](/img/cohort-timeline.jpg)
+![cohort timeline](/img/cohort-timeline.png)
 
-Every 4 months, the Celestia Foundation will distribute a portion of the Foundation’s total available stake to a cohort of validators who meet certain criteria, detailed below. Here is an overview of how the cohort process will work.
+Every 6 months, the Celestia Foundation will distribute a portion of the Foundation’s total available stake to a cohort of validators who meet certain criteria, detailed below. Here is an overview of how the cohort process will work.
 
 ### Key Points
 
-- The program is split into Cohorts every 4 months.
-- Each Cohort has to renew in 12 months.
+- The program is split into Cohorts every 6 months.
+- Each Cohort has to renew in 12 months, except the bottom 7 validators.
+- The bottom 7 validators renew every 6 months.
 - Open slots may be filled by existing Cohort members up for renewal or new applicants.
 
 | Cohort   | Cohort Size | Delegation Duration | Renewal By Cohort |
 | -------- | ----------- | ------------------- | ----------------- |
-| Cohort 5 | 15          | 12 months           | Cohort 8          |
-| Cohort 6 | 15          | 12 months           | Cohort 9          |
-| Cohort 7 | 20          | 12 months           | Cohort 10         |
-| Cohort 8 | 15          | 12 months           | Cohort 11         |
+| Cohort 9 | 35          | 12 months           |  Cohort 11          |
+| Cohort 10 | 7          | 6 months           |  Cohort 11          |
+| Cohort 11 | 35          | 12 months           |  Cohort 13         |
+| Cohort 12 | 7          | 6 months           |  Cohort 13         |
 
 This structure allows for a steady flow of both existing applicants and new applicants to maintain a stable set of participants in the program.
 
@@ -4871,7 +4190,7 @@ During this period, so long as the validator maintains high uptime and does not 
 
 The minimum requirements for participation in the program are as follows:
 
-- Run an active Mainnet Beta validator **or** an active Mocha testnet validator for **at least 1 month before application deadline**
+- Run an active Mainnet Beta validator **or** an active Mocha testnet validator for **at least 2 months before application deadline**
 - The validator has to have significant stake to be able to propose blocks
 - Not jailed more than once in the 6 months before application deadline
 - If jailed more than once in the 6 months period before application deadline, then we require a public forum post with detailed post mortem and we consider case by case
@@ -4906,7 +4225,7 @@ Other optional but important criteria:
 
 ## Application
 
-The program will be divided into cohorts with applications open for new applicants and renewal of existing applicants every 4 months. Validators will be delegated for up to a year. For each cohort, the deadline to apply/be evaluated (if you are reapplying) is exactly 1 month prior to the date of being delegated to.
+The program will be divided into cohorts with applications open for new applicants and renewal of existing applicants every 6 months. Validators will be delegated for up to a year. For each cohort, the deadline to apply/be evaluated (if you are reapplying) is exactly 1 month prior to the date of being delegated to.
 
 Selected validators are required to support both Mainnet Beta and Mocha networks as an active validator and Fibre support (once Fibre is live).
 
@@ -4922,7 +4241,7 @@ Before applying, be ready to share the following:
   - Website if any
   - Github page of your organization
   - Team experience and roster (including Twitter + Github links)
-  - Which networks you validate on Mainnet Beta + links to your validators
+  - Which networks you validate on Mainnet + links to your validators
   - A personal statement why you should receive delegation from the Foundation (max 1500 characters)
 - Infrastructure
   - Validator address on Mainnet Beta
@@ -4951,7 +4270,7 @@ The Foundation will report each cohort’s composition and the duration of their
 - [Cohort 5](https://docs.google.com/spreadsheets/d/1Fxu9uYJ4wxfHChEiSg5bmXAMU8IZSq7J3GYDCFgk1HA/edit?gid=1471991269#gid=1471991269): 15 Validator Seats (Applications open June 1, 2025)
 - [Cohort 6](https://docs.google.com/spreadsheets/d/1Fxu9uYJ4wxfHChEiSg5bmXAMU8IZSq7J3GYDCFgk1HA/edit?gid=1010270944): 15 Validator Seats (Applications open October 1, 2025)
 - [Cohort 7](https://forum.celestia.org/t/foundation-delegation-cohort-7-is-live/2232): 20 Validator Seats (Applications open February 1, 2026)
-- Cohort 8: Applications open June 1, 2026 (validators selected in Cohort 5 must reapply)
+- [Cohort 8](https://forum.celestia.org/t/foundation-delegation-cohort-8-is-live/2281): 15 Validator Seats (Applications open June 1, 2026)
 
 ---
 Title: Install celestia-app
@@ -4978,6 +4297,18 @@ Celestia-app officially supports the following architectures:
 - darwin/arm64 (macOS Apple Silicon)
 
 Only these four architectures are officially tested and supported.
+
+## Linux requirements
+
+Check the installed glibc version before installing or upgrading:
+
+```bash
+ldd --version
+```
+
+See the [celestia-app v9 release notes](https://github.com/celestiaorg/celestia-app/blob/v9.0.4/docs/release-notes/release-notes.md#supported-operating-systems)
+and the [Mocha release requirements](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)
+for the supported operating system details.
 
 ## Building binary from source
 
@@ -5014,7 +4345,7 @@ terminal:
 bash -c "$(curl -sL https://docs.celestia.org/celestia-app.sh)"
 
 # Install specific version, latest version for Mocha testnet in this example
-bash -c "$(curl -sL https://docs.celestia.org/celestia-app.sh)" -- -v v9.0.4-mocha
+bash -c "$(curl -sL https://docs.celestia.org/celestia-app.sh)" -- -v v10.2.0-mocha
 ```
 
 Follow the instructions in the terminal output to choose your installation
@@ -5282,7 +4613,7 @@ See [hardware requirements](/operate/getting-started/hardware-requirements).
 
 ## Setting up a validator node
 
-The following tutorial is done on an Ubuntu Linux 20.04 (LTS) x64
+The following tutorial is done on an Ubuntu Linux 24.04 (LTS) x64
 instance machine.
 
 First, follow the instructions on
@@ -5322,10 +4653,9 @@ is properly configured in your consensus node's `app.toml` file. The `[grpc]`
 section should have `enable = true` and the appropriate address setting for the
 bridge node to connect successfully.
 
-Using an RPC of your own, or one from
-[Mainnet Beta](/operate/networks/mainnet-beta#integrations),
-[Mocha testnet](/operate/networks/mocha-testnet#rpc-for-da-bridge-full-and-light-nodes) or
-[Arabica devnet](/operate/networks/arabica-devnet#integrations),
+Using an RPC of your own, or one listed for
+[Mainnet Beta](/operate/networks/mainnet-beta#integrations) or
+[Mocha testnet](/operate/networks/mocha-testnet#community-consensus-endpoints),
 initialize your node.
 
 ### Run the bridge node
@@ -5368,23 +4698,6 @@ In order to create a validator on-chain, follow the steps below.
 
    # Set VALIDATOR_PUBKEY to the pubkey of your validator wallet.
    export VALIDATOR_PUBKEY=$(celestia-appd tendermint show-validator)
-   ```
-
-1. If you want to create a validator on a testnet that is on app version 4 (currently only Arabica), you will need to create a `validator.json` file.
-
-   **Arabica:**
-   ```bash
-   cat <<EOF > validator.json
-   {
-     "pubkey": $VALIDATOR_PUBKEY,
-     "amount": "1000000utia",
-     "moniker": "$MONIKER",
-     "commission-rate": "0.1",
-     "commission-max-rate": "0.2",
-     "commission-max-change-rate": "0.01",
-     "min-self-delegation": "1"
-   }
-   EOF
    ```
 
 1. Create a validator
@@ -5460,7 +4773,7 @@ example you can run:
 ```bash
 celestia-appd tx staking delegate \
 <the_valoper_address_starts_with_celestiavaloper1...> 1000000utia \
---from=$VALIDATOR_WALLET --chain-id=mocha-4 \
+--from=$VALIDATOR_WALLET --chain-id=mocha-5 \
 --fees=21000utia
 ```
 
@@ -5690,7 +5003,6 @@ You can find the address by running the following command:
 You can get testnet tokens from:
 
 - [Mocha](/operate/networks/mocha-testnet)
-- [Arabica](/operate/networks/arabica-devnet)
 
 > **Note:** If you are running a bridge node for your validator, it is highly recommended to request Mocha testnet tokens as this is the testnet used to test out validator operations.
 
@@ -5757,6 +5069,43 @@ This section is needed for the Celestia bridge node.
 By default, `Remote = false`. Still for devnet, we are going
 to use the remote consensus node option and this can also be set
 by the command line flag `--core.remote`.
+
+### RPC
+
+Starting with celestia-node v0.31.3, the RPC server supports optional per-IP
+rate limiting. If you upgraded an existing node from an earlier version, add
+the new fields while preserving your custom configuration by running:
+
+```bash
+celestia <node_type> config-update --p2p.network <network>
+```
+
+The default rate-limit configuration is:
+
+```toml
+[RPC.RateLimit]
+  Enabled = false
+  RequestsPerSec = 100
+  Burst = 200
+  CacheSize = 8192
+```
+
+- `Enabled` turns per-IP rate limiting on or off.
+- `RequestsPerSec` sets the sustained request rate allowed for each IP address.
+- `Burst` allows short request spikes before the sustained rate is enforced.
+- `CacheSize` limits the number of per-IP rate-limit buckets held in memory.
+
+When the limit is exceeded, the RPC server responds with HTTP status `429 Too
+Many Requests`. Leave this rate limiter disabled when the node is behind a
+reverse proxy because all requests may appear to come from the proxy's IP
+address. Apply rate limiting at the proxy instead.
+
+RPC request bodies are limited to 16 MiB, and the server accepts up to 500
+concurrent connections. These limits are enforced by the server and are not
+configurable in `config.toml`.
+
+See the [celestia-node v0.31.3 release notes](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3)
+for the complete upgrade instructions.
 
 ### P2P
 
@@ -5849,7 +5198,7 @@ Check the [latest celestia-app release's `go.mod`](https://github.com/celestiaor
 
 After installing Hermes, edit `config.toml` to add your chains. This tutorial uses:
 
-- Celestia `mocha-4` testnet
+- Celestia `mocha-5` testnet
 - Cosmos Hub `theta-testnet-001` testnet
 
 Edit the Hermes configuration:
@@ -5946,9 +5295,9 @@ list = [["transfer", "channel-3108"]]
 derivation = "cosmos"
 
 [[chains]]
-id = "mocha-4"
+id = "mocha-5"
 type = "CosmosSdk"
-rpc_addr = "https://rpc-celestia-mocha.architectnodes.com"
+rpc_addr = "https://public-endpoint.celestia-mocha.quiknode.pro"
 grpc_addr = "https://grpc.celestia-mocha.com:443"
 rpc_timeout = "10s"
 trusted_node = false
@@ -5970,7 +5319,7 @@ sequential_batch_tx = false
 
 [chains.event_source]
 mode = "push"
-url = "ws://rpc-mocha.pops.one:26657/websocket"
+url = "wss://public-endpoint.celestia-mocha.quiknode.pro/websocket"
 batch_delay = "500ms"
 
 [chains.trust_threshold]
@@ -6007,7 +5356,7 @@ hermes keys add --key-name key-cosmos --chain theta-testnet-001 --mnemonic-file 
 Add Celestia wallet:
 
 ```bash
-hermes keys add --key-name celestia-key --chain mocha-4 --mnemonic-file $HOME/.hermes/key-celestia-mnemonic.txt
+hermes keys add --key-name celestia-key --chain mocha-5 --mnemonic-file $HOME/.hermes/key-celestia-mnemonic.txt
 ```
 
 ### Create a channel
@@ -6015,7 +5364,7 @@ hermes keys add --key-name celestia-key --chain mocha-4 --mnemonic-file $HOME/.h
 With both chains configured and wallets funded, create a channel:
 
 ```bash
-hermes create channel --a-chain theta-testnet-001 --b-chain mocha-4 --a-port transfer --b-port transfer --new-client-connection
+hermes create channel --a-chain theta-testnet-001 --b-chain mocha-5 --a-port transfer --b-port transfer --new-client-connection
 ```
 
 This command creates:
@@ -6065,9 +5414,10 @@ commands:
 
 Installing a pre-built binary is the fastest way to get started with your Celestia data availability node. Releases after celestia-node v0.13.3 have these binaries available.
 
-The installation script will download a binary file named `celestia`. Depending on your chosen installation option, the `celestia` binary will be available at one of these locations:
+The installation script will download a binary file named `celestia`. Depending on your environment and chosen installation option, the `celestia` binary will be available at one of these locations:
 
-- `$GOPATH/bin/celestia` (if Go is installed)
+- The Homebrew bin directory (usually `/opt/homebrew/bin/celestia` on Apple silicon or `/usr/local/bin/celestia` on Intel Macs) when Go is installed with Homebrew
+- `$GOBIN/celestia`, or `$GOPATH/bin/celestia` when `GOBIN` is unset, for other Go installations
 - `/usr/local/bin/celestia`
 - `$HOME/celestia-node-temp/celestia`
 
@@ -6085,7 +5435,7 @@ You can install the latest version or specify a particular version:
 bash -c "$(curl -sL https://docs.celestia.org/celestia-node.sh)"
 
 # Install specific version, Mainnet Beta in this example
-bash -c "$(curl -sL https://docs.celestia.org/celestia-node.sh)" -- -v v0.31.3
+bash -c "$(curl -sL https://docs.celestia.org/celestia-node.sh)" -- -v v0.33.2
 ```
 
 The script will:
@@ -6095,7 +5445,7 @@ The script will:
 3. Verify the checksum for security
 4. Provide installation location options based on your environment:
    - If Go is installed:
-     - Go bin directory (`$GOPATH/bin`)
+     - Detected Go bin directory (the Homebrew bin directory when Go is installed with Homebrew, otherwise `$GOBIN` or `$GOPATH/bin`)
      - System bin directory (`/usr/local/bin`)
      - Keep in current directory
    - If Go is not installed:
@@ -6125,9 +5475,15 @@ we recommend the [quick-start guide](/operate/data-availability/light-node/quick
 
 ## Upgrading your binary
 
-To upgrade your binary, you can install the latest version from the
-instructions above and restart your node. If you run into any issues,
-Refer to the [troubleshooting section](/operate/maintenance/troubleshooting).
+To upgrade your binary, install the latest version using the instructions above.
+
+When upgrading from a version earlier than celestia-node v0.31.3 to v0.31.3 or later, update the node configuration after replacing the binary and before starting the node:
+
+```bash
+celestia <node_type> config-update --p2p.network <network>
+```
+
+The [v0.31.3 release](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3) adds support for Mainnet Beta v9 and introduces new config fields. The command merges those fields into the existing configuration while preserving custom values. Review your configuration after the update, then start the node. If you run into any issues, refer to the [troubleshooting section](/operate/maintenance/troubleshooting#resetting-your-config).
 
 ---
 Title: Advanced
@@ -6269,7 +5625,7 @@ parallel submission by setting `TxWorkerAccounts` to a value greater than 1.
 The node store is created during `celestia light init` and lives under
 `~/.celestia-<node-type>-<network>`.
 
-For example, a Mocha light node store at `~/.celestia-light-mocha-4` contains:
+For example, a Mocha light node store at `~/.celestia-light-mocha-5` contains:
 
 - `config.toml`: Node configuration settings
 - `data/`: Database files
@@ -6360,21 +5716,12 @@ Light nodes:
 
 ## Optional: run a light node in your browser
 
-The easiest way to try a light node is with [Lumina.rs](https://lumina.rs) in
-your browser.
-
-<img
-  width="1000"
-  alt="Lumina.rs in browser"
-  src="https://github.com/user-attachments/assets/5c6ae717-503e-4b83-844f-8716f33ec76c"
-/>
-
-You can also run Lumina on the decentralized explorer,
+You can run Lumina in your browser on the decentralized explorer,
 [Celenium](https://celenium.io).
 
 <img
   width="1000"
-  alt="Celenium running a light node with Lumina.rs"
+  alt="Celenium running a light node with Lumina"
   src="https://github.com/user-attachments/assets/28183a24-8bb1-4f77-850c-d0528de075c7"
 />
 
@@ -6448,16 +5795,6 @@ Here is an example for Mocha testnet:
 celestia <node-type> start --metrics.tls=true \
     --metrics --metrics.endpoint otel.mocha.celestia.observer \
     --core.ip <URI> --core.port <port> --p2p.network mocha
-```
-
-### Arabica devnet
-
-Here is an example for Arabica devnet:
-
-```sh
-celestia <node-type> start --metrics.tls=true \
-    --metrics --metrics.endpoint otel.arabica.celestia.observer \
-    --core.ip <URI> --core.port <port> --p2p.network arabica
 ```
 
 ### TLS connections
@@ -6889,7 +6226,11 @@ Source: app/operate/getting-started/hardware-requirements/page.mdx
 | Light node  | 500 MB RAM | Single core | 20 GB SSD   | 56 Kbps   |
 | Bridge node | 64 GB RAM  | 32 cores    | 25 TiB NVME | 1 Gbps    |
 
-Non-archival node requirements are based on the maximum possible throughput at 128MB/6s for 7 days. Operators may provision less by pruning more aggressively **at their own risk**.
+Non-archival disk recommendations use a 7-day planning window sized for the
+128MB/6s maximum-throughput envelope, which provides headroom above the current
+maximum block capacity of 32 MiB at approximately 3-second blocks. These are
+conservative recommendations; operators may provision less by pruning more
+aggressively **at their own risk**.
 
 ### Archival data availability nodes
 
@@ -6898,7 +6239,11 @@ Non-archival node requirements are based on the maximum possible throughput at 1
 | Light node (unpruned headers) | 500 MB RAM | Single core | 7 TiB NVME\*   | 56 Kbps   |
 | Bridge node                   | 64 GB RAM  | 32 cores    | 637 TiB NVME\* | 1 Gbps    |
 
-\*Archival disk requirement is based on the current v6 128MB/6s throughput at maximum capacity for one year. In reality the requirement can be much lower and we advise regularly checking disk usage and having at least 1 month worth of max throughput of extra disk space.
+\*Archival disk recommendations use a 1-year planning window sized for the
+128MB/6s maximum-throughput envelope, which provides headroom above the current
+maximum block capacity of 32 MiB at approximately 3-second blocks. Actual
+usage can be much lower. Regularly check disk usage and maintain at least 1
+month of maximum-throughput capacity as additional free space.
 
 ## Consensus nodes
 
@@ -6909,7 +6254,11 @@ Non-archival node requirements are based on the maximum possible throughput at 1
 | Validator      | 32 GB RAM | 32 cores | 12 TiB NVME | 1 Gbps    |
 | Consensus node | 32 GB RAM | 32 cores | 12 TiB NVME | 1 Gbps    |
 
-Non-archival node requirements are based on the maximum possible throughput at 128MB/6s for 7 days. Operators may provision less by pruning more aggressively **at their own risk**.
+Non-archival disk recommendations use a 7-day planning window sized for the
+128MB/6s maximum-throughput envelope, which provides headroom above the current
+maximum block capacity of 32 MiB at approximately 3-second blocks. These are
+conservative recommendations; operators may provision less by pruning more
+aggressively **at their own risk**.
 
 #### Archival consensus nodes
 
@@ -6917,11 +6266,15 @@ Non-archival node requirements are based on the maximum possible throughput at 1
 | -------------- | --------- | -------- | -------------- | --------- |
 | Consensus node | 64 GB RAM | 32 cores | 624 TiB NVME\* | 1 Gbps    |
 
-\*Archival disk requirement is based on the current v6 128MB/6s throughput at maximum capacity for one year. In reality the requirement can be much lower and we advise regularly checking disk usage and having at least 1 month worth of max throughput of extra disk space.
+\*Archival disk recommendations use a 1-year planning window sized for the
+128MB/6s maximum-throughput envelope, which provides headroom above the current
+maximum block capacity of 32 MiB at approximately 3-second blocks. Actual
+usage can be much lower. Regularly check disk usage and maintain at least 1
+month of maximum-throughput capacity as additional free space.
 
-When upgrading to 128MB/6s, validators must use hardware that passes the [CPU benchmark](https://github.com/celestiaorg/celestia-app/blob/main/tools/cpu_requirements/README.md). If your server does not pass, upgrade to a more powerful machine.
+Validators must use hardware that passes the [CPU benchmark](https://github.com/celestiaorg/celestia-app/blob/main/tools/cpu_requirements/README.md). If your server does not pass, upgrade to a more powerful machine.
 
-For a list of CPUs tested for 128MB/6s, see the [release notes](https://github.com/celestiaorg/celestia-app/blob/main/docs/release-notes/release-notes.md#v6---128mb6s). Other CPUs are acceptable if they pass the benchmark. Recommended CPU specs:
+For a list of CPUs tested against the v6 128MB/6s workload, see the [release notes](https://github.com/celestiaorg/celestia-app/blob/main/docs/release-notes/release-notes.md#v6---128mb6s). Other CPUs are acceptable if they pass the benchmark. Recommended CPU specs:
 
 - 32 or more cores
 - GFNI (Galois Field New Instructions) support
@@ -7059,7 +6412,7 @@ After you set a password, your encrypted key will be displayed.
 
 For the public celestia address, you can fund the
 previously created wallet via [Discord](https://discord.com/invite/YsnTPcSfWQ)
-by sending this message to either the #mocha-faucet or #arabica-faucet channel:
+by sending this message to the #mocha-faucet channel:
 
 ```text
 $request celestia1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -7147,14 +6500,14 @@ This will load the key `<key-name>` into the directory of the node.
 
 Further flags you can use to customize your key are the following:
 
-- `--p2p.network`: Specifies which network you want the key for. Values
-  are `arabica` and `mocha`. Please note the default network will be `mocha`.
+- `--p2p.network`: Specifies which network you want the key for. Use `mocha`
+  to target Mocha.
 
 Keep in mind that your celestia-node will only pick up keys that
 are inside the default directory under `/keys` so you should make
 sure to point `cel-key` utility to the correct directory via the
 `p2p.network` or `home` flags if you have specified a custom
-directory or network other than Arabica, Mocha, or Mainnet Beta.
+directory or network other than Mocha or Mainnet Beta.
 
 Also keep in mind that if you do not specify a network with `--p2p.network`,
 the default one will always be `celestia` (Mainnet Beta).
@@ -7207,7 +6560,7 @@ When you run a Celestia node and use the command `celestia state account-address
 
 The key reported by `celestia state account-address` is stored in your node's keyring directory:
 
-- For Mocha testnet: `~/.celestia-<node-type>-mocha-4/keys/keyring-test/`
+- For Mocha testnet: `~/.celestia-<node-type>-mocha-5/keys/keyring-test/`
 - For Mainnet Beta: `~/.celestia-<node-type>/keys/keyring-test/`
 
 You can verify this by listing your keys with `cel-key`:
@@ -7248,7 +6601,7 @@ You can also directly back up the entire keyring directory:
 
 ```bash
 # For Mocha testnet
-cp -r ~/.celestia-<node-type>-mocha-4/keys/keyring-test /secure/backup/location
+cp -r ~/.celestia-<node-type>-mocha-5/keys/keyring-test /secure/backup/location
 
 # For Mainnet Beta
 cp -r ~/.celestia-<node-type>/keys/keyring-test /secure/backup/location
@@ -7284,7 +6637,7 @@ If you backed up the keyring directory:
 
 ```bash
 # For Mocha testnet
-cp -r /secure/backup/location/* ~/.celestia-<node-type>-mocha-4/keys/keyring-test/
+cp -r /secure/backup/location/* ~/.celestia-<node-type>-mocha-5/keys/keyring-test/
 
 # For Mainnet Beta
 cp -r /secure/backup/location/* ~/.celestia-<node-type>/keys/keyring-test/
@@ -7307,7 +6660,9 @@ celestia <node-type> start --p2p.network <network> --keyring.keyname <key-name> 
 For example:
 
 ```bash
-celestia light start --p2p.network mocha --keyring.keyname my_celes_key --core.ip rpc-mocha.pops.one
+celestia light start --p2p.network mocha --keyring.keyname my_celes_key \
+  --core.ip public-endpoint.celestia-mocha.quiknode.pro \
+  --core.port 9090 --core.tls
 ```
 
 This ensures your node uses the specified key for all operations, including those reported by `celestia state account-address`.
@@ -7327,8 +6682,9 @@ testnet):
 
 ```bash
 docker run --name celestia-node -e NODE_TYPE=light -e P2P_NETWORK=mocha -p 26659:26659 \
-ghcr.io/celestiaorg/celestia-node:v0.31.3-mocha celestia light start \
---core.ip rpc-mocha.pops.one --core.port 9090 --p2p.network mocha
+ghcr.io/celestiaorg/celestia-node:v0.34.2-mocha celestia light start \
+--core.ip public-endpoint.celestia-mocha.quiknode.pro --core.port 9090 \
+--core.tls --p2p.network mocha
 ```
 
 List active containers in another window with:
@@ -7376,9 +6732,9 @@ services:
     image: celestia-node
     environment:
       - NODE_TYPE=light
-    command: celestia light start --core.ip rpc-mocha.pops.one --core.port 9090 --p2p.network mocha --keyring.keyname my_celes_key
+    command: celestia light start --core.ip public-endpoint.celestia-mocha.quiknode.pro --core.port 9090 --core.tls --p2p.network mocha --keyring.keyname my_celes_key
     volumes:
-      - ${PWD}/keys:/root/.celestia-light-mocha-4/keys
+      - ${PWD}/keys:/root/.celestia-light-mocha-5/keys
     ports:
       - 26659:26659
 ```
@@ -7413,7 +6769,7 @@ expect with the key you mounted:
 
 ```bash
 root@<container-id>:/# ./cel-key list --keyring-backend test --node.type light
-using directory:  ~/.celestia-light-mocha-4/keys
+using directory:  ~/.celestia-light-mocha-5/keys
 - address: celestia1wkhyhr7ngf0ayqlpnsnxg4d72hfs5453dvunm9
   name: my_celes_key
   pubkey: '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"A1/NsoY0RGL7Hqt4VWLg441GQKJsZ2fBUnZXipgns8oV"}'
@@ -7822,7 +7178,7 @@ and fund your `origin` address.
 
 To create a vesting account on Mocha, you will need an RPC URL to send
 the transaction to. You can find the
-[RPC endpoints on the Mocha testnet page](/operate/networks/mocha-testnet#rpc-for-da-bridge-full-and-light-nodes).
+[consensus endpoints on the Mocha testnet page](/operate/networks/mocha-testnet#community-consensus-endpoints).
 
 If you are running a production application, use a production endpoint.
 
@@ -7883,7 +7239,7 @@ keyring-backend = "test"
 # CLI output format (text|json)
 output = "text"
 # <host>:<port> to Tendermint RPC interface for this chain
-node = "tcp://rpc-mocha.pops.one:443"
+node = "https://public-endpoint.celestia-mocha.quiknode.pro"
 # Transaction broadcasting mode (sync|async|block)
 broadcast-mode = "sync"
 ```
@@ -7964,41 +7320,82 @@ The upgrade process can be broken down into a few steps:
 1. [Celestia Improvement Proposals](https://cips.celestia.org) (CIPs) are created for consensus-breaking changes and features that impact user experience. These CIPs are included in a meta-CIP, which define the scope of the upgrade.
 1. Celestia core developer teams implement the features defined in the CIPs.
 1. A new binary is released with the new features to be tested on testnets.
-1. Node operators upgrade to the new binary, on [Arabica devnet](/operate/networks/arabica-devnet), [Mocha testnet](/operate/networks/mocha-testnet), and finally on Celestia [Mainnet Beta](/operate/networks/mainnet-beta).
+1. Node operators upgrade to the new binary on [Mocha testnet](/operate/networks/mocha-testnet), and finally on Celestia [Mainnet Beta](/operate/networks/mainnet-beta).
    - Upgrades using pre-programmed height (v2) activate at a predetermined block number.
    - Upgrades using in-protocol signaling (v3+) activate one week after 5/6 of the voting power has signaled for a particular version
+
+## Configuration changes in v10
+
+### Existing configuration files
+
+Replacing celestia-app does not add new settings or comments to existing
+configuration files. Missing settings use the binary's defaults.
+
+Starting with celestia-app v10.2.0, use `config sync` to add missing fields and
+their documentation to `config/config.toml`. Preview the additions first:
+
+```bash
+celestia-appd config sync --home ~/.celestia-app --dry-run
+celestia-appd config sync --home ~/.celestia-app
+```
+
+Use your node's home directory if different. The command preserves existing
+values and creates a backup before writing changes. It does not run
+automatically on startup. Use it instead of the deprecated `update-config`
+command for v10 configuration maintenance.
+
+### RPC and storage settings
+
+These settings apply to celestia-app consensus nodes:
+
+| Section in `config/config.toml` | Setting | Default |
+|---|---|---|
+| `[rpc]` | `max_concurrent_heavy_requests` | `20` |
+| `[storage]` | `compact` | `false` |
+| `[storage]` | `compaction_interval` | `10000` |
+
+The RPC setting caps concurrent heavy requests such as `block_results` and
+`tx_search`; public RPC providers may want to raise it. Blockstore compaction
+is optional and does not enable pruning. When enabled, it compacts the pruned
+range in the background. To compact an existing blockstore once, stop the node
+and run `celestia-appd compact-blockstore`.
+
+See the [Mocha release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)
+for details. Follow the upgrade announcement for your network before replacing
+its binary.
 
 ## Network upgrade history
 
 v7 (Hibiscus) was skipped on Mainnet Beta due to a bug discovered after testnet activation; v8 (defined in [CIP-49](https://cips.celestia.org/cip-049.html)) was activated instead.
 
-Version links point to Celenium upgrade status pages for signaling upgrades (v3+). v2 used a pre-programmed height and does not have a Celenium signaling page.
-
-### Arabica devnet
-
-| Version                                                                                 | Name       | CIP                                                                     | Date and time           | Upgrade height                                                          | Delay period | Parameters                                                          |
-| --------------------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------------- | ----------------------- | ----------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------- |
-| v2                                                                                      | Lemongrass | [CIP-17](https://github.com/celestiaorg/CIPs/blob/main/cips/cip-017.md) | 2024/08/19 14:00 UTC    | [1751707](https://arabica.celenium.io/block/1751707)                    | —            | [v2](https://celestiaorg.github.io/celestia-app/parameters_v2.html) |
-| [v3](https://arabica.celenium.io/upgrade/3?tab=signals&page=1)                          | Ginger     | [CIP-25](https://cips.celestia.org/cip-025.html)                        | 2024/11/05 21:55:13 UTC | [2348907](https://arabica.celenium.io/block/2348907)                    | —            | [v3](https://celestiaorg.github.io/celestia-app/parameters_v3.html) |
-| [v4](https://arabica.celenium.io/upgrade/4?tab=signals&page=1)                          | Lotus      | [CIP-33](https://cips.celestia.org/cip-033.html)                        | 2025/05/16 07:51:35 UTC | [5975265](https://arabica.celenium.io/block/5975265)                    | 1 day        | [v4](https://celestiaorg.github.io/celestia-app/parameters_v4.html) |
-| [v5](https://arabica.celenium.io/upgrade/5?tab=signals&page=1)                          | —          | —                                                                       | 2025/07/29 19:59:00 UTC | [7316464](https://arabica.celenium.io/block/7316464)                    | 1 block      | [v5](https://celestiaorg.github.io/celestia-app/parameters_v5.html) |
-| [v6](https://arabica.celenium.io/upgrade/6?tab=signals&page=1)                          | Matcha     | [CIP-42](https://cips.celestia.org/cip-042.html)                        | 2025/09/09 06:08:11 UTC | [8105605](https://arabica.celenium.io/block/8105605)                    | 1 day        | [v6](https://celestiaorg.github.io/celestia-app/parameters_v6.html) |
-| [v7](https://arabica.celenium.io/upgrade/7?tab=signals&page=1)                          | Hibiscus   | [CIP-47](https://cips.celestia.org/cip-047.html)                        | 2026/02/14 02:36:26 UTC | [10133989](https://arabica.celenium.io/block/10133989?tab=transactions) | 1 day        | [v7](https://celestiaorg.github.io/celestia-app/parameters_v7.html) |
-| [v8](https://arabica.celenium.io/upgrade/8?tab=signals&page=1)                          | —          | [CIP-49](https://cips.celestia.org/cip-049.html)                        | 2026/04/04 17:22:12 UTC | [10853352](https://arabica.celenium.io/block/10853352?tab=transactions) | 1 day        | [v8](https://celestiaorg.github.io/celestia-app/parameters_v8.html) |
-| [v9](https://arabica.celenium.io/upgrade/9?tab=signals&page=1)                          | —          | TBD                                                                     | 2026/05/28 12:00:22 UTC | [11636100](https://arabica.celenium.io/block/11636100?tab=transactions) | 1 day        | [v9](https://celestiaorg.github.io/celestia-app/parameters_v9.html) |
+In the Mainnet Beta table, version links point to Celenium upgrade status pages for signaling upgrades (v3+). v2 used a pre-programmed height and does not have a Celenium signaling page.
 
 ### Mocha testnet
 
-| Version                                                                               | Name       | CIP                                                                     | Date and time           | Upgrade height                                                        | Delay period | Parameters                                                          |
-| ------------------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------------- | ----------------------- | --------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------- |
-| v2                                                                                    | Lemongrass | [CIP-17](https://github.com/celestiaorg/CIPs/blob/main/cips/cip-017.md) | 2024/08/28 14:00 UTC    | [2585031](https://mocha.celenium.io/block/2585031)                    | —            | [v2](https://celestiaorg.github.io/celestia-app/parameters_v2.html) |
-| [v3](https://mocha.celenium.io/upgrade/3?tab=signals&page=1)                          | Ginger     | [CIP-25](https://cips.celestia.org/cip-025.html)                        | 2024/11/14 18:31:11 UTC | [3140052](https://mocha.celenium.io/block/3140052)                    | —            | [v3](https://celestiaorg.github.io/celestia-app/parameters_v3.html) |
-| [v4](https://mocha.celenium.io/upgrade/4?tab=signals&page=1)                          | Lotus      | [CIP-33](https://cips.celestia.org/cip-033.html)                        | 2025/07/01 11:51:58 UTC | [6915786](https://mocha.celenium.io/block/6915786)                    | 2 days       | [v4](https://celestiaorg.github.io/celestia-app/parameters_v4.html) |
-| [v5](https://mocha.celenium.io/upgrade/5?tab=signals&page=1)                          | —          | —                                                                       | 2025/07/30 17:07:29 UTC | [7401191](https://mocha.celenium.io/block/7401191)                    | 1 block      | [v5](https://celestiaorg.github.io/celestia-app/parameters_v5.html) |
-| [v6](https://mocha.celenium.io/upgrade/6?tab=signals&page=1)                          | Matcha     | [CIP-42](https://cips.celestia.org/cip-042.html)                        | 2025/10/03 01:25:02 UTC | [8236886](https://mocha.celenium.io/block/8236886?tab=transactions)   | 2 days       | [v6](https://celestiaorg.github.io/celestia-app/parameters_v6.html) |
-| [v7](https://mocha.celenium.io/upgrade/7?tab=signals&page=1)                          | Hibiscus   | [CIP-47](https://cips.celestia.org/cip-047.html)                        | 2026/02/23 18:21:52 UTC | [10209986](https://mocha.celenium.io/block/10209986?tab=transactions) | 2 days       | [v7](https://celestiaorg.github.io/celestia-app/parameters_v7.html) |
-| [v8](https://mocha.celenium.io/upgrade/8?tab=signals&page=1)                          | —          | [CIP-49](https://cips.celestia.org/cip-049.html)                        | 2026/04/16 14:26:21 UTC | [10941526](https://mocha.celenium.io/block/10941526?tab=transactions) | 2 days       | [v8](https://celestiaorg.github.io/celestia-app/parameters_v8.html) |
-| [v9](https://mocha.celenium.io/upgrade/9?tab=signals&page=1)                          | —          | TBD                                                                     | 2026/06/05 08:16:10 UTC | [11655991](https://mocha.celenium.io/block/11655991?tab=transactions) | 2 days       | [v9](https://celestiaorg.github.io/celestia-app/parameters_v9.html) |
+#### Mocha-5
+
+App version 10 activated on `mocha-5` at the height specified in the
+[activation announcement](https://status.celestia.org/incidents/vbsesey3).
+Bonded validators can now [start and register their Fibre servers](/operate/consensus-validators/fibre).
+
+| Version | Date and time | Upgrade height | Parameters |
+| ------- | ------------- | -------------- | ---------- |
+| v10 | 2026/09/24 20:20:15 UTC | [1082619](https://testnet.celestia.explorers.guru/block/1082619) | [v10](https://celestiaorg.github.io/celestia-app/parameters_v10.html) |
+
+#### Mocha-4 (historical)
+
+The upgrades below happened on the `mocha-4` chain. Celenium now indexes `mocha-5`, so explorer pages for these historical upgrades and heights are no longer available.
+
+| Version | Name       | CIP                                                                     | Date and time           | Upgrade height | Delay period | Parameters                                                          |
+| ------- | ---------- | ----------------------------------------------------------------------- | ----------------------- | -------------- | ------------ | ------------------------------------------------------------------- |
+| v2      | Lemongrass | [CIP-17](https://github.com/celestiaorg/CIPs/blob/main/cips/cip-017.md) | 2024/08/28 14:00 UTC    | 2585031        | —            | [v2](https://celestiaorg.github.io/celestia-app/parameters_v2.html) |
+| v3      | Ginger     | [CIP-25](https://cips.celestia.org/cip-025.html)                        | 2024/11/14 18:31:11 UTC | 3140052        | —            | [v3](https://celestiaorg.github.io/celestia-app/parameters_v3.html) |
+| v4      | Lotus      | [CIP-33](https://cips.celestia.org/cip-033.html)                        | 2025/07/01 11:51:58 UTC | 6915786        | 2 days       | [v4](https://celestiaorg.github.io/celestia-app/parameters_v4.html) |
+| v5      | —          | —                                                                       | 2025/07/30 17:07:29 UTC | 7401191        | 1 block      | [v5](https://celestiaorg.github.io/celestia-app/parameters_v5.html) |
+| v6      | Matcha     | [CIP-42](https://cips.celestia.org/cip-042.html)                        | 2025/10/03 01:25:02 UTC | 8236886        | 2 days       | [v6](https://celestiaorg.github.io/celestia-app/parameters_v6.html) |
+| v7      | Hibiscus   | [CIP-47](https://cips.celestia.org/cip-047.html)                        | 2026/02/23 18:21:52 UTC | 10209986       | 2 days       | [v7](https://celestiaorg.github.io/celestia-app/parameters_v7.html) |
+| v8      | —          | [CIP-49](https://cips.celestia.org/cip-049.html)                        | 2026/04/16 14:26:21 UTC | 10941526       | 2 days       | [v8](https://celestiaorg.github.io/celestia-app/parameters_v8.html) |
+| v9      | —          | [CIP-50](https://cips.celestia.org/cip-050.html)                        | 2026/06/05 08:16:10 UTC | 11655991       | 2 days       | [v9](https://celestiaorg.github.io/celestia-app/parameters_v9.html) |
 
 ### Mainnet Beta
 
@@ -8011,13 +7408,15 @@ Version links point to Celenium upgrade status pages for signaling upgrades (v3+
 | [v6](https://celenium.io/upgrade/6?tab=signals&page=1)                          | Matcha     | [CIP-42](https://cips.celestia.org/cip-042.html)                        | 2025/11/24 12:33:12 UTC               | [8662012](https://celenium.io/block/8662012?tab=transactions) | 7 days       | [v6](https://celestiaorg.github.io/celestia-app/parameters_v6.html) |
 | [v7](https://celenium.io/upgrade/7?tab=signals&page=1)                          | Hibiscus   | [CIP-47](https://cips.celestia.org/cip-047.html)                        | N/A (skipped, see v8)                 | N/A                                                           | —            | —                                                                   |
 | [v8](https://celenium.io/upgrade/8?tab=signals&page=1)                          | —          | [CIP-49](https://cips.celestia.org/cip-049.html)                        | 2026/05/05 16:37:35 UTC               | [10960599](https://celenium.io/block/10960599?tab=transactions) | 7 days       | [v8](https://celestiaorg.github.io/celestia-app/parameters_v8.html) |
-| [v9](https://celenium.io/upgrade/9?tab=signals&page=1)                          | —          | TBD                                                                     | Signaling began 2026/06/02 14:54:21 UTC | [Monitor status](https://celenium.io/upgrade/9?tab=signals&page=1) | 7 days       | [v9](https://celestiaorg.github.io/celestia-app/parameters_v9.html) |
+| [v9](https://celenium.io/upgrade/9?tab=signals&page=1)                          | —          | [CIP-50](https://cips.celestia.org/cip-050.html)                        | 2026/07/01 18:53:25 UTC            | [11771699](https://celenium.io/block/11771699)              | 7 days       | [v9](https://celestiaorg.github.io/celestia-app/parameters_v9.html) |
 
 ## Upcoming upgrades
 
 > **Warning:** You do not need to use a tool like [cosmovisor](https://docs.cosmos.network/sdk/v0.53/build/tooling/cosmovisor) to upgrade the binary. Please upgrade your binary before signaling support for the new version.
 
-Mainnet Beta v9 signaling is in progress. Monitor the upgrade status on [Celenium](https://celenium.io/upgrade/9?tab=signals&page=1).
+Mocha has activated app version 10; see the [Mocha-5 upgrade history](#mocha-5).
+For upcoming upgrade schedules on each network, follow the
+[network announcements](https://status.celestia.org/).
 
 ---
 Title: Node snapshots
@@ -8374,8 +7773,7 @@ _i.e._ no `--p2p.network string` flag is required for Mainnet Beta.
 | Network      | Chain ID                   | `--p2p.network string`                  |
 | ------------ | -------------------------- | --------------------------------------- |
 | Mainnet Beta | celestia | not required (`--p2p.network celestia`) |
-| Mocha        | mocha-4   | `--p2p.network mocha`                   |
-| Arabica      | arabica-11 | `--p2p.network arabica`                 |
+| Mocha        | mocha-5   | `--p2p.network mocha`                   |
 
 ## Ports
 
@@ -8414,7 +7812,7 @@ manually specify the `--node.store` flag for each RPC request.
 **Assumptions:**
 
 - The presence of a lock signifies a running node.
-- Networks are ordered as Mainnet Beta, Mocha, Arabica, private, custom.
+- Networks are ordered as Mainnet Beta, Mocha, private, custom.
 - Node types are ordered as bridge and light.
 - Each network has only one running node type.
 - Multiple nodes of the same network and type are prohibited
@@ -8447,7 +7845,7 @@ celestia <node-type> init --node.store /home/user/celestia-<node-type>-location/
 Next, start your node:
 
 ```bash
-celestia bridge start --core.ip rpc-mocha.pops.one --p2p.network mocha \
+celestia bridge start --core.ip <archival-consensus-endpoint> --p2p.network mocha \
     --node.store /home/user/celestia-bridge-location/ --core.port <port>
 ```
 
@@ -8485,26 +7883,6 @@ The request will go to the Mainnet Beta node, and a 401 will show in
 this node's logs. Note that a 401 is expected because this blob was
 posted to Mocha and neither the namespace nor the blob exist on Mainnet Beta.
 
-#### Mocha bridge and Arabica light
-
-This example uses a Mocha bridge node and an Arabica light node. When
-making the request:
-
-```bash
-❯ celestia blob get 1318129 0x42690c204d39600fddd3 0MFhYKQUi2BU+U1jxPzG7QY2BVV1lb3kiU+zAK7nUiY=
-{
-  "result": {
-    "namespace": "AAAAAAAAAAAAAAAAAAAAAAAAAEJpDCBNOWAP3dM=",
-    "data": "0x676d",
-    "share_version": 0,
-    "commitment": "0MFhYKQUi2BU+U1jxPzG7QY2BVV1lb3kiU+zAK7nUiY=",
-    "index": 23
-  }
-}
-```
-
-The request will go to the Mocha bridge node, and result shown as expected.
-
 #### Using a custom rpc.config address
 
 When using a custom RPC config address `0.0.0.1` and port `25231`,
@@ -8519,6 +7897,8 @@ node is running. It fails as expected:
 ```
 
 ## Resetting your config
+
+> **Warning:** When upgrading from a version earlier than celestia-node v0.31.3 to v0.31.3 or later, run `config-update` after replacing the binary and before starting the node. The [v0.31.3 release](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3) adds support for Mainnet Beta v9 and introduces new config fields, including RPC rate limiting. Skipping this step leaves the new options at their defaults and may cause config warnings.
 
 If you encounter an error, it is likely that an old config file is present:
 
@@ -8630,7 +8010,7 @@ sudo systemctl restart celestia-bridge
 When a bridge node runs on `ext4` file system, there will be errors like the following due to large folder size:
 
 ```bash
-ERROR   header/sync     sync/sync.go:227        syncing headers {"from": 5074102, "to": 5161144, "err": "creating file: creating ODSQ4 file: creating Q4 file: creating Q4 file: open /root/.celestia-bridge-mocha-4/blocks/C9ADF6D9F862D92993D67977DE407D17ECF7F1DACE5FB7FE9A6845F4BD0172CE.q4: no space left on device"}
+ERROR   header/sync     sync/sync.go:227        syncing headers {"from": 5074102, "to": 5161144, "err": "creating file: creating ODSQ4 file: creating Q4 file: creating Q4 file: open /root/.celestia-bridge-mocha-5/blocks/C9ADF6D9F862D92993D67977DE407D17ECF7F1DACE5FB7FE9A6845F4BD0172CE.q4: no space left on device"}
 ```
 
 You may also observe similar errors from the `tar` command when extracting a snapshot of an archival bridge node.
@@ -8698,12 +8078,12 @@ Source: app/operate/maintenance/trusted-hash-recovery/page.mdx
 # Syncing a light node from a trusted hash
 
 This guide goes over how to sync a DA light node from a trusted hash.
-The example uses the Mocha testnet. You will need to adjust the commands accordingly for Mainnet Beta, Arabica, or a custom network.
+The example uses the Mocha testnet. You will need to adjust the commands accordingly for Mainnet Beta or a custom network.
 
 If you already have a data store for your node, you need to remove it before syncing from a trusted hash:
 
 ```sh
-rm -rf ~/.celestia-light-mocha-4/data
+rm -rf ~/.celestia-light-mocha-5/data
 ```
 
 You also cannot sync to a height earlier than the data availability sampling (DAS) start height.
@@ -8729,181 +8109,14 @@ By configuring these fields, your light node will maintain history from the spec
 You can automate the process of setting the trusted height and hash using the following commands for Mocha testnet:
 
 > **Tip (Linux):** Remove the empty string (`''`) after `-i` in the `sed` commands:  
-> `sed -i "s/SyncFromHeight = .*/SyncFromHeight = $TRUSTED_HEIGHT/" ~/.celestia-light-mocha-4/config.toml`  
-> `sed -i "s/SyncFromHash = .*/SyncFromHash = \"$TRUSTED_HASH\"/" ~/.celestia-light-mocha-4/config.toml`
+> `sed -i "s/SyncFromHeight = .*/SyncFromHeight = $TRUSTED_HEIGHT/" ~/.celestia-light-mocha-5/config.toml`  
+> `sed -i "s/SyncFromHash = .*/SyncFromHash = \"$TRUSTED_HASH\"/" ~/.celestia-light-mocha-5/config.toml`
 
 ## For service operators
 
 If you're using multiple light nodes for similar services like tracking the same rollup,
 it is recommended to use the same hash and height for all services using
 the same starting height.
-
----
-Title: Arabica devnet
-URL: https://docs.celestia.org/operate/networks/arabica-devnet.md
-Source: app/operate/networks/arabica-devnet/page.mdx
----
-
-# Arabica devnet
-
-![arabica-devnet](/img/arabica-devnet.png)
-
-Arabica devnet is a testnet from Celestia Labs that is focused
-exclusively on providing developers with enhanced performance and
-the latest upgrades for testing their rollups and applications.
-
-Arabica does not focus on validator or consensus-level testing, rather,
-that is what Mocha testnet is used for. If you are a validator, we
-recommend testing your validator operations on the
-[Mocha testnet](/operate/networks/mocha-testnet).
-
-## Network stability and upgrades
-
-Arabica has the latest updates from all Celestia's products deployed
-on it, it can be subject to many changes. Therefore, as a fair warning,
-Arabica can break unexpectedly, but given it will be continuously updated,
-it is a useful way to keep testing the latest changes in the software.
-
-Developers can still deploy on Mocha testnet their sovereign rollups if they
-chose to do so, it just will always lag behind Arabica devnet until Mocha
-undergoes network upgrades in coordination with validators.
-
-## Network details
-
-| Detail        | Value                                                                                                  |
-| ------------- | ------------------------------------------------------------------------------------------------------ |
-| Chain ID      | `arabica-11`                                                                                      |
-| Genesis hash  | `27122593765E07329BC348E8D16E92DCB4C75B34CCCB35C640FD7A4484D4C711`                                     |
-| Genesis file  | https://github.com/celestiaorg/networks/blob/master/arabica-11/genesis.json                       |
-| Peers file    | https://github.com/celestiaorg/networks/blob/master/arabica-11/peers.txt                          |
-| Validators    | 4                                                                                                      |
-
-### Software version numbers
-
-| Software       | Version                                                                  |
-| -------------- | ------------------------------------------------------------------------ |
-| celestia-node  | [v0.31.3-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3-arabica) |
-| celestia-app   | [v9.0.4-arabica](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.4-arabica)   |
-
-## Network status
-
-For real-time network status information, including uptime, incident reports,
-and service availability, visit the
-[official Celestia Arabica devnet status page](https://status.celestia.dev/status/arabica).
-
-## Network constants
-
-For the current Arabica devnet network constants, see
-[arabica.celenium.io/constants](https://arabica.celenium.io/constants).
-
-## Integrations
-
-This guide contains the relevant sections for how to connect to Arabica
-devnet, depending on the type of node you are running. Your best
-approach to participating is to first determine which node you would
-like to run. Each node’s guide will link to the relevant network in
-order to show you how to connect to them. Learn about the different
-endpoint types [in the Cosmos SDK documentation](https://docs.cosmos.network/sdk/v0.53/learn/advanced/grpc_rest).
-
-### Production RPC endpoints
-
-These RPC providers are meant to be used in production environments
-and for specific use cases that require reliable access to full block
-history, such as:
-
-- Running Bridge Nodes that download data from core RPC endpoints
-- Applications that need Bridge Node endpoints with guaranteed uptime and SLAs
-- Submitting blobs in production settings (free RPC endpoints have no guarantees, even for submitting transactions)
-
-| Provider  | URL                                                                                       |
-| --------- | ----------------------------------------------------------------------------------------- |
-| QuickNode | [https://www.quicknode.com/chains/celestia](https://www.quicknode.com/chains/celestia) ([docs](https://quicknode.com/docs/celestia)) |
-
-### Community RPC endpoints
-
-> **Warning:** Do not rely on the free community endpoints listed below for production deployments. Production deployments should rely on [service providers with SLAs](#production-rpc-endpoints) or your own node.
-
-RPC endpoints and types of nodes you can run in order to participate in Arabica devnet:
-
-| Node type                                                        | Endpoint type                    | Endpoint                                                                                                                                                                                                               |
-| ---------------------------------------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Consensus nodes** ([full guide](/operate/consensus-validators/consensus-node)) | Consensus RPC                    | `https://rpc.celestia-arabica-11.com`                                                                                                                                                                                 |
-|                                                                  | API                              | `https://api.celestia-arabica-11.com`                                                                                                                                                                                 |
-|                                                                  | gRPC                             | `grpc.celestia-arabica-11.com:443`                                                                                                                                                                                    |
-|                                                                  | Direct endpoints with open ports | Open ports: 26656 (p2p), 26657 (RPC), 1317 (API), 9090 (GRPC)                                                                                                                                                          |
-|                                                                  |                                  | `validator-1.celestia-arabica-11.com`                                                                                                                                                                                 |
-|                                                                  |                                  | `validator-2.celestia-arabica-11.com`                                                                                                                                                                                 |
-|                                                                  |                                  | `validator-3.celestia-arabica-11.com`                                                                                                                                                                                 |
-|                                                                  |                                  | `validator-4.celestia-arabica-11.com`                                                                                                                                                                                 |
-|                                                                  |                                  |                                                                                                                                                                                                                        |
-| **Data availability nodes**                                      | DA Bridge Node Endpoints         | See the list of official Celestia bootstrappers in the [celestia-node GitHub repository](https://github.com/celestiaorg/celestia-node/blob/a87a17557223d88231b56d323d22ac9da31871db/nodebuilder/p2p/bootstrap.go#L39). |
-|                                                                  | `--core.ip string` endpoints     | Refer to "Direct endpoints with open ports" above                                                                                                                                                                      |
-
-You can [find the status of these endpoints](https://celestia-tools.brightlystake.com/).
-
-### Using consensus endpoints with DA nodes
-
-#### Data availability (DA) RPC endpoints for bridge node sync
-
-These RPC endpoints allow bridge nodes to sync blocks from the Celestia network.
-For users, they will need to provide a `–core.ip string`
-from a consensus node’s URL or IP that populates a default RPC port at 26657
-to their respective DA node.
-
-#### Data availability (DA) gRPC endpoints for state access
-
-These gRPC endpoints for DA nodes provide state access for querying the
-chain’s state and broadcasting transactions (balances, blobs, etc.) to the
-Celestia network. For users, they will need to provide a `–core.ip string`
-from a consensus node’s URL or IP that populates a default gRPC port at 9090
-to their respective DA node.
-
-RPCs for DA nodes to initialise or start your celestia-node to
-Arabica devnet with can be found in the table in the
-"Direct endpoints with open ports" section above.
-
-As an example, this command will work to start a light node with state access, using default ports:
-
-```bash
-celestia light start --p2p.network arabica \
-  --core.ip validator-1.celestia-arabica-11.com \
-  --core.port 9090
-```
-
-## Arabica devnet faucet
-
-> **Warning:** Using this faucet does not entitle you to any airdrop or other distribution of mainnet Celestia tokens.
-
-### Discord
-
-You can request from Arabica devnet Faucet on the #arabica-faucet channel on
-Celestia's Discord server with the following command:
-
-```text
-$request <CELESTIA-ADDRESS>
-```
-
-Where `<CELESTIA-ADDRESS>` is a `celestia1******` generated address.
-
-> **Note:** Faucet has a limit of 10 tokens per week per address/Discord ID.
-
-### Web
-
-The web faucet is available at [https://arabica.celenium.io/faucet](https://arabica.celenium.io/faucet) and [https://faucet.celestia-arabica-11.com/](https://faucet.celestia-arabica-11.com/).
-
-## Explorers
-
-There are multiple explorers you can use for Arabica:
-
-- [https://arabica.celenium.io](https://arabica.celenium.io)
-
-## Network upgrades
-
-Join our [Telegram announcement channel](https://t.me/+smSFIA7XXLU4MjJh)
-for network upgrades.
-
-See the [network upgrades page](/operate/maintenance/network-upgrades) to learn more
-about specific upgrades like the [Ginger network upgrade](/operate/maintenance/network-upgrades#ginger-network-upgrade).
 
 ---
 Title: Local devnet setup
@@ -8982,16 +8195,20 @@ functional, users may encounter occasional instability or reduced performance.
 | ------------- | -------------------------------------------------------------------------------------------------- |
 | Chain ID      | `celestia`                                                                       |
 | Genesis hash  | `6BE39EFD10BA412A9DB5288488303F5DD32CF386707A5BEF33617F4C43301872`                                 |
-| Genesis file  | https://github.com/celestiaorg/networks/blob/master/celestia/genesis.json        |
-| Peers file    | https://github.com/celestiaorg/networks/blob/master/celestia/peers.txt           |
+| Genesis file  | <a href={`https://github.com/celestiaorg/networks/blob/main/$celestia/genesis.json`}>genesis.json</a> |
+| Peers file    | <a href={`https://github.com/celestiaorg/networks/blob/main/$celestia/peers.txt`}>peers.txt</a>       |
 | Validators    | 100                                                                                                |
+| Block time    | [Approximately 3 seconds](https://cips.celestia.org/cip-048.html)                                      |
+
+The happy-path cadence is approximately 2.6 seconds, so integrations should
+treat 3 seconds as an approximate target rather than an exact interval.
 
 ## Software version numbers
 
 | Software       | Version                                                             |
 | -------------- | ------------------------------------------------------------------- |
-| celestia-node  | [v0.31.3](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3) |
-| celestia-app   | [v9.0.4](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.4)   |
+| celestia-node  | [v0.33.2](https://github.com/celestiaorg/celestia-node/releases/tag/v0.33.2) |
+| celestia-app   | [v9.0.8](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.8)   |
 
 ## Network status
 
@@ -9011,20 +8228,23 @@ Previously, in [CIP-28](https://cips.celestia.org/cip-028.html), there was a 2 M
 
 While individual transactions are limited to 8 MiB as of v6, a block can contain multiple transactions and has a much larger capacity. The maximum block size is determined by the effective maximum square size.
 
-The current max square size on Arabica is 128 MiB, Mocha is 32 MiB, and Mainnet is 8 MiB.
+The current maximum block capacity on Mocha and Mainnet Beta is 32 MiB. On
+Mainnet Beta, the governance square size is 256 (a 32 MiB square) and the
+consensus encoded-block limit is also 32 MiB; the effective capacity is the
+smaller of the two.
 
-The following provides an approximation of the maximum blob capacity on Arabica:
+The following provides an approximation of the maximum blob capacity:
 
-- The maximum square size is 512x512, which gives us 262,144 shares.
-- One share is reserved for the PFB transaction, leaving us with 262,143 shares available for blob data.
+- The maximum square size is 256x256, which gives us 65,536 shares.
+- One share is reserved for the PFB transaction, leaving us with 65,535 shares available for blob data.
 - The first sparse share has 478 bytes available, and the remaining sparse shares have 482 bytes each.
 
 Approximate capacity:
 
 ```
 First share:       1 x 478 bytes
-Remaining shares:  262,142 x 482 bytes
-Total bytes:       126,352,922 bytes
+Remaining shares:  65,534 x 482 bytes
+Total bytes:       31,587,866 bytes
 ```
 
 There is no precise, static upper bound on the maximum total
@@ -9040,11 +8260,11 @@ These factors can cause the maximum total blob size that can be included in one
 block to vary.
 
 See the code in
-[celestia-app](https://github.com/celestiaorg/celestia-app/blob/52a3cfadbf4439e5e1bd89a8c47e14d3209ca525/pkg/appconsts/initial_consts.go#L9).
+[celestia-app](https://github.com/celestiaorg/celestia-app/blob/v9.0.4/pkg/appconsts/initial_consts.go#L13).
 
-Full network parameters, such as [max bytes](https://github.com/celestiaorg/celestia-app/blob/52a3cfadbf4439e5e1bd89a8c47e14d3209ca525/specs/src/parameters_v6.md?plain=1#L35),
+Full network parameters, such as [max bytes](https://github.com/celestiaorg/celestia-app/blob/v9.0.4/specs/src/parameters_v9.md?plain=1#L41),
 can be found in the
-[celestia-app specifications](https://celestiaorg.github.io/celestia-app/parameters_v6.html).
+[celestia-app specifications](https://celestiaorg.github.io/celestia-app/parameters_v9.html).
 
 ## Network constants
 
@@ -9078,6 +8298,21 @@ If you are using QuickNode or another provider with authenticated endpoints,
 see [the light node guide](/operate/data-availability/light-node/advanced#optional-start-light-node-with-consensus-endpoint-authentication)
 to learn how to use an endpoint with x-token.
 
+### Public RPC endpoint
+
+For development, testing, and documentation examples, use the public QuickNode
+endpoint:
+
+| Interface | Endpoint |
+| --------- | -------- |
+| HTTP RPC and REST | `https://public-endpoint.celestia-mainnet.quiknode.pro` |
+| WebSocket | `wss://public-endpoint.celestia-mainnet.quiknode.pro/websocket` |
+| gRPC over TLS | `public-endpoint.celestia-mainnet.quiknode.pro:9090` |
+| DA JSON-RPC | `https://public-endpoint.celestia-mainnet.quiknode.pro` |
+
+This shared endpoint does not provide a production SLA. Use a [production
+provider](#production-rpc-endpoints) or your own node for production workloads.
+
 ### Node setup and tools
 
 Several community providers offer comprehensive node setup tools, installation scripts, and monitoring services to help node operators get started quickly:
@@ -9098,27 +8333,32 @@ The following table lists community-provided consensus node endpoints that you c
 | --------------- | --------------------------------------- | --------------------------------------- | ----------------------------------------- | -------------------------------------------------------- |
 | AlphaB          | `rpc-celestia.alphab.ai`               | `api-celestia.alphab.ai`               | `rpc-celestia.alphab.ai:9090`             | -                                                        |
 | CitizenWeb3     | `rpc.celestia.citizenweb3.com`          | `api.celestia.citizenweb3.com`          | `grpc.celestia.citizenweb3.com:443`       | -                                                        |
-| Cumulo Archive  | `rpc.archive.celestia.cumulo.com.es`    | `api.archive.celestia.cumulo.com.es`    | `grpc.archive.celestia.cumulo.com.es:443` | `wss://rpc.archive.celestia.cumulo.com.es:443/websocket` |
-| Easy2Stake      | `celestia-rpc.easy2stake.com`           | `celestia-lcd.easy2stake.com`           | -                                         | -                                                        |
-| ITRocket        | `celestia-mainnet-rpc.itrocket.net:443` | `celestia-mainnet-api.itrocket.net:443` | `celestia-mainnet-grpc.itrocket.net:443`  | `wss://celestia-mainnet-ws.itrocket.net:443/websocket`   |
+| ITRocket        | `celestia-mainnet-rpc.itrocket.net:443` | `celestia-mainnet-api.itrocket.net:443` | `celestia-mainnet-grpc.itrocket.net:443`  | -                                                        |
 | kjnodes         | `celestia.rpc.kjnodes.com`              | `celestia.api.kjnodes.com`              | `celestia.grpc.kjnodes.com:443`           | -                                                        |
-| lunaroasis      | `rpc.lunaroasis.net`                    | `api.lunaroasis.net`                    | `grpc.lunaroasis.net:443`                 | -                                                        |
-| Noders Services | `celestia-rpc.noders.services`          | `celestia-api.noders.services`          | `celestia-grpc.noders.services:11090`     | -                                                        |
+| lunaroasis      | `rpc.lunaroasis.net`                    | -                                       | `grpc.lunaroasis.net:443`                 | -                                                        |
+| Noders Services | `celestia-rpc.noders.services`          | -                                       | -                                         | -                                                        |
 | Numia           | `public-celestia-rpc.numia.xyz`         | `public-celestia-lcd.numia.xyz`         | `public-celestia-grpc.numia.xyz`          | `wss://public-celestia-rpc.numia.xyz/websocket`          |
 | P-OPS           | `rpc.celestia.pops.one`                 | `api.celestia.pops.one`                 | `grpc.celestia.pops.one`                  | -                                                        |
 | Stakin          | `celestia.rpc.stakin-nodes.com`         | `celestia.rest.stakin-nodes.com`        | `celestia.grpc.stakin-nodes.com:443`      | -                                                        |
-| deNodes         | `celestia-mainnet-rpc.denodes.xyz`      | `celestia-mainnet-api.denodes.xyz`      | `celestia-mainnet-grpc.denodes.xyz:443`   | `wss://celestia-mainnet-rpc.denodes.xyz:443/websocket`   |
+| deNodes         | `celestia-mainnet-rpc.denodes.xyz`      | `celestia-mainnet-api.denodes.xyz`      | -                                         | `wss://celestia-mainnet-rpc.denodes.xyz:443/websocket`   |
+
+> Live latency benchmarks for public no-key Celestia RPC endpoints (PublicNode, Polkachu, LavenderFive — Tendermint status p50/p90/p99, 3 probe regions, updated every 60 s): [OpenChainBench Celestia RPC](https://openchainbench.com/benchmarks/celestia-rpc)
 
 ### Connecting DA nodes to consensus nodes
 
 Data availability (DA) nodes need to connect to consensus nodes to sync blocks and access state. When starting a DA node, you'll need to provide a consensus node endpoint using the `--core.ip` parameter and the port.
 
-You can use any of the RPC endpoints from the [community consensus endpoints](#community-consensus-endpoints) table above. The default port is 9090, where gRPC is used for both block sync and state access.
+You can use the [public endpoint](#public-rpc-endpoint) or any of the RPC
+endpoints from the [community consensus endpoints](#community-consensus-endpoints)
+table above. The default port is 9090, where gRPC is used for both block sync
+and state access.
 
-For example, to connect to the P-OPS endpoint:
+For example, to connect to the public QuickNode endpoint:
 
 ```bash
-celestia light start --core.ip rpc.celestia.pops.one --core.port 9090
+celestia light start \
+  --core.ip public-endpoint.celestia-mainnet.quiknode.pro \
+  --core.port 9090 --core.tls
 ```
 
 ### Bridge node requirements
@@ -9183,7 +8423,7 @@ The following websites provide analytics for Celestia:
 
 The following websites provide visual maps of Celestia DA nodes:
 
-- [https://validao.xyz/#maps-celestia-da](https://validao.xyz/#maps-celestia-da) (community contribution)
+- [https://probelab.io/celestia/](https://probelab.io/celestia/) (community contribution)
 
 ## Network upgrades
 
@@ -9208,15 +8448,96 @@ Source: app/operate/networks/mocha-testnet/page.mdx
 This guide contains the relevant sections for how to connect to Mocha,
 depending on the type of node you are running. Mocha testnet is designed
 to help validators test out their infrastructure and node software.
-Developers are encouraged to deploy their
-sovereign rollups on Mocha, but we also recommend [Arabica devnet](/operate/networks/arabica-devnet)
-for that as it is designed for development purposes.
+Developers can also deploy sovereign rollups on Mocha.
 
 Mocha is a milestone in Celestia, allowing everyone to test out
 core functionalities on the network. Read [the announcement](https://blog.celestia.org/celestia-testnet-introduces-alpha-data-availability-api).
 Your best approach to participating is to first determine which node
 you would like to run. Each node's guide will link to the relevant networks,
 to show you how to connect to them.
+
+## Mocha-5 network restart
+
+Mocha-5 is live. It is a hardspoon of `mocha-4` at block
+[13205115](https://celestia.explorers.guru/block/13205115): only account
+balances recorded at that height carried over. Transactions and balance
+changes after that height do not exist on `mocha-5`, and account
+sequences were reset to 0. Delegations, unbonding delegations, and
+pending staking rewards were redeemed as liquid balances.
+
+The initial validator set was created from separately coordinated
+genesis transactions. Other validators can join by submitting
+`MsgCreateValidator` once their node is synced. The `mocha-4` validator
+set, governance proposals, IBC channels, Hyperlane state, community
+pool, and all other chain state did not carry over.
+
+`mocha-4` remains running until it is officially shut down on
+September 1, 2026. All services still pointing at `mocha-4` should move
+to `mocha-5` before then. If you operate a `mocha-4` validator, keep it
+running while you migrate if possible; if you need to stop it sooner,
+unbond it from the active set first so it does not affect `mocha-4`
+block production.
+
+### Accessing mocha-4 history
+
+Because `mocha-5` started from a new genesis, `mocha-4` history is not
+queryable on the new network. Blobs and rollup data posted to `mocha-4`
+are not retrievable on `mocha-5`. Individual node operators are not
+expected to retain `mocha-4` data. An exported copy of the final
+`mocha-4` state will be available for one month after the shutdown.
+
+If you depend on specific `mocha-4` transaction history, export what you
+need before the September 1, 2026 shutdown.
+
+### Prepare a separate consensus-node home
+
+If you already operate a `mocha-4` consensus node or validator, do not
+initialize `mocha-5` in the existing `$HOME/.celestia-app` directory.
+That directory's `data/priv_validator_state.json` records the last
+`mocha-4` height you signed, and a validator will not sign at a height
+at or below that value. Because `mocha-5` restarts at height 1, a node
+reusing the old home would refuse to sign. The old `data` directory also
+holds blocks from a different chain, which will not reconcile with the
+`mocha-5` genesis.
+
+Using a separate home avoids both problems and leaves your `mocha-4`
+node runnable if you need to fall back during the cutover. Back up your
+[wallet keys](/operate/keys-wallets/celestia-app-wallet#key-management)
+and `$HOME/.celestia-app/config/priv_validator_key.json` before
+continuing.
+
+Initialize `mocha-5` with its own home directory:
+
+```bash
+MOCHA_5_HOME="$HOME/.celestia-app-mocha-5"
+
+celestia-appd init "node-name" \
+  --chain-id mocha-5 \
+  --home "$MOCHA_5_HOME"
+
+celestia-appd download-genesis mocha-5 \
+  --home "$MOCHA_5_HOME"
+# if this command doesn't exist in the binary, use this instead:
+# curl -sL "https://raw.githubusercontent.com/celestiaorg/networks/main/mocha-5/genesis.json" -o "$MOCHA_5_HOME/config/genesis.json"
+```
+
+Configure the new Mocha seeds and peers in that directory:
+
+```bash
+SEEDS=$(curl -sL https://raw.githubusercontent.com/celestiaorg/networks/main/mocha-5/seeds.txt | tr '\n' ',')
+
+sed -i.bak -e "s/^seeds *=.*/seeds = \"$SEEDS\"/" "$MOCHA_5_HOME/config/config.toml"
+```
+
+Do not copy the `mocha-4` data directory or
+`data/priv_validator_state.json` into the new home.
+
+Run `mocha-5` under a separate service whose start command includes the
+new home:
+
+```bash
+celestia-appd start --home "$MOCHA_5_HOME"
+```
 
 You have a list of options on the types of nodes you can run to
 participate in Mocha:
@@ -9240,18 +8561,18 @@ to the correct instructions on this page on how to connect to Mocha.
 
 | Detail        | Value                                                                                              |
 | ------------- | -------------------------------------------------------------------------------------------------- |
-| Chain ID      | `mocha-4`                                                                                     |
-| Genesis hash  | `B93BBE20A0FBFDF955811B6420F8433904664D45DB4BF51022BE4200C1A1680D`                                 |
-| Genesis file  | https://github.com/celestiaorg/networks/blob/master/mocha-4/genesis.json                      |
-| Peers file    | https://github.com/celestiaorg/networks/blob/master/mocha-4/peers.txt                         |
-| Validators    | 100                                                                                                |
+| Chain ID      | `mocha-5`                                                                                     |
+| Genesis hash  | `82DB3AC5AB8485E4784054BD10457533A64563F055C0D234A3134603A9C85D33`                                 |
+| Genesis file  | <a href={`https://github.com/celestiaorg/networks/blob/main/$mocha-5/genesis.json`}>genesis.json</a> |
+| Peers file    | <a href={`https://github.com/celestiaorg/networks/blob/main/$mocha-5/peers.txt`}>peers.txt</a>       |
+| Validators    | 100 (max)                                                                                                |
 
 ## Software version numbers
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [v0.31.3-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3-mocha) |
-| celestia-app   | [v9.0.4-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.4-mocha)   |
+| celestia-node  | [v0.34.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha) |
+| celestia-app   | [v10.2.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)   |
 
 ## Network status
 
@@ -9282,15 +8603,30 @@ history, such as:
 
 > **Warning:** Do not rely on the free community endpoints listed below for production deployments. Production deployments should rely on [service providers with SLAs](#production-rpc-endpoints) or your own node.
 
-### Node setup and tools
+### Public RPC endpoint
 
-Several community providers offer comprehensive node setup tools, installation scripts, and monitoring services to help node operators get started quickly:
+For development, testing, and documentation examples, use the public QuickNode
+endpoint:
 
-| Provider | Installation guide                                             | State sync                                                    | Monitoring tools                                                |
-| -------- | -------------------------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------- |
-| ITRocket | [Setup guide](https://itrocket.net/services/testnet/celestia/) | [State sync](https://itrocket.net/services/testnet/celestia/) | [Chain status](https://itrocket.net/services/testnet/celestia/) |
+| Interface | Endpoint |
+| --------- | -------- |
+| HTTP RPC and REST | `https://public-endpoint.celestia-mocha.quiknode.pro` |
+| WebSocket | `wss://public-endpoint.celestia-mocha.quiknode.pro/websocket` |
+| gRPC over TLS | `public-endpoint.celestia-mocha.quiknode.pro:9090` |
+| DA JSON-RPC | `https://public-endpoint.celestia-mocha.quiknode.pro` |
 
-### Community bridge node endpoints
+This shared endpoint is pruned and does not provide a production SLA. Do not
+use it for historical queries or bridge node sync from genesis.
+
+### Community consensus endpoints
+
+Use these hosts for `--core.ip`. celestia-node connects over gRPC with
+`--core.port` (default `9090`). RPC ports are listed for operators who also
+need Tendermint RPC from the same provider.
+
+| Provider      | Endpoint for `--core.ip`                                          | RPC port | gRPC port |
+| ------------- | ----------------------------------------------------------------- | -------- | --------- |
+| P-OPS         | `rpc-mocha.pops.one`                                              | 443      | 9090      |
 
 You can also find the list of official Celestia bootstrappers in the [celestia-node GitHub repository](https://github.com/celestiaorg/celestia-node/blob/a87a17557223d88231b56d323d22ac9da31871db/nodebuilder/p2p/bootstrap.go#L39).
 
@@ -9311,13 +8647,7 @@ to their respective DA node.
 
 > **Tip for bridge nodes:** Community RPC endpoints do not guarantee full block downloads. If you are running a bridge node, also run a local [consensus node](/operate/consensus-validators/consensus-node) to download full blocks.
 
-- `public-celestia-mocha-4-consensus.numia.xyz`
-- `full.consensus.mocha-4.celestia-mocha.com`
-- `consensus-full-mocha-4.celestia-mocha.com`
-- `rpc-mocha.pops.one`
-- `celestia-testnet-consensus.itrocket.net`
-  - RPC port: 26657
-  - gRPC port: 9090
+Use one of the `--core.ip` values from the [community consensus endpoints](#community-consensus-endpoints) table above.
 
 ## Community RPC endpoints
 
@@ -9325,11 +8655,10 @@ The RPC endpoint is to allow users to interact with Celestia's nodes by
 querying the node's state and broadcasting transactions on the
 Celestia network. The default port is 26657.
 
-- `public-celestia-mocha-4-consensus.numia.xyz:26657`
+- `rpc-mocha.pops.one`
 - `rpc-1.testnet.celestia.nodes.guru`
 - `rpc-2.testnet.celestia.nodes.guru`
 - `celestia-testnet-rpc.itrocket.net:443`
-- `celestia-t-rpc.noders.services`
 
 ## Community API endpoints
 
@@ -9340,11 +8669,9 @@ calls, which can be useful if the client does not support gRPC or HTTP2.
 The default port is 1317.
 
 - `https://api-mocha.pops.one`
-- `https://mocha.api.cumulo.me/`
 - `https://api-1.testnet.celestia.nodes.guru`
 - `https://api-2.testnet.celestia.nodes.guru`
 - `https://celestia-testnet-api.itrocket.net`
-- `https://celestia-t-api.noders.services`
 
 ## Community gRPC endpoints
 
@@ -9353,43 +8680,15 @@ gRPC, a modern open-source and high-performance RPC framework. The default
 port is 9090. In the Cosmos SDK, gRPC is used to define state queries and
 broadcast transactions.
 
-- `public-celestia-mocha-4-consensus.numia.xyz:9090`
 - `grpc-mocha.pops.one`
-- `grpc.celestia-mocha.com:443`
-- `full.consensus.mocha-4.celestia-mocha.com:9090`
-- `consensus-full-mocha-4.celestia-mocha.com:9090`
-- `mocha.grpc.cumulo.me:443`
 - `grpc-1.testnet.celestia.nodes.guru:10790`
 - `grpc-2.testnet.celestia.nodes.guru:10790`
 - `celestia-testnet-grpc.itrocket.net:443`
-- `celestia-t-grpc.noders.services:21090`
-- `celestiam.grpc.lava.build:443`
-- `grpc-celestia-testnet.mzonder.com:443`
-
-## Community JSON-RPC endpoints
-
-- `celestia-testnet-consensus.itrocket.net:26658`
-- `celestiam.jsonrpc.lava.build`
-- `celestia-testnet-da-archival.rpc.grove.city/v1/c33eeadb`
-
-## Community Tendermint RPC endpoints
-
-- `celestiam.tendermintrpc.lava.build`
 
 ## Community bridge node endpoints
 
-The endpoints below are for bridge nodes only. They can be used to
-find bootstrapper peers in the p2p network.
-
-Bridge node 1:
-
-- da-bridge-mocha-4.celestia-mocha.com
-- bridge-mocha-4.da.celestia-mocha.com
-
-Bridge node 2:
-
-- da-bridge-mocha-4-2.celestia-mocha.com
-- bridge-mocha-4-2.da.celestia-mocha.com
+The `mocha-5` DA network is live. Community bridge node endpoints will
+be added here as providers make them available.
 
 ## Mocha testnet faucet
 
@@ -9416,13 +8715,13 @@ The web faucet is available at [https://mocha.celenium.io/faucet](https://mocha.
 
 The following websites provide analytics for Mocha Testnet:
 
-- [https://itrocket.net/services/testnet/celestia/](https://itrocket.net/services/testnet/celestia/) - Node setup, monitoring, and chain status tools
+- [https://itrocket.net/services/testnet/celestia/](https://itrocket.net/services/testnet/celestia/) - Monitoring and chain status tools
 
 ## Node maps
 
 The following websites provide visual maps of Celestia DA nodes:
 
-- [https://validao.xyz/#maps-celestia-testnet-da](https://validao.xyz/#maps-celestia-testnet-da) (community contribution)
+- [https://probelab.io/celestia/](https://probelab.io/celestia/) (community contribution)
 
 ## Explorers
 
@@ -9435,7 +8734,7 @@ There are several explorers you can use for Mocha:
 - `https://testnet.celestia.explorers.guru`
 - `https://testnet.itrocket.net/celestia`
 - `https://testnet.celestia.valopers.com/`
-- `https://explorer.chainroot.io/celestia-testnet-mocha-4`
+- `https://explorer.chainroot.io/celestia-testnet-mocha-5`
 
 ## Network upgrades
 
@@ -9444,8 +8743,10 @@ There are a few ways to stay informed about network upgrades on the Mocha testne
 - Telegram [announcement channel](https://t.me/+smSFIA7XXLU4MjJh)
 - Discord [Mocha announcements](https://discord.com/channels/638338779505229824/979037494735691816)
 
-See the [network upgrades page](/operate/maintenance/network-upgrades) to learn more
-about specific upgrades like the [Ginger network upgrade](/operate/maintenance/network-upgrades#ginger-network-upgrade).
+Mocha has activated app version 10. See the
+[Mocha-5 upgrade history](/operate/maintenance/network-upgrades#mocha-5) for the
+activation height and date, and the [Fibre server guide](/operate/consensus-validators/fibre)
+for validator setup and registration.
 
 ---
 Title: Participate in the Celestia networks
@@ -9468,42 +8769,26 @@ reduced performance.
 
 | Software       | Version                                                             |
 | -------------- | ------------------------------------------------------------------- |
-| celestia-node  | [v0.31.3](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3) |
-| celestia-app   | [v9.0.4](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.4)   |
+| celestia-node  | [v0.33.2](https://github.com/celestiaorg/celestia-node/releases/tag/v0.33.2) |
+| celestia-app   | [v9.0.8](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.8)   |
 
 ## Testnets
 
-Celestia currently has two existing testnets that you can participate in:
-
-### Arabica Devnet
-
-[Arabica devnet](/operate/networks/arabica-devnet) is a devnet focused on developers who
-want to deploy sovereign rollups on the latest changes from Celestia's codebase.
-Arabica will be updated frequently and might be unstable at times given new updates.
-Validators won't be able to validate on Arabica as it is not designed for
-validators to participate.
-
-#### Compatible software versions for Arabica devnet
-
-| Software       | Version                                                                  |
-| -------------- | ------------------------------------------------------------------------ |
-| celestia-node  | [v0.31.3-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3-arabica) |
-| celestia-app   | [v9.0.4-arabica](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.4-arabica)     |
+Celestia currently has one public testnet that you can participate in:
 
 ### Mocha testnet
 
 [Mocha testnet](/operate/networks/mocha-testnet) is a testnet focused on enabling validators
 to test out their infrastructure by running nodes connected to the network. Developers
-can also deploy sovereign rollups on Mocha, it just will always be behind Arabica
-as Mocha upgrades are slower given they need to be done via breaking network upgrades
-in coordination with the validator community on Mocha.
+can also deploy sovereign rollups on Mocha. Breaking network upgrades are coordinated
+with the validator community.
 
 ### Compatible software versions for Mocha testnet
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [v0.31.3-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3-mocha) |
-| celestia-app   | [v9.0.4-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v9.0.4-mocha)   |
+| celestia-node  | [v0.34.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha) |
+| celestia-app   | [v10.2.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)   |
 
 ## Network upgrades
 

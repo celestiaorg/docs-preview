@@ -12,7 +12,7 @@
     "methods": [
         {
             "name": "blob.Get",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Get retrieves the blob by commitment under the given namespace and height.\n",
             "paramStructure": "by-position",
             "params": [
@@ -102,7 +102,7 @@
         },
         {
             "name": "blob.GetAll",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "GetAll returns all blobs under the given namespaces at the given height.\nIf all blobs were found without any errors, the user will receive a list of blobs.\nIf the BlobService couldn't find any blobs under the requested namespaces,\nthe user will receive an empty list of blobs along with an empty error.\nIf some of the requested namespaces were not found, the user will receive all the found blobs\nand an empty error. If there were internal errors during some of the requests,\nthe user will receive all found blobs along with a combined error message.\n\nAll blobs will preserve the order of the namespaces that were requested.\n",
             "paramStructure": "by-position",
             "params": [
@@ -207,7 +207,7 @@
         },
         {
             "name": "blob.GetCommitmentProof",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "GetCommitmentProof generates a commitment proof for a share commitment.\n",
             "paramStructure": "by-position",
             "params": [
@@ -370,7 +370,7 @@
         },
         {
             "name": "blob.GetProof",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "GetProof retrieves proofs in the given namespaces at the given height by commitment.\n",
             "paramStructure": "by-position",
             "params": [
@@ -482,7 +482,7 @@
         },
         {
             "name": "blob.Included",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Included checks whether a blob's given commitment(Merkle subtree root) is included at\ngiven height and under the namespace.\n",
             "paramStructure": "by-position",
             "params": [
@@ -609,7 +609,7 @@
         },
         {
             "name": "blob.Submit",
-            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Submit sends Blobs and reports the height in which they were included.\nAllows sending multiple Blobs atomically synchronously.\nUses default wallet registered on the Node.\n",
             "paramStructure": "by-position",
             "params": [
@@ -714,7 +714,7 @@
         },
         {
             "name": "blob.Subscribe",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Subscribe to published blobs from the given namespace as they are included.\n",
             "paramStructure": "by-position",
             "params": [
@@ -736,8 +736,8 @@
                 }
             ],
             "result": {
-                "name": "\u003c-chan *blob.SubscriptionResponse",
-                "description": "\u003c-chan *blob.SubscriptionResponse",
+                "name": "<-chan *blob.SubscriptionResponse",
+                "description": "<-chan *blob.SubscriptionResponse",
                 "summary": "",
                 "schema": {
                     "title": "typeUnsupportedByJSONSchema",
@@ -756,7 +756,7 @@
         },
         {
             "name": "blobstream.GetDataRootTupleInclusionProof",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "GetDataRootTupleInclusionProof creates an inclusion proof, for the data root tuple of block\nheight `height`, in the set of blocks defined by `start` and `end`. The range\nis end exclusive.\nIt's in the header module because it only needs access to the headers to generate the proof.\n",
             "paramStructure": "by-position",
             "params": [
@@ -860,7 +860,7 @@
         },
         {
             "name": "blobstream.GetDataRootTupleRoot",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "GetDataRootTupleRoot collects the data roots over a provided ordered range of blocks,\nand then creates a new Merkle root of those data roots. The range is end exclusive.\nIt's in the header module because it only needs access to the headers to generate the proof.\n",
             "paramStructure": "by-position",
             "params": [
@@ -918,7 +918,7 @@
         },
         {
             "name": "da.Commit",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Commit creates a Commitment for each given Blob.\n\nDeprecated: This method is deprecated and will be removed in the future.\n",
             "paramStructure": "by-position",
             "params": [
@@ -994,7 +994,7 @@
         },
         {
             "name": "da.Get",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Get returns Blob for each given ID, or an error.\n\nError should be returned if ID is not formatted properly, there is no Blob for given ID or any other client-level\nerror occurred (dropped connection, timeout, etc).\n\nDeprecated: This method is deprecated and will be removed in the future.\n",
             "paramStructure": "by-position",
             "params": [
@@ -1070,7 +1070,7 @@
         },
         {
             "name": "da.GetIDs",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "GetIDs returns IDs of all Blobs located in DA at given height.\n\nDeprecated: This method is deprecated and will be removed in the future.\n",
             "paramStructure": "by-position",
             "params": [
@@ -1149,7 +1149,7 @@
         },
         {
             "name": "da.GetProofs",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "GetProofs returns inclusion Proofs for Blobs specified by their IDs.\n\nDeprecated: This method is deprecated and will be removed in the future.\n",
             "paramStructure": "by-position",
             "params": [
@@ -1225,7 +1225,7 @@
         },
         {
             "name": "da.MaxBlobSize",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "MaxBlobSize returns the max blob size\n\nDeprecated: This method is deprecated and will be removed in the future.\n",
             "paramStructure": "by-position",
             "params": [],
@@ -1252,7 +1252,7 @@
         },
         {
             "name": "da.Submit",
-            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Submit submits the Blobs to Data Availability layer.\n\nThis method is synchronous. Upon successful submission to Data Availability layer, it returns the IDs identifying\nblobs in DA.\n\nDeprecated: This method is deprecated and will be removed in the future.\n",
             "paramStructure": "by-position",
             "params": [
@@ -1343,7 +1343,7 @@
         },
         {
             "name": "da.SubmitWithOptions",
-            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "SubmitWithOptions submits the Blobs to Data Availability layer.\n\nThis method is synchronous. Upon successful submission to Data Availability layer, it returns the IDs identifying\nblobs in DA.\n\nDeprecated: This method is deprecated and will be removed in the future.\n",
             "paramStructure": "by-position",
             "params": [
@@ -1449,7 +1449,7 @@
         },
         {
             "name": "da.Validate",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Validate validates Commitments against the corresponding Proofs. This should be possible without retrieving the\nBlobs.\n\nDeprecated: This method is deprecated and will be removed in the future.\n",
             "paramStructure": "by-position",
             "params": [
@@ -1549,7 +1549,7 @@
         },
         {
             "name": "das.SamplingStats",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "SamplingStats returns the current statistics over the DA sampling process.\n",
             "paramStructure": "by-position",
             "params": [],
@@ -1674,7 +1674,7 @@
         },
         {
             "name": "das.WaitCatchUp",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "WaitCatchUp blocks until DASer finishes catching up to the network head.\n",
             "paramStructure": "by-position",
             "params": [],
@@ -1697,7 +1697,7 @@
         },
         {
             "name": "header.GetByHash",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "GetByHash returns the header of the given hash from the node's header store.\n",
             "paramStructure": "by-position",
             "params": [
@@ -2070,7 +2070,7 @@
         },
         {
             "name": "header.GetByHeight",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "GetByHeight returns the ExtendedHeader at the given height if it is\ncurrently available.\n",
             "paramStructure": "by-position",
             "params": [
@@ -2443,7 +2443,7 @@
         },
         {
             "name": "header.GetRangeByHeight",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "GetRangeByHeight returns the given range (from:to) of ExtendedHeaders\nfrom the node's header store and verifies that the returned headers are\nadjacent to each other.\n",
             "paramStructure": "by-position",
             "params": [
@@ -3170,7 +3170,7 @@
         },
         {
             "name": "header.LocalHead",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "LocalHead returns the ExtendedHeader of the chain head.\n",
             "paramStructure": "by-position",
             "params": [],
@@ -3527,7 +3527,7 @@
         },
         {
             "name": "header.NetworkHead",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "NetworkHead provides the Syncer's view of the current network head.\n",
             "paramStructure": "by-position",
             "params": [],
@@ -3884,13 +3884,13 @@
         },
         {
             "name": "header.Subscribe",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Subscribe to recent ExtendedHeaders from the network.\n",
             "paramStructure": "by-position",
             "params": [],
             "result": {
-                "name": "\u003c-chan *header.ExtendedHeader",
-                "description": "\u003c-chan *header.ExtendedHeader",
+                "name": "<-chan *header.ExtendedHeader",
+                "description": "<-chan *header.ExtendedHeader",
                 "summary": "",
                 "schema": {
                     "title": "typeUnsupportedByJSONSchema",
@@ -3909,7 +3909,7 @@
         },
         {
             "name": "header.SyncState",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "SyncState returns the current state of the header Syncer.\n",
             "paramStructure": "by-position",
             "params": [],
@@ -3984,7 +3984,7 @@
         },
         {
             "name": "header.SyncWait",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "SyncWait blocks until the header Syncer is synced to network head.\n",
             "paramStructure": "by-position",
             "params": [],
@@ -4007,7 +4007,7 @@
         },
         {
             "name": "header.Tail",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Tail reports current tail header of the node.\n\nTail header is the lowest height header known by the running node.\nHeaders with height below Tail are not available to be requested.\nSubsequently, Shwap data requests for this height are not available as well.\n\nNOTE: In future, requests for headers below Tail will be supported by lazily fetching them\nfrom the network.\n",
             "paramStructure": "by-position",
             "params": [],
@@ -4364,7 +4364,7 @@
         },
         {
             "name": "header.WaitForHeight",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "WaitForHeight blocks until the header at the given height has been processed\nby the store or context deadline is exceeded.\n",
             "paramStructure": "by-position",
             "params": [
@@ -4737,7 +4737,7 @@
         },
         {
             "name": "node.AuthNew",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "AuthNew signs and returns a new token with the given permissions.\n",
             "paramStructure": "by-position",
             "params": [
@@ -4789,7 +4789,7 @@
         },
         {
             "name": "node.AuthNewWithExpiry",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "AuthNewWithExpiry signs and returns a new token with the given permissions and TTL.\n",
             "paramStructure": "by-position",
             "params": [
@@ -4856,7 +4856,7 @@
         },
         {
             "name": "node.AuthVerify",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "AuthVerify returns the permissions assigned to the given token.\n",
             "paramStructure": "by-position",
             "params": [
@@ -4908,7 +4908,7 @@
         },
         {
             "name": "node.Info",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Info returns administrative information about the node.\n",
             "paramStructure": "by-position",
             "params": [],
@@ -4929,7 +4929,7 @@
                             "type": "string"
                         },
                         "type": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     },
                     "type": [
@@ -4947,7 +4947,7 @@
         },
         {
             "name": "node.LogLevelSet",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "LogLevelSet sets the given component log level to the given level.\n",
             "paramStructure": "by-position",
             "params": [
@@ -5001,7 +5001,7 @@
         },
         {
             "name": "node.Ready",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Ready returns true once the node's RPC is ready to accept requests.\n",
             "paramStructure": "by-position",
             "params": [],
@@ -5028,7 +5028,7 @@
         },
         {
             "name": "p2p.BandwidthForPeer",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "BandwidthForPeer returns a Stats struct with bandwidth metrics associated with the given peer.ID.\nThe metrics returned include all traffic sent / received for the peer, regardless of protocol.\n",
             "paramStructure": "by-position",
             "params": [
@@ -5091,7 +5091,7 @@
         },
         {
             "name": "p2p.BandwidthForProtocol",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "BandwidthForProtocol returns a Stats struct with bandwidth metrics associated with the given\nprotocol.ID.\n",
             "paramStructure": "by-position",
             "params": [
@@ -5154,7 +5154,7 @@
         },
         {
             "name": "p2p.BandwidthStats",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "BandwidthStats returns a Stats struct with bandwidth metrics for all\ndata sent/received by the local peer, regardless of protocol or remote\npeer IDs.\n",
             "paramStructure": "by-position",
             "params": [],
@@ -5201,7 +5201,7 @@
         },
         {
             "name": "p2p.BlockPeer",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "BlockPeer adds a peer to the set of blocked peers and\ncloses any existing connection to that peer.\n",
             "paramStructure": "by-position",
             "params": [
@@ -5240,7 +5240,7 @@
         },
         {
             "name": "p2p.ClosePeer",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "ClosePeer closes the connection to a given peer.\n",
             "paramStructure": "by-position",
             "params": [
@@ -5279,7 +5279,7 @@
         },
         {
             "name": "p2p.Connect",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Connect ensures there is a connection between this host and the peer with\ngiven peer.\n",
             "paramStructure": "by-position",
             "params": [
@@ -5339,7 +5339,7 @@
         },
         {
             "name": "p2p.Connectedness",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Connectedness returns a state signaling connection capabilities.\n",
             "paramStructure": "by-position",
             "params": [
@@ -5382,7 +5382,7 @@
         },
         {
             "name": "p2p.ConnectionState",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "ConnectionState returns information about each *active* connection to the peer.\nNOTE: At most cases there should be only a single connection.\n",
             "paramStructure": "by-position",
             "params": [
@@ -5481,7 +5481,7 @@
         },
         {
             "name": "p2p.Info",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Info returns address information about the host.\n",
             "paramStructure": "by-position",
             "params": [],
@@ -5529,7 +5529,7 @@
         },
         {
             "name": "p2p.IsProtected",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "IsProtected returns whether the given peer is protected.\n",
             "paramStructure": "by-position",
             "params": [
@@ -5587,7 +5587,7 @@
         },
         {
             "name": "p2p.ListBlockedPeers",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "ListBlockedPeers returns a list of blocked peers.\n",
             "paramStructure": "by-position",
             "params": [],
@@ -5623,7 +5623,7 @@
         },
         {
             "name": "p2p.NATStatus",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "NATStatus returns the current NAT status.\n",
             "paramStructure": "by-position",
             "params": [],
@@ -5650,7 +5650,7 @@
         },
         {
             "name": "p2p.Network",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Network returns the host's network/chain ID.\n",
             "paramStructure": "by-position",
             "params": [],
@@ -5677,7 +5677,7 @@
         },
         {
             "name": "p2p.PeerInfo",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "PeerInfo returns a small slice of information Peerstore has on the\ngiven peer.\n",
             "paramStructure": "by-position",
             "params": [
@@ -5741,7 +5741,7 @@
         },
         {
             "name": "p2p.Peers",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Peers returns connected peers.\n",
             "paramStructure": "by-position",
             "params": [],
@@ -5777,7 +5777,7 @@
         },
         {
             "name": "p2p.Ping",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Ping pings the selected peer and returns time it took or error.\n",
             "paramStructure": "by-position",
             "params": [
@@ -5820,7 +5820,7 @@
         },
         {
             "name": "p2p.Protect",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Protect adds a peer to the list of peers who have a bidirectional\npeering agreement that they are protected from being trimmed, dropped\nor negatively scored.\n",
             "paramStructure": "by-position",
             "params": [
@@ -5874,7 +5874,7 @@
         },
         {
             "name": "p2p.PubSubPeers",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "PubSubPeers returns the peer IDs of the peers joined on\nthe given topic.\n",
             "paramStructure": "by-position",
             "params": [
@@ -5926,7 +5926,7 @@
         },
         {
             "name": "p2p.PubSubTopics",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "PubSubTopics reports current PubSubTopics the node participates in.\n",
             "paramStructure": "by-position",
             "params": [],
@@ -5962,7 +5962,7 @@
         },
         {
             "name": "p2p.ResourceState",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "ResourceState returns the state of the resource manager.\n",
             "paramStructure": "by-position",
             "params": [],
@@ -6050,7 +6050,7 @@
                                 }
                             },
                             "Peers": {
-                                "\u0000$\b\u0001\u0012 \ufffd-\ufffd\ufffd\u0026\ufffd\ufffdY\ufffdk\ufffd\u000e\u0011\ufffdS\ufffdRM\u0013\ufffd\u0015\ufffd\ufffd$\ufffd\ufffd\ufffd\ufffd*\ufffd\u0002W": {
+                                "\u0000$\b\u0001\u0012 �-��&��Y�k�\u000e\u0011�S�RM\u0013�\u0015��$����*�\u0002W": {
                                     "NumStreamsInbound": 1,
                                     "NumStreamsOutbound": 3,
                                     "NumConnsInbound": 0,
@@ -6214,7 +6214,7 @@
         },
         {
             "name": "p2p.UnblockPeer",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "UnblockPeer removes a peer from the set of blocked peers.\n",
             "paramStructure": "by-position",
             "params": [
@@ -6253,7 +6253,7 @@
         },
         {
             "name": "p2p.Unprotect",
-            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: admin. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Unprotect removes a peer from the list of peers who have a bidirectional\npeering agreement that they are protected from being trimmed, dropped\nor negatively scored, returning a bool representing whether the given\npeer is protected or not.\n",
             "paramStructure": "by-position",
             "params": [
@@ -6311,7 +6311,7 @@
         },
         {
             "name": "share.GetEDS",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "GetEDS retrieves the complete Extended Data Square (EDS) for the specified height.\nThe EDS contains all shares organized in a 2D matrix format with erasure coding.\nReturns the full EDS or an error if retrieval fails.\n",
             "paramStructure": "by-position",
             "params": [
@@ -6363,7 +6363,7 @@
         },
         {
             "name": "share.GetNamespaceData",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "GetNamespaceData retrieves all shares that belong to the specified namespace within\nthe Extended Data Square (EDS) at the given height. The shares are returned in a\nrow-by-row order, maintaining the original layout if the namespace spans multiple rows.\nReturns the namespace data or an error if retrieval fails.\n",
             "paramStructure": "by-position",
             "params": [
@@ -6450,7 +6450,7 @@
         },
         {
             "name": "share.GetRange",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "GetRange retrieves a range of the *original* shares and their corresponding proofs within a specific\nnamespace in the Extended Data Square (EDS) at the given height. The range is defined\nby start and end indexes. Returns the range data with proof to the data root or an error if retrieval fails.\n",
             "paramStructure": "by-position",
             "params": [
@@ -6676,7 +6676,7 @@
         },
         {
             "name": "share.GetRow",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "GetRow retrieves all shares from a specific row in the Extended Data Square (EDS)\nat the given height. Returns the complete row of shares or an error if retrieval fails.\n",
             "paramStructure": "by-position",
             "params": [
@@ -6738,7 +6738,7 @@
         },
         {
             "name": "share.GetSamples",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "GetSamples retrieves multiple shares from the Extended Data Square (EDS) specified by the header\nat the given sample coordinates. Returns an array of samples containing the requested shares\nor an error if retrieval fails.\n",
             "paramStructure": "by-position",
             "params": [
@@ -6840,7 +6840,7 @@
         },
         {
             "name": "share.GetShare",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "GetShare retrieves a specific share from the Extended Data Square (EDS) at the given height\nusing its row and column coordinates. Returns the share data or an error if retrieval fails.\n",
             "paramStructure": "by-position",
             "params": [
@@ -6914,7 +6914,7 @@
         },
         {
             "name": "share.SharesAvailable",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "SharesAvailable performs a subjective validation to check if the shares committed to\nthe ExtendedHeader at the specified height are available and retrievable from the network.\nReturns an error if the shares are not available or if validation fails.\n",
             "paramStructure": "by-position",
             "params": [
@@ -6953,7 +6953,7 @@
         },
         {
             "name": "state.AccountAddress",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "AccountAddress retrieves the address of the node's account/signer\n",
             "paramStructure": "by-position",
             "params": [],
@@ -6981,7 +6981,7 @@
         },
         {
             "name": "state.Balance",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Balance retrieves the Celestia coin balance for the node's account/signer\nand verifies it against the corresponding block's AppHash.\n",
             "paramStructure": "by-position",
             "params": [],
@@ -7021,7 +7021,7 @@
         },
         {
             "name": "state.BalanceForAddress",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "BalanceForAddress retrieves the Celestia coin balance for the given address and verifies\nthe returned balance against the corresponding block's AppHash.\n\nNOTE: the balance returned is the balance reported by the block right before\nthe node's current head (head-1). This is due to the fact that for block N, the block's\n`AppHash` is the result of applying the previous block's transaction list.\n",
             "paramStructure": "by-position",
             "params": [
@@ -7078,7 +7078,7 @@
         },
         {
             "name": "state.BeginRedelegate",
-            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "BeginRedelegate sends a user's delegated tokens to a new validator for redelegation.\n",
             "paramStructure": "by-position",
             "params": [
@@ -7308,7 +7308,7 @@
         },
         {
             "name": "state.CancelUnbondingDelegation",
-            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "CancelUnbondingDelegation cancels a user's pending undelegation from a validator.\n",
             "paramStructure": "by-position",
             "params": [
@@ -7539,7 +7539,7 @@
         },
         {
             "name": "state.Delegate",
-            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Delegate sends a user's liquid tokens to a validator for delegation.\n",
             "paramStructure": "by-position",
             "params": [
@@ -7754,7 +7754,7 @@
         },
         {
             "name": "state.GrantFee",
-            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "No comment exists yet for this method.",
             "paramStructure": "by-position",
             "params": [
@@ -7969,7 +7969,7 @@
         },
         {
             "name": "state.QueryDelegation",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "QueryDelegation retrieves the delegation information between a delegator and a validator.\n",
             "paramStructure": "by-position",
             "params": [
@@ -8062,7 +8062,7 @@
         },
         {
             "name": "state.QueryDelegationRewards",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "QueryDelegationRewards retrieves the pending rewards for a delegation to a given validator.\n",
             "paramStructure": "by-position",
             "params": [
@@ -8131,7 +8131,7 @@
         },
         {
             "name": "state.QueryRedelegations",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "QueryRedelegations retrieves the status of the redelegations between a delegator and a validator.\n",
             "paramStructure": "by-position",
             "params": [
@@ -8338,7 +8338,7 @@
         },
         {
             "name": "state.QueryUnbonding",
-            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: read. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "QueryUnbonding retrieves the unbonding status between a delegator and a validator.\n",
             "paramStructure": "by-position",
             "params": [
@@ -8441,7 +8441,7 @@
         },
         {
             "name": "state.RevokeGrantFee",
-            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "No comment exists yet for this method.",
             "paramStructure": "by-position",
             "params": [
@@ -8640,7 +8640,7 @@
         },
         {
             "name": "state.SubmitPayForBlob",
-            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "SubmitPayForBlob builds, signs and submits a PayForBlob transaction.\n",
             "paramStructure": "by-position",
             "params": [
@@ -8852,7 +8852,7 @@
         },
         {
             "name": "state.Transfer",
-            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Transfer sends the given amount of coins from default wallet of the node to the given account\naddress.\n",
             "paramStructure": "by-position",
             "params": [
@@ -9067,7 +9067,7 @@
         },
         {
             "name": "state.Undelegate",
-            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "Undelegate undelegates a user's delegated tokens, unbonding them from the current validator.\n",
             "paramStructure": "by-position",
             "params": [
@@ -9282,7 +9282,7 @@
         },
         {
             "name": "state.WithdrawDelegatorReward",
-            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer \u003ctoken\u003e.",
+            "description": "Auth level: write. Requests must include the HTTP header: Authorization: Bearer <token>.",
             "summary": "WithdrawDelegatorReward withdraws a delegator's rewards from a validator.\n",
             "paramStructure": "by-position",
             "params": [

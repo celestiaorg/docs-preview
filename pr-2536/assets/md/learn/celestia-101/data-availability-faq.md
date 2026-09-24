@@ -4,7 +4,7 @@
 
 Data availability is about proving that a block's transactions have been published to the network. In most chains this means downloading all transaction data for a new block; in Celestia, light nodes can answer this question via DAS without full downloads.
 
-![Data availability](/img/learn/data-availability-faq/Data-availability.png)
+![Data availability](/docs-preview/pr-2536/img/learn/data-availability-faq/Data-availability.png)
 
 ## What is the data availability problem?
 
@@ -31,7 +31,7 @@ Blocks are erasure coded; malicious encoders could extend data incorrectly. Brid
 
 Data storage concerns keeping and retrieving historical transaction data. The security assumption for storage is 1-of-N honesty—only one honest keeper of history is needed—while data availability is about new blocks being publishable and verifiable.
 
-![Data storage](/img/learn/data-availability-faq/Data-storage.png)
+![Data storage](/docs-preview/pr-2536/img/learn/data-availability-faq/Data-storage.png)
 
 ## What problems arise around data storage?
 

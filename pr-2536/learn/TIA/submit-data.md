@@ -14,7 +14,7 @@ The _exact_ maximum total blob size in a transaction depends on:
 - the share version and layout rules,
 - and the fact that the **first sparse share has 478 bytes**, while **all subsequent sparse shares have 482 bytes**.
 
-The current max square size on Arabica is 128 MiB, Mocha is 32 MiB, and Mainnet is 8 MiB.
+The current max square size on Mocha and Mainnet Beta is 32 MiB.
 
 Under v6 and future upgrades, networks will use larger square sizes, so the absolute maximum blob capacity per transaction will increase correspondingly—up to the global **8 MiB transaction size limit**, which is now the binding constraint.
 
@@ -154,7 +154,7 @@ state config in `config.toml`. Each mode has different throughput characteristic
 ### Default behavior (TxWorkerAccounts = 0)
 
 By default, `TxWorkerAccounts` is set to `0`, which means queued submission is disabled. All PayForBlobs transactions are submitted
-immediately to the mempool without waiting for confirmations. This is the same behavior as versions prior to [v0.28.2-arabica](https://github.com/celestiaorg/celestia-node/releases/tag/v0.28.2-arabica).
+immediately to the mempool without waiting for confirmations. This is the same behavior as versions before queued submission was introduced.
 
 The mempool maintains a fork of the canonical state each block, updating the sequence number (nonce) for each account that submits a
 transaction. If you wish to submit multiple transactions from the same account in quick succession, you must specify the nonce

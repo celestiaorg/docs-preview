@@ -4,7 +4,7 @@ This guide covers how to set up a consensus node on Celestia.
 Consensus nodes allow you to sync the entire blockchain history in the Celestia
 consensus layer.
 
-![consensus node](/img/nodes/consensus-node.jpg)
+![consensus node](/docs-preview/pr-2536/img/nodes/consensus-node.jpg)
 
 ## Minimum hardware requirements
 
@@ -12,7 +12,7 @@ See [hardware requirements](/operate/getting-started/hardware-requirements).
 
 ## Set up a consensus node
 
-The following tutorial is done on an Ubuntu Linux 20.04 (LTS) x64
+The following tutorial is done on an Ubuntu Linux 24.04 (LTS) x64
 instance machine.
 
 <Steps>
@@ -29,7 +29,7 @@ instance machine.
   To initialize the network, pick a "node-name" that describes your
   node. Keep in mind that this might change if a new testnet is deployed.
 
-  <Tabs items={['Mainnet Beta', 'Mocha', 'Arabica']}>
+  <Tabs items={['Mainnet Beta', 'Mocha']}>
     <Tabs.Tab>
       ```bash
       celestia-appd init "node-name" --chain-id celestia
@@ -38,20 +38,14 @@ instance machine.
 
     <Tabs.Tab>
       ```bash
-      celestia-appd init "node-name" --chain-id mocha-4
-      ```
-    </Tabs.Tab>
-
-    <Tabs.Tab>
-      ```bash
-      celestia-appd init "node-name" --chain-id arabica-11
+      celestia-appd init "node-name" --chain-id mocha-5
       ```
     </Tabs.Tab>
   </Tabs>
 
   Download the `genesis.json` file:
 
-  <Tabs items={['Mainnet Beta', 'Mocha', 'Arabica']}>
+  <Tabs items={['Mainnet Beta', 'Mocha']}>
     <Tabs.Tab>
       ```bash
       celestia-appd download-genesis celestia
@@ -60,20 +54,14 @@ instance machine.
 
     <Tabs.Tab>
       ```bash
-      celestia-appd download-genesis mocha-4
-      ```
-    </Tabs.Tab>
-
-    <Tabs.Tab>
-      ```bash
-      celestia-appd download-genesis arabica-11
+      celestia-appd download-genesis mocha-5
       ```
     </Tabs.Tab>
   </Tabs>
 
   Set seeds in the `$HOME/.celestia-app/config/config.toml` file:
 
-  <Tabs items={['Mainnet Beta', 'Mocha', 'Arabica']}>
+  <Tabs items={['Mainnet Beta', 'Mocha']}>
     <Tabs.Tab>
       ```bash
       SEEDS=$(curl -sL https://raw.githubusercontent.com/celestiaorg/networks/master/celestia/seeds.txt | tr '\n' ',')
@@ -84,18 +72,9 @@ instance machine.
 
     <Tabs.Tab>
       ```bash
-      SEEDS=$(curl -sL https://raw.githubusercontent.com/celestiaorg/networks/master/mocha-4/seeds.txt | tr '\n' ',')
+      SEEDS=$(curl -sL https://raw.githubusercontent.com/celestiaorg/networks/main/mocha-5/seeds.txt | tr '\n' ',')
       echo $SEEDS
       sed -i.bak -e "s/^seeds *=.*/seeds = \"$SEEDS\"/" $HOME/.celestia-app/config/config.toml
-      ```
-    </Tabs.Tab>
-
-    <Tabs.Tab>
-      ```bash
-      # For Arabica, you can set seeds manually in the
-      # `$HOME/.celestia-app/config/config.toml` file:
-      # Comma separated list of seed nodes to connect to
-      seeds = ""
       ```
     </Tabs.Tab>
   </Tabs>
@@ -107,9 +86,9 @@ instance machine.
   You can set persistent peers in your `config.toml` file. If you set persistent peers, your node will **always** try to connect to these peers. This is useful when running a local devnet, for example, when you would always want to connect to the same local nodes in your devnet. In production, setting persistent peers is advised only if you are running a [sentry node](https://hub.cosmos.network/main/validators/security.html#sentry-nodes-ddos-protection).
 </Callout>
 
-You can get the persistent peers from the [@cosmos/chain-registry](https://github.com/cosmos/chain-registry) repository (for Mainnet Beta) or [@celestiaorg/networks repository](https://github.com/celestiaorg/networks) repo (for Mocha and Arabica) with the following commands:
+You can get the persistent peers from the [@cosmos/chain-registry](https://github.com/cosmos/chain-registry) repository (for Mainnet Beta) or [@celestiaorg/networks repository](https://github.com/celestiaorg/networks) repo (for Mocha) with the following commands:
 
-<Tabs items={['Mainnet Beta', 'Mocha', 'Arabica']}>
+<Tabs items={['Mainnet Beta', 'Mocha']}>
   <Tabs.Tab>
     ```bash
     PERSISTENT_PEERS=$(curl -s https://raw.githubusercontent.com/cosmos/chain-registry/master/celestia/chain.json | jq -r '.peers.persistent_peers[].address' | tr '\n' ',' | sed 's/,$/\n/')
@@ -120,15 +99,7 @@ You can get the persistent peers from the [@cosmos/chain-registry](https://githu
 
   <Tabs.Tab>
     ```bash
-    PERSISTENT_PEERS=$(curl -sL https://raw.githubusercontent.com/celestiaorg/networks/master/mocha-4/peers.txt | tr '\n' ',')
-    echo $PERSISTENT_PEERS
-    sed -i.bak -e "s/^persistent_peers *=.*/persistent_peers = \"$PERSISTENT_PEERS\"/" $HOME/.celestia-app/config/config.toml
-    ```
-  </Tabs.Tab>
-
-  <Tabs.Tab>
-    ```bash
-    PERSISTENT_PEERS=$(curl -sL https://raw.githubusercontent.com/celestiaorg/networks/master/arabica-11/peers.txt | tr '\n' ',')
+    PERSISTENT_PEERS=$(curl -sL https://raw.githubusercontent.com/celestiaorg/networks/main/mocha-5/peers.txt | tr '\n' ',')
     echo $PERSISTENT_PEERS
     sed -i.bak -e "s/^persistent_peers *=.*/persistent_peers = \"$PERSISTENT_PEERS\"/" $HOME/.celestia-app/config/config.toml
     ```
@@ -136,6 +107,14 @@ You can get the persistent peers from the [@cosmos/chain-registry](https://githu
 </Tabs>
 
 ## Storage and pruning configurations
+
+### Database backend
+
+celestia-app v9 and later use PebbleDB by default for new nodes. Before
+changing an existing node's `db_backend` from `"goleveldb"` to `"pebbledb"`,
+stop the node and use the
+[`migrate-db` tool](https://github.com/celestiaorg/celestia-app/tree/v9.x/tools/migrate-db)
+to migrate its databases.
 
 ### Optional: Connect a consensus node to a bridge node
 
@@ -176,13 +155,22 @@ indexer = "kv"
 
 If you want to query the historical state — for example, you might want
 to know the balance of a Celestia wallet at a given height in the past —
-you should run an archive node with `pruning = "nothing"` in your `app.toml`.
-Note that this configuration is resource-intensive and will require
+you should run an archive node. In your `app.toml`, set `pruning = "nothing"`
+to retain application state and `min-retain-blocks = 0` to retain all block
+data. Note that this configuration is resource-intensive and will require
 significant storage:
 
 ```toml
 pruning = "nothing"
+min-retain-blocks = 0
 ```
+
+<Callout type="warning">
+  `min-retain-blocks` defaults to `0`. Any non-zero value enables block pruning,
+  so archival operators must keep the value at `0`. Changing the value from `0`
+  to a non-zero value starts pruning the existing backlog when the node restarts
+  and can temporarily increase sync time.
+</Callout>
 
 ### Save on storage requirements
 
@@ -224,7 +212,19 @@ By default, a consensus node will sync using block sync; which will request, val
 and execute every block up to the head of the blockchain. This is the most secure
 mechanism yet the slowest (taking up to weeks depending on the height of the blockchain).
 
-There is an [issue](https://github.com/celestiaorg/celestia-app/issues/4370) that prevents recent celestia-app binaries from block syncing Mainnet Beta. As a temporary workaround, you can use celestia-app [v3.0.2](https://github.com/celestiaorg/celestia-app/releases/tag/v3.0.2) to block sync Mainnet Beta until that issue is resolved. After block syncing, please upgrade to the latest version of celestia-app to pick up recent security fixes.
+Starting with celestia-app v9, `verify_data` defaults to `false` in the
+`[blocksync]` section of `config.toml`. This skips re-running `ProcessProposal`
+on historical blocks to improve block sync speed. Blocks are still verified by
+their validator signatures, and normal validation resumes after the node enters
+consensus mode. To restore the pre-v9 behaviour, set:
+
+```toml
+[blocksync]
+verify_data = true
+```
+
+See the [celestia-app v9 release notes](https://github.com/celestiaorg/celestia-app/blob/v9.0.4/docs/release-notes/release-notes.md#block-sync-verify_data-default-changed-to-false)
+for details.
 
 There are two alternatives for quicker syncing.
 
@@ -284,7 +284,7 @@ copied from.
 
 Run the following command to quick-sync from a snapshot:
 
-<Tabs items={['Mainnet Beta', 'Mocha', 'Arabica']}>
+<Tabs items={['Mainnet Beta', 'Mocha']}>
   <Tabs.Tab>
     ```bash
     cd $HOME
@@ -303,19 +303,7 @@ Run the following command to quick-sync from a snapshot:
     rm -rf ~/.celestia-app/data
     mkdir -p ~/.celestia-app/data
     SNAP_NAME=$(curl -s https://snaps.qubelabs.io/celestia/ | \
-        egrep -o ">mocha-4.*tar" | tr -d ">")
-    aria2c -x 16 -s 16 -o celestia-snap.tar "https://snaps.qubelabs.io/celestia/${SNAP_NAME}"
-    tar xf celestia-snap.tar -C ~/.celestia-app/data/
-    ```
-  </Tabs.Tab>
-
-  <Tabs.Tab>
-    ```bash
-    cd $HOME
-    rm -rf ~/.celestia-app/data
-    mkdir -p ~/.celestia-app/data
-    SNAP_NAME=$(curl -s https://snaps.qubelabs.io/celestia/ | \
-        egrep -o ">arabica-11.*tar" | tr -d ">")
+        egrep -o ">mocha-5.*tar" | tr -d ">")
     aria2c -x 16 -s 16 -o celestia-snap.tar "https://snaps.qubelabs.io/celestia/${SNAP_NAME}"
     tar xf celestia-snap.tar -C ~/.celestia-app/data/
     ```
@@ -340,7 +328,7 @@ celestia-appd start --rpc.grpc_laddr tcp://0.0.0.0:9098
 
 If you are running celestia-app v2.x.x then you'll want to start the node with a `--v2-upgrade-height` that is dependent on the network. The `--v2-upgrade-height` flag is only needed during the v2 upgrade height so after your node has executed the upgrade (e.g. you see the log `upgraded from app version 1 to 2`), you don't need to provide this flag for future `celestia-appd start` invocations.
 
-<Tabs items={['Mainnet Beta', 'Mocha', 'Arabica']}>
+<Tabs items={['Mainnet Beta', 'Mocha']}>
   <Tabs.Tab>
     ```sh
     celestia-appd start --v2-upgrade-height 2371495
@@ -350,12 +338,6 @@ If you are running celestia-app v2.x.x then you'll want to start the node with a
   <Tabs.Tab>
     ```sh
     celestia-appd start --v2-upgrade-height 2585031
-    ```
-  </Tabs.Tab>
-
-  <Tabs.Tab>
-    ```sh
-    celestia-appd start --v2-upgrade-height 1751707
     ```
   </Tabs.Tab>
 </Tabs>
@@ -497,7 +479,7 @@ The available options are:
    transaction status. If you don't need to query transaction data,
    you can choose this option to save space.
 2. `kv`: This is the simplest indexer, backed by
-   key-value storage (defaults to levelDB; see DBBackend).
+   PebbleDB key-value storage.
    When `kv` is chosen, `tx.height` and `tx.hash` will always be
    indexed. This option is suitable for basic queries on transactions.
 3. `psql`: This indexer is backed by PostgreSQL. When psql is chosen,

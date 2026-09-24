@@ -11,7 +11,9 @@ The Celestia Go client lets you submit and retrieve data from the Celestia netwo
 
 ## Prerequisites
 
-* Go 1.25.1 or later
+* Go 1.25.x (Go 1.26 is not yet supported by a transitive dependency,
+  `bytedance/sonic`; if your default toolchain is newer, run the tutorial with
+  `GOTOOLCHAIN=go1.25.1 go run main.go`)
 * A Celestia account (created automatically)
 * Testnet tokens from the [Mocha faucet](/operate/networks/mocha-testnet#mocha-testnet-faucet)
 
@@ -100,7 +102,7 @@ The Celestia Go client lets you submit and retrieve data from the Celestia netwo
 
   	// Add Core gRPC config if provided
   	if coreGRPC != "" {
-  		network := p2p.Network("mocha-4")
+  		network := p2p.Network("mocha-5")
   		cfg.SubmitConfig.Network = network
   		cfg.SubmitConfig.CoreGRPCConfig = client.CoreGRPCConfig{
   			Addr:       coreGRPC,
@@ -241,20 +243,20 @@ The Celestia Go client lets you submit and retrieve data from the Celestia netwo
   Choose your connection type:
 
   <Callout type="info">
-    To submit blobs, you need both a DA JSON-RPC endpoint on port `26658` and a consensus gRPC endpoint on port `9090`.
-    The public Mocha combination verified for this guide is ITRocket for DA JSON-RPC
-    and P-OPS for consensus gRPC:
-    `http://celestia-testnet-consensus.itrocket.net:26658` and
-    `rpc-mocha.pops.one:9090`.
+    To submit blobs, you need both a DA JSON-RPC endpoint and a consensus gRPC endpoint.
+    The public QuickNode Mocha endpoint serves both, and the full submit and
+    retrieve flow in this guide was verified against it:
+    `https://public-endpoint.celestia-mocha.quiknode.pro` for DA JSON-RPC and
+    `public-endpoint.celestia-mocha.quiknode.pro:9090` for consensus gRPC.
   </Callout>
 
-  **Public community endpoints (tested on Mocha):**
+  **Public endpoints (tested on Mocha):**
 
   ```bash
-  export CELE_DA_URL=http://celestia-testnet-consensus.itrocket.net:26658
-  export CELE_DA_TLS=false
-  export CELE_CORE_GRPC=rpc-mocha.pops.one:9090
-  export CELE_CORE_TLS=false
+  export CELE_DA_URL=https://public-endpoint.celestia-mocha.quiknode.pro
+  export CELE_DA_TLS=true
+  export CELE_CORE_GRPC=public-endpoint.celestia-mocha.quiknode.pro:9090
+  export CELE_CORE_TLS=true
   ```
 
   **Managed provider (for example QuickNode):**
@@ -279,8 +281,8 @@ The Celestia Go client lets you submit and retrieve data from the Celestia netwo
   **Read-only mode (no blob submission):**
 
   ```bash
-  export CELE_DA_URL=http://celestia-testnet-consensus.itrocket.net:26658
-  export CELE_DA_TLS=false
+  export CELE_DA_URL=https://public-endpoint.celestia-mocha.quiknode.pro
+  export CELE_DA_TLS=true
   # Don't set CELE_CORE_GRPC for read-only mode
   ```
 
@@ -440,7 +442,7 @@ cfg := client.Config{
     },
     SubmitConfig: client.SubmitConfig{
         DefaultKeyName: "my_key",
-        Network:        p2p.Network("mocha-4"),
+        Network:        p2p.Network("mocha-5"),
         CoreGRPCConfig: client.CoreGRPCConfig{
             Addr:       coreGRPC,
             TLSEnabled: coreTLS,

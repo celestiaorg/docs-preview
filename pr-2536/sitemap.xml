@@ -4,12 +4,6 @@
     <loc>https://docs.celestia.org/</loc>
   </url>
   <url>
-    <loc>https://docs.celestia.org/build/blobstream/integrate-contracts/</loc>
-  </url>
-  <url>
-    <loc>https://docs.celestia.org/build/blobstream/integrate-offchain/</loc>
-  </url>
-  <url>
     <loc>https://docs.celestia.org/build/blobstream/proof-queries/</loc>
   </url>
   <url>
@@ -32,6 +26,9 @@
   </url>
   <url>
     <loc>https://docs.celestia.org/build/rpc/node-api/</loc>
+  </url>
+  <url>
+    <loc>https://docs.celestia.org/build/stacks/account-selection/</loc>
   </url>
   <url>
     <loc>https://docs.celestia.org/build/stacks/nitro-das-server/</loc>
@@ -91,25 +88,16 @@
     <loc>https://docs.celestia.org/learn/features/private-blockspace/</loc>
   </url>
   <url>
-    <loc>https://docs.celestia.org/operate/blobstream/deploy-contract/</loc>
-  </url>
-  <url>
-    <loc>https://docs.celestia.org/operate/blobstream/install-binary/</loc>
-  </url>
-  <url>
-    <loc>https://docs.celestia.org/operate/blobstream/key-management/</loc>
-  </url>
-  <url>
-    <loc>https://docs.celestia.org/operate/blobstream/orchestrator/</loc>
-  </url>
-  <url>
-    <loc>https://docs.celestia.org/operate/blobstream/relayer/</loc>
-  </url>
-  <url>
     <loc>https://docs.celestia.org/operate/consensus-validators/cli-reference/</loc>
   </url>
   <url>
     <loc>https://docs.celestia.org/operate/consensus-validators/consensus-node/</loc>
+  </url>
+  <url>
+    <loc>https://docs.celestia.org/operate/consensus-validators/fibre/</loc>
+  </url>
+  <url>
+    <loc>https://docs.celestia.org/operate/consensus-validators/fibre/metrics/</loc>
   </url>
   <url>
     <loc>https://docs.celestia.org/operate/consensus-validators/foundation-delegation-program/</loc>
@@ -197,9 +185,6 @@
   </url>
   <url>
     <loc>https://docs.celestia.org/operate/maintenance/trusted-hash-recovery/</loc>
-  </url>
-  <url>
-    <loc>https://docs.celestia.org/operate/networks/arabica-devnet/</loc>
   </url>
   <url>
     <loc>https://docs.celestia.org/operate/networks/local-devnet/</loc>

@@ -12,14 +12,22 @@ See [hardware requirements](/operate/getting-started/hardware-requirements).
 
 ## Set up a consensus node
 
-The following tutorial is done on an Ubuntu Linux 20.04 (LTS) x64
+The following tutorial is done on an Ubuntu Linux 24.04 (LTS) x64
 instance machine.
 
 #### Optional: Set persistent peers
 
-You can get the persistent peers from the [@cosmos/chain-registry](https://github.com/cosmos/chain-registry) repository (for Mainnet Beta) or [@celestiaorg/networks repository](https://github.com/celestiaorg/networks) repo (for Mocha and Arabica) with the following commands:
+You can get the persistent peers from the [@cosmos/chain-registry](https://github.com/cosmos/chain-registry) repository (for Mainnet Beta) or [@celestiaorg/networks repository](https://github.com/celestiaorg/networks) repo (for Mocha) with the following commands:
 
 ## Storage and pruning configurations
+
+### Database backend
+
+celestia-app v9 and later use PebbleDB by default for new nodes. Before
+changing an existing node's `db_backend` from `"goleveldb"` to `"pebbledb"`,
+stop the node and use the
+[`migrate-db` tool](https://github.com/celestiaorg/celestia-app/tree/v9.x/tools/migrate-db)
+to migrate its databases.
 
 ### Optional: Connect a consensus node to a bridge node
 
@@ -60,12 +68,14 @@ indexer = "kv"
 
 If you want to query the historical state — for example, you might want
 to know the balance of a Celestia wallet at a given height in the past —
-you should run an archive node with `pruning = "nothing"` in your `app.toml`.
-Note that this configuration is resource-intensive and will require
+you should run an archive node. In your `app.toml`, set `pruning = "nothing"`
+to retain application state and `min-retain-blocks = 0` to retain all block
+data. Note that this configuration is resource-intensive and will require
 significant storage:
 
 ```toml
 pruning = "nothing"
+min-retain-blocks = 0
 ```
 
 ### Save on storage requirements
@@ -108,7 +118,19 @@ By default, a consensus node will sync using block sync; which will request, val
 and execute every block up to the head of the blockchain. This is the most secure
 mechanism yet the slowest (taking up to weeks depending on the height of the blockchain).
 
-There is an [issue](https://github.com/celestiaorg/celestia-app/issues/4370) that prevents recent celestia-app binaries from block syncing Mainnet Beta. As a temporary workaround, you can use celestia-app [v3.0.2](https://github.com/celestiaorg/celestia-app/releases/tag/v3.0.2) to block sync Mainnet Beta until that issue is resolved. After block syncing, please upgrade to the latest version of celestia-app to pick up recent security fixes.
+Starting with celestia-app v9, `verify_data` defaults to `false` in the
+`[blocksync]` section of `config.toml`. This skips re-running `ProcessProposal`
+on historical blocks to improve block sync speed. Blocks are still verified by
+their validator signatures, and normal validation resumes after the node enters
+consensus mode. To restore the pre-v9 behaviour, set:
+
+```toml
+[blocksync]
+verify_data = true
+```
+
+See the [celestia-app v9 release notes](https://github.com/celestiaorg/celestia-app/blob/v9.0.4/docs/release-notes/release-notes.md#block-sync-verify_data-default-changed-to-false)
+for details.
 
 There are two alternatives for quicker syncing.
 
@@ -311,7 +333,7 @@ The available options are:
    transaction status. If you don't need to query transaction data,
    you can choose this option to save space.
 2. `kv`: This is the simplest indexer, backed by
-   key-value storage (defaults to levelDB; see DBBackend).
+   PebbleDB key-value storage.
    When `kv` is chosen, `tx.height` and `tx.hash` will always be
    indexed. This option is suitable for basic queries on transactions.
 3. `psql`: This indexer is backed by PostgreSQL. When psql is chosen,

@@ -1,12 +1,12 @@
 # Syncing a light node from a trusted hash
 
 This guide goes over how to sync a DA light node from a trusted hash.
-The example uses the Mocha testnet. You will need to adjust the commands accordingly for Mainnet Beta, Arabica, or a custom network.
+The example uses the Mocha testnet. You will need to adjust the commands accordingly for Mainnet Beta or a custom network.
 
 If you already have a data store for your node, you need to remove it before syncing from a trusted hash:
 
 ```sh
-rm -rf ~/.celestia-light-mocha-4/data
+rm -rf ~/.celestia-light-mocha-5/data
 ```
 
 You also cannot sync to a height earlier than the data availability sampling (DAS) start height.
@@ -66,13 +66,13 @@ You can automate the process of setting the trusted height and hash using the fo
 
   ```sh
   # Get both the height and hash values in a single call
-  read -r TRUSTED_HEIGHT TRUSTED_HASH <<<"$(curl -s https://rpc-mocha.pops.one/header | jq -r '.result.header | "\(.height) \(.last_block_id.hash)"')" && export TRUSTED_HEIGHT TRUSTED_HASH
+  read -r TRUSTED_HEIGHT TRUSTED_HASH <<<"$(curl -s https://public-endpoint.celestia-mocha.quiknode.pro/header | jq -r '.result.header | "\(.height) \(.last_block_id.hash)"')" && export TRUSTED_HEIGHT TRUSTED_HASH
 
   # Use sed to find and replace the SyncFromHeight value in the config file (macOS version)
-  sed -i '' "s/SyncFromHeight = .*/SyncFromHeight = $TRUSTED_HEIGHT/" ~/.celestia-light-mocha-4/config.toml
+  sed -i '' "s/SyncFromHeight = .*/SyncFromHeight = $TRUSTED_HEIGHT/" ~/.celestia-light-mocha-5/config.toml
 
   # Add/update the SyncFromHash value
-  sed -i '' "s/SyncFromHash = .*/SyncFromHash = \"$TRUSTED_HASH\"/" ~/.celestia-light-mocha-4/config.toml
+  sed -i '' "s/SyncFromHash = .*/SyncFromHash = \"$TRUSTED_HASH\"/" ~/.celestia-light-mocha-5/config.toml
 
   # Display the updated values to confirm
   echo "SyncFromHeight updated to: $TRUSTED_HEIGHT"
@@ -82,13 +82,15 @@ You can automate the process of setting the trusted height and hash using the fo
   ### Start the node
 
   ```sh
-  celestia light start --p2p.network mocha --core.ip rpc-mocha.pops.one --core.port 9090
+  celestia light start --p2p.network mocha \
+    --core.ip public-endpoint.celestia-mocha.quiknode.pro \
+    --core.port 9090 --core.tls
   ```
 </Steps>
 
 > **Tip (Linux):** Remove the empty string (`''`) after `-i` in the `sed` commands:\
-> `sed -i "s/SyncFromHeight = .*/SyncFromHeight = $TRUSTED_HEIGHT/" ~/.celestia-light-mocha-4/config.toml`\
-> `sed -i "s/SyncFromHash = .*/SyncFromHash = \"$TRUSTED_HASH\"/" ~/.celestia-light-mocha-4/config.toml`
+> `sed -i "s/SyncFromHeight = .*/SyncFromHeight = $TRUSTED_HEIGHT/" ~/.celestia-light-mocha-5/config.toml`\
+> `sed -i "s/SyncFromHash = .*/SyncFromHash = \"$TRUSTED_HASH\"/" ~/.celestia-light-mocha-5/config.toml`
 
 ## For service operators
 

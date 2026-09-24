@@ -3,7 +3,7 @@
 This tutorial will guide you through setting up a validator node on Celestia.
 Validator nodes allow you to participate in consensus in the Celestia network.
 
-![validator node](/img/nodes/validator.png)
+![validator node](/docs-preview/pr-2536/img/nodes/validator.png)
 
 ## Hardware requirements
 
@@ -11,7 +11,7 @@ See [hardware requirements](/operate/getting-started/hardware-requirements).
 
 ## Setting up a validator node
 
-The following tutorial is done on an Ubuntu Linux 20.04 (LTS) x64
+The following tutorial is done on an Ubuntu Linux 24.04 (LTS) x64
 instance machine.
 
 First, follow the instructions on
@@ -55,10 +55,9 @@ is properly configured in your consensus node's `app.toml` file. The `[grpc]`
 section should have `enable = true` and the appropriate address setting for the
 bridge node to connect successfully.
 
-Using an RPC of your own, or one from
-[Mainnet Beta](/operate/networks/mainnet-beta#integrations),
-[Mocha testnet](/operate/networks/mocha-testnet#rpc-for-da-bridge-full-and-light-nodes) or
-[Arabica devnet](/operate/networks/arabica-devnet#integrations),
+Using an RPC of your own, or one listed for
+[Mainnet Beta](/operate/networks/mainnet-beta#integrations) or
+[Mocha testnet](/operate/networks/mocha-testnet#community-consensus-endpoints),
 initialize your node.
 
 ### Run the bridge node
@@ -88,7 +87,7 @@ In order to create a validator on-chain, follow the steps below.
 
 2. Export an environment variable for the chain ID you want to run on:
 
-   <Tabs items={['Mainnet Beta', 'Mocha', 'Arabica']}>
+   <Tabs items={['Mainnet Beta', 'Mocha']}>
      <Tabs.Tab>
        ```bash
        export CHAIN_ID=celestia
@@ -97,13 +96,7 @@ In order to create a validator on-chain, follow the steps below.
 
      <Tabs.Tab>
        ```bash
-       export CHAIN_ID=mocha-4
-       ```
-     </Tabs.Tab>
-
-     <Tabs.Tab>
-       ```bash
-       export CHAIN_ID=arabica-11
+       export CHAIN_ID=mocha-5
        ```
      </Tabs.Tab>
    </Tabs>
@@ -121,27 +114,9 @@ In order to create a validator on-chain, follow the steps below.
    export VALIDATOR_PUBKEY=$(celestia-appd tendermint show-validator)
    ```
 
-4. If you want to create a validator on a testnet that is on app version 4 (currently only Arabica), you will need to create a `validator.json` file.
+4. Create a validator
 
-   **Arabica:**
-
-   ```bash
-   cat <<EOF > validator.json
-   {
-     "pubkey": $VALIDATOR_PUBKEY,
-     "amount": "1000000utia",
-     "moniker": "$MONIKER",
-     "commission-rate": "0.1",
-     "commission-max-rate": "0.2",
-     "commission-max-change-rate": "0.01",
-     "min-self-delegation": "1"
-   }
-   EOF
-   ```
-
-5. Create a validator
-
-   <Tabs items={['Mainnet Beta', 'Mocha', 'Arabica']}>
+   <Tabs items={['Mainnet Beta', 'Mocha']}>
      <Tabs.Tab>
        ```bash
        celestia-appd tx staking create-validator \
@@ -183,17 +158,6 @@ In order to create a validator on-chain, follow the steps below.
            --from=$VALIDATOR_WALLET \
            --keyring-backend=test \
            --fees=21000utia \
-           --gas=220000 \
-           --yes
-       ```
-     </Tabs.Tab>
-
-     <Tabs.Tab>
-       ```bash
-       celestia-appd tx staking create-validator validator.json \
-           --from $VALIDATOR_WALLET \
-           --keyring-backend test \
-           --fees 21000utia \
            --gas=220000 \
            --yes
        ```
@@ -269,7 +233,7 @@ example you can run:
 ```bash
 celestia-appd tx staking delegate \
 <the_valoper_address_starts_with_celestiavaloper1...> 1000000utia \
---from=$VALIDATOR_WALLET --chain-id=mocha-4 \
+--from=$VALIDATOR_WALLET --chain-id=mocha-5 \
 --fees=21000utia
 ```
 

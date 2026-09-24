@@ -32,22 +32,16 @@ commands:
 
   ### Check out the desired version
 
-  <Tabs items={['Mainnet Beta', 'Mocha', 'Arabica']}>
+  <Tabs items={['Mainnet Beta', 'Mocha']}>
     <Tabs.Tab>
       ```bash
-      git checkout tags/v0.31.3
+      git checkout tags/v0.33.2
       ```
     </Tabs.Tab>
 
     <Tabs.Tab>
       ```bash
-      git checkout tags/v0.31.3-mocha
-      ```
-    </Tabs.Tab>
-
-    <Tabs.Tab>
-      ```bash
-      git checkout tags/v0.31.3-arabica
+      git checkout tags/v0.34.2-mocha
       ```
     </Tabs.Tab>
   </Tabs>
@@ -99,9 +93,10 @@ commands:
 
 Installing a pre-built binary is the fastest way to get started with your Celestia data availability node. Releases after celestia-node v0.13.3 have these binaries available.
 
-The installation script will download a binary file named `celestia`. Depending on your chosen installation option, the `celestia` binary will be available at one of these locations:
+The installation script will download a binary file named `celestia`. Depending on your environment and chosen installation option, the `celestia` binary will be available at one of these locations:
 
-* `$GOPATH/bin/celestia` (if Go is installed)
+* The Homebrew bin directory (usually `/opt/homebrew/bin/celestia` on Apple silicon or `/usr/local/bin/celestia` on Intel Macs) when Go is installed with Homebrew
+* `$GOBIN/celestia`, or `$GOPATH/bin/celestia` when `GOBIN` is unset, for other Go installations
 * `/usr/local/bin/celestia`
 * `$HOME/celestia-node-temp/celestia`
 
@@ -119,7 +114,7 @@ You can install the latest version or specify a particular version:
 bash -c "$(curl -sL https://docs.celestia.org/celestia-node.sh)"
 
 # Install specific version, Mainnet Beta in this example
-bash -c "$(curl -sL https://docs.celestia.org/celestia-node.sh)" -- -v v0.31.3
+bash -c "$(curl -sL https://docs.celestia.org/celestia-node.sh)" -- -v v0.33.2
 ```
 
 The script will:
@@ -129,7 +124,7 @@ The script will:
 3. Verify the checksum for security
 4. Provide installation location options based on your environment:
    * If Go is installed:
-     * Go bin directory (`$GOPATH/bin`)
+     * Detected Go bin directory (the Homebrew bin directory when Go is installed with Homebrew, otherwise `$GOBIN` or `$GOPATH/bin`)
      * System bin directory (`/usr/local/bin`)
      * Keep in current directory
    * If Go is not installed:
@@ -159,6 +154,12 @@ we recommend the [quick-start guide](/operate/data-availability/light-node/quick
 
 ## Upgrading your binary
 
-To upgrade your binary, you can install the latest version from the
-instructions above and restart your node. If you run into any issues,
-Refer to the [troubleshooting section](/operate/maintenance/troubleshooting).
+To upgrade your binary, install the latest version using the instructions above.
+
+When upgrading from a version earlier than celestia-node v0.31.3 to v0.31.3 or later, update the node configuration after replacing the binary and before starting the node:
+
+```bash
+celestia <node_type> config-update --p2p.network <network>
+```
+
+The [v0.31.3 release](https://github.com/celestiaorg/celestia-node/releases/tag/v0.31.3) adds support for Mainnet Beta v9 and introduces new config fields. The command merges those fields into the existing configuration while preserving custom values. Review your configuration after the update, then start the node. If you run into any issues, refer to the [troubleshooting section](/operate/maintenance/troubleshooting#resetting-your-config).
