@@ -1,7 +1,7 @@
 # Private blockspace quickstart
 
 Private blockspace encrypts your blob data before it’s posted to Celestia using a lightweight proxy.  
-In this quickstart, you’ll use hosted Celestia nodes (like QuickNode) instead of running your own.
+In this quickstart, you’ll use hosted Celestia nodes (like Quicknode) instead of running your own.
 
 ## Troubleshooting
 

@@ -993,7 +993,7 @@ Source: app/build/private-blockspace/quickstart/page.mdx
 # Private blockspace quickstart
 
 Private blockspace encrypts your blob data before it’s posted to Celestia using a lightweight proxy.  
-In this quickstart, you’ll use hosted Celestia nodes (like QuickNode) instead of running your own.
+In this quickstart, you’ll use hosted Celestia nodes (like Quicknode) instead of running your own.
 
 ## Troubleshooting
 
@@ -1835,7 +1835,7 @@ access historical data.
 - **Use professional archival node or data providers.** It is expected that
   professional infrastructure providers will provide paid access to archival
   nodes, where historical data can be retrieved, for example using the `GetAll`
-  API method. Providers like QuickNode offer archival node services that maintain
+  API method. Providers like Quicknode offer archival node services that maintain
   complete historical data, ensuring reliable access to past transactions and state.
   This provides better guarantees than solely relying on free archival nodes on the
   public Celestia network. For a list of available providers, see the
@@ -8309,15 +8309,15 @@ history, such as:
 
 | Provider  | URL                                                                                       |
 | --------- | ----------------------------------------------------------------------------------------- |
-| QuickNode | [https://www.quicknode.com/chains/celestia](https://www.quicknode.com/chains/celestia) ([docs](https://quicknode.com/docs/celestia)) |
+| Quicknode | [https://www.quicknode.com/chains/celestia](https://www.quicknode.com/chains/celestia) ([docs](https://quicknode.com/docs/celestia)) |
 
-If you are using QuickNode or another provider with authenticated endpoints,
+If you are using Quicknode or another provider with authenticated endpoints,
 see [the light node guide](/operate/data-availability/light-node/advanced#optional-start-light-node-with-consensus-endpoint-authentication)
 to learn how to use an endpoint with x-token.
 
 ### Public RPC endpoint
 
-For development, testing, and documentation examples, use the public QuickNode
+For development, testing, and documentation examples, use the public Quicknode
 endpoint:
 
 | Interface | Endpoint |
@@ -8370,7 +8370,7 @@ endpoints from the [community consensus endpoints](#community-consensus-endpoint
 table above. The default port is 9090, where gRPC is used for both block sync
 and state access.
 
-For example, to connect to the public QuickNode endpoint:
+For example, to connect to the public Quicknode endpoint:
 
 ```bash
 celestia light start \
@@ -8396,7 +8396,7 @@ pruning any data so all data available data is retrievable. You can
 
 | Provider                         | Endpoint                                                                                  | RPC Port | Gateway Port |
 | -------------------------------- | ----------------------------------------------------------------------------------------- | -------- | ------------ |
-| QuickNode                        | [https://www.quicknode.com/chains/celestia](https://www.quicknode.com/chains/celestia) ([docs](https://quicknode.com/docs/celestia)) | -        | -            |
+| Quicknode                        | [https://www.quicknode.com/chains/celestia](https://www.quicknode.com/chains/celestia) ([docs](https://quicknode.com/docs/celestia)) | -        | -            |
 | Mzonder                          | `celestia-da-full-storage.mzonder.com`                                                    | 27758    | 27759        |
 | Noders Services                  | `celestia-archive-da.noders.services`                                                     | 26658    | 26659        |
 | ITRocket                         | `celestia-mainnet-da-full-storage.itrocket.net`                                           | 26658    | 26659        |
@@ -8616,13 +8616,13 @@ history, such as:
 
 | Provider  | URL                                                                                       |
 | --------- | ----------------------------------------------------------------------------------------- |
-| QuickNode | [https://www.quicknode.com/chains/celestia](https://www.quicknode.com/chains/celestia) ([docs](https://quicknode.com/docs/celestia)) |
+| Quicknode | [https://www.quicknode.com/chains/celestia](https://www.quicknode.com/chains/celestia) ([docs](https://quicknode.com/docs/celestia)) |
 
 > **Warning:** Do not rely on the free community endpoints listed below for production deployments. Production deployments should rely on [service providers with SLAs](#production-rpc-endpoints) or your own node.
 
 ### Public RPC endpoint
 
-For development, testing, and documentation examples, use the public QuickNode
+For development, testing, and documentation examples, use the public Quicknode
 endpoint:
 
 | Interface | Endpoint |
