@@ -1,0 +1,100 @@
+# Multisig
+
+Celestia inherits support for multisig accounts from the Cosmos SDK. Multisig
+accounts behave similarly to regular accounts with the added requirement that
+a threshold of signatures is needed to authorize a transaction.
+
+Multisig accounts can be created from the [command line](#command-line) or using
+a graphical interface such as [Keplr](https://multisig.keplr.app/).
+
+## Command line
+
+This example is for a local devnet only. It creates all three signing keys on
+one machine using the unencrypted `test` backend. For production, keep signing
+keys with separate signers and use hardware wallets or encrypted key storage;
+storing all keys together does not protect against that machine being compromised.
+
+Start a devnet with `./scripts/single-node.sh <devnet_home>` from your
+celestia-app checkout, using a fresh directory dedicated to the devnet. In a
+second terminal, set `CELESTIA_APP_HOME` below to that same directory. The
+commands require `jq` and the same `celestia-appd` binary used by the devnet.
+
+```bash
+
+CHAIN_ID=$(jq -r .chain_id "$CELESTIA_APP_HOME/config/genesis.json")
+KEY_NAME="validator"
+KEYRING_BACKEND="test"
+BROADCAST_MODE="sync"
+
+# Create 3 test keys
+celestia-appd keys add test1 --home "$CELESTIA_APP_HOME" --keyring-backend "$KEYRING_BACKEND"
+celestia-appd keys add test2 --home "$CELESTIA_APP_HOME" --keyring-backend "$KEYRING_BACKEND"
+celestia-appd keys add test3 --home "$CELESTIA_APP_HOME" --keyring-backend "$KEYRING_BACKEND"
+# Create the multisig account
+celestia-appd keys add multisig \
+    --multisig test1,test2,test3 \
+    --multisig-threshold 2 \
+    --home "$CELESTIA_APP_HOME" --keyring-backend "$KEYRING_BACKEND"
+
+VALIDATOR=$(celestia-appd keys show "$KEY_NAME" -a \
+    --home "$CELESTIA_APP_HOME" --keyring-backend "$KEYRING_BACKEND")
+MULTISIG=$(celestia-appd keys show multisig -a \
+    --home "$CELESTIA_APP_HOME" --keyring-backend "$KEYRING_BACKEND")
+
+# Send some funds from the validator account to the multisig account
+celestia-appd tx bank send $VALIDATOR $MULTISIG 100000utia \
+    --from $VALIDATOR \
+    --fees 1000utia \
+    --chain-id $CHAIN_ID \
+    --home "$CELESTIA_APP_HOME" --keyring-backend "$KEYRING_BACKEND" \
+    --broadcast-mode $BROADCAST_MODE \
+    --yes
+```
+
+Wait for the funding transaction to be included successfully in a block before
+continuing. With `sync` broadcasting, a returned transaction hash does not yet
+confirm inclusion. Check the transaction with:
+
+```bash
+celestia-appd query tx <funding_tx_hash> --home "$CELESTIA_APP_HOME"
+```
+
+Continue once the query returns the transaction with `code: 0`.
+
+```bash
+# Send some funds from the multisig account to the validator account.
+# Note this transaction will need to be signed by at least 2 of the 3 test accounts.
+celestia-appd tx bank send $MULTISIG $VALIDATOR 1utia \
+    --from $MULTISIG \
+    --fees 1000utia \
+    --chain-id $CHAIN_ID \
+    --home "$CELESTIA_APP_HOME" --keyring-backend "$KEYRING_BACKEND" \
+    --generate-only > unsignedTx.json
+
+# Sign from test1 and test2
+celestia-appd tx sign unsignedTx.json \
+    --multisig $MULTISIG \
+    --from test1 \
+    --output-document test1sig.json \
+    --chain-id $CHAIN_ID \
+    --home "$CELESTIA_APP_HOME" --keyring-backend "$KEYRING_BACKEND"
+celestia-appd tx sign unsignedTx.json \
+    --multisig $MULTISIG \
+    --from test2 \
+    --output-document test2sig.json \
+    --chain-id $CHAIN_ID \
+    --home "$CELESTIA_APP_HOME" --keyring-backend "$KEYRING_BACKEND"
+
+# Generate the final signed transaction
+celestia-appd tx multisign unsignedTx.json multisig \
+    test1sig.json test2sig.json \
+    --output-document signedTx.json \
+    --chain-id $CHAIN_ID \
+    --home "$CELESTIA_APP_HOME" --keyring-backend "$KEYRING_BACKEND"
+```
+
+## Resources
+
+- [https://figment.io/insights/how-to-multi-sig-on-cosmos/](https://figment.io/insights/how-to-multi-sig-on-cosmos/)
+- [https://github.com/aura-nw/Aura-Safe](https://github.com/aura-nw/Aura-Safe)
+- [https://github.com/informalsystems/multisig](https://github.com/informalsystems/multisig)
