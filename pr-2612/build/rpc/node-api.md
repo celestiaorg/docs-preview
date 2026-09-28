@@ -33,7 +33,7 @@ configured. Fund the Fibre escrow account with `fibre.Deposit` before uploading
 blobs. `fibre.Submit` uploads and settles the payment in one call;
 `fibre.Upload` settles the payment in the background.
 
-See the [celestia-node v0.34.2-mocha release notes](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha)
+See the [celestia-node release notes](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha)
 for requirements and changes. The Mainnet Beta `v0.33.2` specification does not
 include the `fibre` namespace.
 

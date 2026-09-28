@@ -1,6 +1,6 @@
 1:"$Sreact.fragment"
 2:I[27603,["2545","static/chunks/c16f53c3-91823fac9848ebbe.js","9300","static/chunks/9300-d6bb8cb609014bbf.js","4503","static/chunks/4503-7529059bc789049f.js","2619","static/chunks/2619-9431a3f48da8eef4.js","4224","static/chunks/4224-c89f8608eff36738.js","6319","static/chunks/app/build/rpc/node-api/page-8edbd741aa948d9f.js"],"WrapperWithFooter"]
-3:Tbb9,import NodeAPIContent from "../components/NodeAPIContent";
+3:Tbd4,import NodeAPIContent from "../components/NodeAPIContent";
 import { DynamicRPCTOC } from "../components/DynamicRPCTOC";
 
 {/* Hide Nextra's copy button - doesn't work well with dynamic content on this page */}
@@ -28,7 +28,7 @@ Celestia node RPC reference for blob, blobstream, da, das, header, node, p2p, sh
 
 ## Fibre API on Mocha
 
-Select `v0.34.2-mocha` in the API version dropdown to browse the `fibre`
+Select `{{apiVersions['mocha']}}` in the API version dropdown to browse the `fibre`
 namespace: `Submit`, `Upload`, `Download`, `Deposit`, `Withdraw`,
 `QueryEscrowAccount`, and `PendingWithdrawals`.
 
@@ -39,8 +39,8 @@ configured. Fund the Fibre escrow account with `fibre.Deposit` before uploading
 blobs. `fibre.Submit` uploads and settles the payment in one call;
 `fibre.Upload` settles the payment in the background.
 
-See the [celestia-node v0.34.2-mocha release notes](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha)
-for requirements and changes. The Mainnet Beta `v0.33.2` specification does not
+See the [celestia-node release notes](https://github.com/celestiaorg/celestia-node/releases/tag/{{apiVersions['mocha']}})
+for requirements and changes. The Mainnet Beta `{{apiVersions['mainnet']}}` specification does not
 include the `fibre` namespace.
 
 ## celestia-node v0.31.3 breaking changes
@@ -63,7 +63,7 @@ for the complete list of changes.
 <DynamicRPCTOC />7:X
 c:X
 c:C
-0:{"buildId":"V4JyJd3zP1eO-UZMNL0zM","data":[{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"metadata":{"title":"Node API","filePath":"app/build/rpc/node-api/page.mdx","timestamp":1790609933000},"toc":[{"value":"Celestia Node API","id":"celestia-node-api","depth":2},{"value":"Fibre API on Mocha","id":"fibre-api-on-mocha","depth":2},{"value":"celestia-node v0.31.3 breaking changes","id":"celestia-node-v0313-breaking-changes","depth":2}],"sourceCode":"$3","children":"$L4"}],null,"$L5"]}],"isPartial":"$@6","staleTime":"$7","varyParams":null},{"rsc":"$L8","isPartial":"$@9","staleTime":"$7","varyParams":null},{"rsc":"$La","isPartial":"$@b","staleTime":"$7","varyParams":"$c"},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$7","varyParams":"$c"},{"rsc":"$Lf","isPartial":"$@10","staleTime":"$7","varyParams":"$c"}],"isUpgradeableISRFallback":false,"a":"$@11","rootVaryParams":null,"needsRuntimeRequest":"$@12"}
+0:{"buildId":"JWv4ZfS6jJQHktioKKYAw","data":[{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"metadata":{"title":"Node API","filePath":"app/build/rpc/node-api/page.mdx","timestamp":1790629210000},"toc":[{"value":"Celestia Node API","id":"celestia-node-api","depth":2},{"value":"Fibre API on Mocha","id":"fibre-api-on-mocha","depth":2},{"value":"celestia-node v0.31.3 breaking changes","id":"celestia-node-v0313-breaking-changes","depth":2}],"sourceCode":"$3","children":"$L4"}],null,"$L5"]}],"isPartial":"$@6","staleTime":"$7","varyParams":null},{"rsc":"$L8","isPartial":"$@9","staleTime":"$7","varyParams":null},{"rsc":"$La","isPartial":"$@b","staleTime":"$7","varyParams":"$c"},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$7","varyParams":"$c"},{"rsc":"$Lf","isPartial":"$@10","staleTime":"$7","varyParams":"$c"}],"isUpgradeableISRFallback":false,"a":"$@11","rootVaryParams":null,"needsRuntimeRequest":"$@12"}
 13:I[90721,["2545","static/chunks/c16f53c3-91823fac9848ebbe.js","9300","static/chunks/9300-d6bb8cb609014bbf.js","4503","static/chunks/4503-7529059bc789049f.js","2619","static/chunks/2619-9431a3f48da8eef4.js","4224","static/chunks/4224-c89f8608eff36738.js","6319","static/chunks/app/build/rpc/node-api/page-8edbd741aa948d9f.js"],"HeadingAnchor"]
 1d:I[90484,[],"OutletBoundary"]
 1e:"$Sreact.suspense"
@@ -81,7 +81,7 @@ f:["$","$1","c",{"children":[null,["$","$L23",null,{"parallelRouterKey":"childre
 12:true
 25:I[44458,["2545","static/chunks/c16f53c3-91823fac9848ebbe.js","9300","static/chunks/9300-d6bb8cb609014bbf.js","4503","static/chunks/4503-7529059bc789049f.js","2619","static/chunks/2619-9431a3f48da8eef4.js","4224","static/chunks/4224-c89f8608eff36738.js","6319","static/chunks/app/build/rpc/node-api/page-8edbd741aa948d9f.js"],"default"]
 26:I[71194,["2545","static/chunks/c16f53c3-91823fac9848ebbe.js","9300","static/chunks/9300-d6bb8cb609014bbf.js","4503","static/chunks/4503-7529059bc789049f.js","2619","static/chunks/2619-9431a3f48da8eef4.js","4224","static/chunks/4224-c89f8608eff36738.js","6319","static/chunks/app/build/rpc/node-api/page-8edbd741aa948d9f.js"],"DynamicRPCTOC"]
-14:["$","a",null,{"href":"https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["celestia-node v0.34.2-mocha release notes",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]
+14:["$","a",null,{"href":"https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["celestia-node release notes",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]
 15:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"v0.33.2"}]
 16:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"fibre"}]
 17:["$","h2",null,{"id":"celestia-node-v0313-breaking-changes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["celestia-node v0.31.3 breaking changes",["$","$L13",null,{"id":"celestia-node-v0313-breaking-changes"}]]}]
