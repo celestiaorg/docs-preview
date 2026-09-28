@@ -993,7 +993,7 @@ Source: app/build/private-blockspace/quickstart/page.mdx
 # Private blockspace quickstart
 
 Private blockspace encrypts your blob data before it’s posted to Celestia using a lightweight proxy.  
-In this quickstart, you’ll use hosted Celestia nodes (like QuickNode) instead of running your own.
+In this quickstart, you’ll use hosted Celestia nodes (like Quicknode) instead of running your own.
 
 ## Troubleshooting
 
@@ -1835,7 +1835,7 @@ access historical data.
 - **Use professional archival node or data providers.** It is expected that
   professional infrastructure providers will provide paid access to archival
   nodes, where historical data can be retrieved, for example using the `GetAll`
-  API method. Providers like QuickNode offer archival node services that maintain
+  API method. Providers like Quicknode offer archival node services that maintain
   complete historical data, ensuring reliable access to past transactions and state.
   This provides better guarantees than solely relying on free archival nodes on the
   public Celestia network. For a list of available providers, see the
@@ -2881,12 +2881,17 @@ for details.
 ## Creating a wallet
 
 ```sh
-celestia-appd config keyring-backend test
+celestia-appd config keyring-backend <backend>
 ```
 
 `keyring-backend` configures the keyring's backend, where the keys are stored.
 
 Options are: `os|file|kwallet|pass|test|memory`.
+
+`test` keeps the key unencrypted on disk with no password, so reserve it for
+local development and testnets. See
+[create a wallet with celestia-app](/operate/keys-wallets/celestia-app-wallet)
+for a comparison of the backends.
 
 You can learn more on the [Cosmos documentation](https://docs.cosmos.network/sdk/v0.53/user/run-node/keyring)
 or [Go Package documentation](https://pkg.go.dev/github.com/cosmos/cosmos-sdk/crypto/keyring).
@@ -4645,6 +4650,9 @@ First, follow the instructions on
 ### Wallet
 
 Follow [the tutorial on creating a wallet](/operate/keys-wallets/celestia-app-wallet).
+That page also covers the available keyring backends. Pick one before you
+create the wallet: a Mainnet Beta validator should not use the `test` backend,
+which stores the key unencrypted on disk.
 
 ## Optional: Deploy the celestia-node
 
@@ -4719,6 +4727,11 @@ In order to create a validator on-chain, follow the steps below.
    # Set VALIDATOR_WALLET to the same you defined previously.
    export VALIDATOR_WALLET="validator"
 
+   # Set KEYRING_BACKEND to the backend you chose when creating the wallet.
+   # `test` stores the key unencrypted on disk: it is a reasonable choice on
+   # Mocha, but do not use it on Mainnet Beta.
+   export KEYRING_BACKEND="file"
+
    # Set VALIDATOR_PUBKEY to the pubkey of your validator wallet.
    export VALIDATOR_PUBKEY=$(celestia-appd tendermint show-validator)
    ```
@@ -4754,7 +4767,7 @@ celestia-appd tx staking edit-validator \
     --security-contact="<email_address_for_security_contact>" \
     --details="New description of the validator." \
     --from=$VALIDATOR_WALLET \
-    --keyring-backend=test \
+    --keyring-backend=$KEYRING_BACKEND \
     --fees=21000utia \
     --gas=220000
 ```
@@ -4780,7 +4793,8 @@ the command below to get the `celestiavaloper` of your local validator wallet in
 case you want to delegate more to it:
 
 ```bash
-celestia-appd keys show $VALIDATOR_WALLET --bech val -a
+celestia-appd keys show $VALIDATOR_WALLET --bech val -a \
+--keyring-backend=$KEYRING_BACKEND
 ```
 
 After entering the wallet passphrase you should see a similar output:
@@ -4797,6 +4811,7 @@ example you can run:
 celestia-appd tx staking delegate \
 <the_valoper_address_starts_with_celestiavaloper1...> 1000000utia \
 --from=$VALIDATOR_WALLET --chain-id=mocha-5 \
+--keyring-backend=$KEYRING_BACKEND \
 --fees=21000utia
 ```
 
@@ -6359,26 +6374,37 @@ Note, you do not need to install celestia-node for this tutorial.
 
 ## Keyring backend
 
-First, create an application CLI configuration file:
+`keyring-backend` configures where celestia-appd stores your keys. Choose it
+before you create a wallet, because the backend you pick decides whether the
+private key is encrypted at rest.
 
-```sh
-celestia-appd config keyring-backend test
-```
+| Backend | Where keys are stored | Suitable for |
+| --- | --- | --- |
+| `os` | The operating system keychain: Keychain on macOS, Credentials Management on Windows, libsecret, kwallet or keyctl on Linux | A single-operator machine |
+| `file` | Encrypted inside the app's configuration directory; the password is requested on every access | Servers and containers |
+| `pass` | GPG-encrypted files managed by the `pass` utility | Servers with an existing GPG setup |
+| `kwallet` | KDE Wallet Manager | KDE desktops |
+| `test` | **Unencrypted on disk, with no password** | Local development and testnets |
+| `memory` | Process memory, discarded when the process exits | Throwaway scripts |
 
-`keyring-backend` configures the keyring's backend, where the keys are stored.
-
-Options are: `os|file|kwallet|pass|test|memory`.
-
-You can learn more on the [Cosmos documentation](https://docs.cosmos.network/sdk/v0.53/user/run-node/keyring)
+You can set the backend for a single command with `--keyring-backend`, which is
+what the examples in these docs do. Pass it on every command that touches a key:
+without the flag, `celestia-appd` falls back to the default backend and will not
+find a key that was created in a different one. You can learn more on the
+[Cosmos documentation](https://docs.cosmos.network/sdk/v0.53/user/run-node/keyring)
 or [Go Package documentation](https://pkg.go.dev/github.com/cosmos/cosmos-sdk/crypto/keyring).
 
 ## Create a wallet
 
-You can pick whatever wallet name you want.
-For our example we used "validator" as the wallet name:
+You can pick whatever wallet name you want. The examples below and the
+[validator node guide](/operate/consensus-validators/validator-node) both use
+`$VALIDATOR_WALLET`, so set it to the name you chose:
 
 ```sh
-celestia-appd keys add validator --interactive
+
+celestia-appd keys add $VALIDATOR_WALLET \
+  --keyring-backend=$KEYRING_BACKEND \
+  --interactive
 ```
 
 Save the mnemonic output as this is the only way to
@@ -6387,23 +6413,24 @@ recover your validator wallet in case you lose it!
 To check all your wallets you can run:
 
 ```sh
-celestia-appd keys list
+celestia-appd keys list --keyring-backend=$KEYRING_BACKEND
 ```
 
 ## Key management
 
 ```sh
 # listing keys
-celestia-appd keys list
+celestia-appd keys list --keyring-backend=$KEYRING_BACKEND
 
 # adding keys
-celestia-appd keys add <KEY_NAME>
+celestia-appd keys add <KEY_NAME> --keyring-backend=$KEYRING_BACKEND
 
 # deleting keys
-celestia-appd keys delete <KEY_NAME>
+celestia-appd keys delete <KEY_NAME> --keyring-backend=$KEYRING_BACKEND
 
 # renaming keys
-celestia-appd keys rename <CURRENT_KEY_NAME> <NEW_KEY_NAME>
+celestia-appd keys rename <CURRENT_KEY_NAME> <NEW_KEY_NAME> \
+  --keyring-backend=$KEYRING_BACKEND
 ```
 
 ### Importing and exporting keys
@@ -6411,19 +6438,19 @@ celestia-appd keys rename <CURRENT_KEY_NAME> <NEW_KEY_NAME>
 Import an encrypted and ASCII-armored private key into the local keybase.
 
 ```sh
-celestia-appd keys import <KEY_NAME> <KEY_FILE>
+celestia-appd keys import <KEY_NAME> <KEY_FILE> --keyring-backend=$KEYRING_BACKEND
 ```
 
 Example usage:
 
 ```sh
-celestia-appd keys import amanda ./keyfile.txt
+celestia-appd keys import amanda ./keyfile.txt --keyring-backend=$KEYRING_BACKEND
 ```
 
 Export a private key from the local keyring in encrypted and ASCII-armored format:
 
 ```sh
-celestia-appd keys export <KEY_NAME>
+celestia-appd keys export <KEY_NAME> --keyring-backend=$KEYRING_BACKEND
 
 # you will then be prompted to set a password for the encrypted private key:
 Enter passphrase to encrypt the exported key:
@@ -6863,10 +6890,11 @@ continuing. With `sync` broadcasting, a returned transaction hash does not yet
 confirm inclusion. Check the transaction with:
 
 ```bash
-celestia-appd query tx <funding_tx_hash> --home "$CELESTIA_APP_HOME"
+celestia-appd query tx "<funding_tx_hash>" --home "$CELESTIA_APP_HOME"
 ```
 
-Continue once the query returns the transaction with `code: 0`.
+Continue in the same terminal once the query returns the transaction with
+`code: 0`. The following commands reuse the variables set above.
 
 ```bash
 # Send some funds from the multisig account to the validator account.
@@ -7036,19 +7064,21 @@ and the vesting-key as the `TO_ADDRESS`.
 
 #### Create your devnet vesting account
 
-Create the vesting account with the following command:
+Create the vesting account with the following command. Both continuous and
+delayed accounts require a positive `--start-time` earlier than the end time.
+These examples use past timestamps so the tokens vest immediately:
 
 > **Note:** The remainder of the instructions are for a **continuous** vesting account. To create a delayed vesting account, use the `--delayed` flag. For example:  
-> `./celestia-appd tx vesting create-vesting-account $TO_ADDRESS 100000utia 1686748051 --from $FROM_ADDRESS --gas auto --fees 100000utia --chain-id private --home $CELESTIA_APP_HOME --keyring-backend test --delayed`
+> `./celestia-appd tx vesting create-vesting-account $TO_ADDRESS 100000utia 1686748051 --start-time 1686740000 --from $FROM_ADDRESS --gas auto --fees 100000utia --chain-id private --home $CELESTIA_APP_HOME --keyring-backend test --delayed`
 
 ```bash
-./celestia-appd tx vesting create-vesting-account $TO_ADDRESS 100000utia 1686748051 --from $FROM_ADDRESS --gas auto --fees 100000utia --chain-id private --home $CELESTIA_APP_HOME --keyring-backend test
+./celestia-appd tx vesting create-vesting-account $TO_ADDRESS 100000utia 1686748051 --start-time 1686740000 --from $FROM_ADDRESS --gas auto --fees 100000utia --chain-id private --home $CELESTIA_APP_HOME --keyring-backend test
 ```
 
 Select "Y" to choose "yes".
 
 > **Optional:** Add `-y` to run the transaction without an interactive prompt:  
-> `./celestia-appd tx vesting create-vesting-account $TO_ADDRESS 100000utia 1686748051 --from $FROM_ADDRESS --gas auto --fees 100000utia --chain-id private --home $CELESTIA_APP_HOME --keyring-backend test -y`
+> `./celestia-appd tx vesting create-vesting-account $TO_ADDRESS 100000utia 1686748051 --start-time 1686740000 --from $FROM_ADDRESS --gas auto --fees 100000utia --chain-id private --home $CELESTIA_APP_HOME --keyring-backend test -y`
 
 Output:
 
@@ -7074,6 +7104,7 @@ body:
       denom: utia
     delayed: false
     end_time: "1686748051"
+    start_time: "1686740000"
     from_address: celestia1adgkqcmzuxvg7x5avx8a8rjwpmxgzex3ztef6j
     to_address: celestia127fpaygehlsgjdknwvlr2mux7h5uvhkxktgkc5
   non_critical_extension_options: []
@@ -7125,7 +7156,7 @@ base_vesting_account:
   original_vesting:
   - amount: "100000"
     denom: utia
-start_time: "1687908352"
+start_time: "1686740000"
 ```
 
 #### Query the devnet base account details
@@ -7247,7 +7278,7 @@ We will use a few flags in our vesting command that are different than the
 devnet version. Since we aren't using our own validator or full node, we will
 use an RPC URL.
 
-We also need to declare the chain ID as `mocha`.
+We also need to declare the chain ID as `mocha-5`.
 
 View the help menu for vesting to understand these flags more:
 
@@ -7258,7 +7289,7 @@ celestia-appd tx vesting --help
 Here's an example command to set up the vesting account:
 
 ```bash
-celestia-appd tx vesting create-vesting-account $TO_ADDRESS 100000utia 1686748051 --from $FROM_ADDRESS --gas 100000 --fees 100000utia --node $RPC_URL --chain-id mocha --keyring-backend "$KEYRING_BACKEND" --delayed
+celestia-appd tx vesting create-vesting-account $TO_ADDRESS 100000utia 1686748051 --start-time 1686740000 --from $FROM_ADDRESS --gas 100000 --fees 100000utia --node $RPC_URL --chain-id mocha-5 --keyring-backend "$KEYRING_BACKEND" --delayed
 ```
 
 ### Optional: Set up a consensus node or validator
@@ -7279,6 +7310,10 @@ If you edit your client configuration in `client.toml`, you can set both the
 chain ID and the node RPC URL. This will prevent you from needing
 to run each flag for every command line that you use. Keep your existing
 `keyring-backend` setting; the Mocha commands above select their backend explicitly.
+The snippet below is a partial configuration: edit these fields in your existing
+file rather than replacing it. For production keys, explicitly configure an
+`os` or encrypted `file` backend; omitting the setting defaults to unencrypted
+`test` storage.
 
 ```toml
 # This is a TOML config file.
@@ -7289,12 +7324,12 @@ to run each flag for every command line that you use. Keep your existing
 ###############################################################################
 
 # The network chain ID
-chain-id = "mocha"
+chain-id = "mocha-5"
 # CLI output format (text|json)
 output = "text"
 # <host>:<port> to Tendermint RPC interface for this chain
 node = "https://public-endpoint.celestia-mocha.quiknode.pro"
-# Transaction broadcasting mode (sync|async|block)
+# Transaction broadcasting mode (sync|async)
 broadcast-mode = "sync"
 ```
 
@@ -8346,15 +8381,15 @@ history, such as:
 
 | Provider  | URL                                                                                       |
 | --------- | ----------------------------------------------------------------------------------------- |
-| QuickNode | [https://www.quicknode.com/chains/celestia](https://www.quicknode.com/chains/celestia) ([docs](https://quicknode.com/docs/celestia)) |
+| Quicknode | [https://www.quicknode.com/chains/celestia](https://www.quicknode.com/chains/celestia) ([docs](https://quicknode.com/docs/celestia)) |
 
-If you are using QuickNode or another provider with authenticated endpoints,
+If you are using Quicknode or another provider with authenticated endpoints,
 see [the light node guide](/operate/data-availability/light-node/advanced#optional-start-light-node-with-consensus-endpoint-authentication)
 to learn how to use an endpoint with x-token.
 
 ### Public RPC endpoint
 
-For development, testing, and documentation examples, use the public QuickNode
+For development, testing, and documentation examples, use the public Quicknode
 endpoint:
 
 | Interface | Endpoint |
@@ -8407,7 +8442,7 @@ endpoints from the [community consensus endpoints](#community-consensus-endpoint
 table above. The default port is 9090, where gRPC is used for both block sync
 and state access.
 
-For example, to connect to the public QuickNode endpoint:
+For example, to connect to the public Quicknode endpoint:
 
 ```bash
 celestia light start \
@@ -8433,7 +8468,7 @@ pruning any data so all data available data is retrievable. You can
 
 | Provider                         | Endpoint                                                                                  | RPC Port | Gateway Port |
 | -------------------------------- | ----------------------------------------------------------------------------------------- | -------- | ------------ |
-| QuickNode                        | [https://www.quicknode.com/chains/celestia](https://www.quicknode.com/chains/celestia) ([docs](https://quicknode.com/docs/celestia)) | -        | -            |
+| Quicknode                        | [https://www.quicknode.com/chains/celestia](https://www.quicknode.com/chains/celestia) ([docs](https://quicknode.com/docs/celestia)) | -        | -            |
 | Mzonder                          | `celestia-da-full-storage.mzonder.com`                                                    | 27758    | 27759        |
 | Noders Services                  | `celestia-archive-da.noders.services`                                                     | 26658    | 26659        |
 | ITRocket                         | `celestia-mainnet-da-full-storage.itrocket.net`                                           | 26658    | 26659        |
@@ -8653,13 +8688,13 @@ history, such as:
 
 | Provider  | URL                                                                                       |
 | --------- | ----------------------------------------------------------------------------------------- |
-| QuickNode | [https://www.quicknode.com/chains/celestia](https://www.quicknode.com/chains/celestia) ([docs](https://quicknode.com/docs/celestia)) |
+| Quicknode | [https://www.quicknode.com/chains/celestia](https://www.quicknode.com/chains/celestia) ([docs](https://quicknode.com/docs/celestia)) |
 
 > **Warning:** Do not rely on the free community endpoints listed below for production deployments. Production deployments should rely on [service providers with SLAs](#production-rpc-endpoints) or your own node.
 
 ### Public RPC endpoint
 
-For development, testing, and documentation examples, use the public QuickNode
+For development, testing, and documentation examples, use the public Quicknode
 endpoint:
 
 | Interface | Endpoint |
