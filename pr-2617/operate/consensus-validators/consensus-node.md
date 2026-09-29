@@ -286,6 +286,22 @@ You can configure your consensus node to be a public RPC endpoint.
 This allows it to accept connections from data availability nodes and
 serve requests for the data availability API.
 
+#### Configure heavy RPC concurrency
+
+Memory-intensive RPC endpoints share a process-wide concurrency limit across
+HTTP, WebSocket and gRPC. The default limit is `20` concurrent requests. Set it
+under `[rpc]` in `config.toml`:
+
+```toml
+[rpc]
+max_concurrent_heavy_requests = 20
+```
+
+A value of `0` selects the built-in default of `20`. A negative value disables
+the limit, which is not recommended. Increasing the limit can increase peak
+memory consumption. Only raise it when the node has sufficient RAM, and monitor
+node memory usage under RPC load.
+
 #### Expose RPC
 
 By default, the RPC service listens on `localhost` which means it can't
