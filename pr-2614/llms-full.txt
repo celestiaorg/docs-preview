@@ -20,6 +20,25 @@ Source: app/build/blobstream/proof-queries/page.mdx
 
 To prove PFBs, blobs or shares, we can use the Celestia consensus node's RPC to query proofs for them:
 
+### Heavy RPC request limit
+
+Proof queries such as `data_root_inclusion_proof` and `prove_shares` are
+memory-intensive. They share the consensus node's process-wide heavy RPC
+request limit with other heavy endpoints and transports.
+
+When the limit is reached, clients receive a temporary capacity response:
+
+- HTTP GET requests return `503 Service Unavailable`.
+- JSON-RPC and WebSocket requests return a JSON-RPC error with
+  `server busy: too many concurrent heavy RPC requests, retry later` in the
+  error's `data` field. Use this message to distinguish temporary overload from
+  other JSON-RPC errors.
+- gRPC requests return `ResourceExhausted`.
+
+These responses indicate that the node is busy, not that proof generation
+failed. Retry with exponential backoff and jitter. Where appropriate, bound the
+maximum delay or number of retries.
+
 ### 1. Data root inclusion proof
 
 To prove the data root is committed to by the Blobstream smart contract, we will need to provide a Merkle proof of the data root tuple to a data root tuple root. This can be created using the [`data_root_inclusion_proof`](https://github.com/celestiaorg/celestia-core/blob/c3ab251659f6fe0f36d10e0dbd14c29a78a85352/rpc/client/http/http.go#L492-L511) query.
@@ -1771,7 +1790,7 @@ A collection of useful tools, dashboards, and analytics platforms for exploring 
 
 | Resource                       | Description                                                     | URL                                                                                                                    |
 | ------------------------------ | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **Blockworks research (paid)** | In-depth analytics and research on TIA and the Celestia network | [View analytics](https://app.blockworksresearch.com/analytics/tia?dashboard=celestia&interval=weekly)                  |
+| **Blockworks research (paid)** | In-depth analytics and research on TIA and the Celestia network | [View analytics](https://app.blockworks.com/analytics/celestia)                  |
 | **Numia blocks dashboard**     | Blocks analytics dashboard                                      | [View dashboard](https://lookerstudio.google.com/u/0/reporting/6d5530fd-4115-4951-8a79-644842f6a2b3/page/Tn17D)        |
 | **Numia rollups dashboard**    | Rollups analytics dashboard                                     | [View dashboard](https://lookerstudio.google.com/u/0/reporting/8853db32-fe0b-4a39-b4d7-3b9efd9e5226/page/p_da0hhwxfjd) |
 
@@ -3512,6 +3531,22 @@ You can configure your consensus node to be a public RPC endpoint.
 This allows it to accept connections from data availability nodes and
 serve requests for the data availability API.
 
+#### Configure heavy RPC concurrency
+
+Memory-intensive RPC endpoints share a process-wide concurrency limit across
+HTTP, WebSocket and gRPC. The default limit is `20` concurrent requests. Set it
+under `[rpc]` in `config.toml`:
+
+```toml
+[rpc]
+max_concurrent_heavy_requests = 20
+```
+
+A value of `0` selects the built-in default of `20`. A negative value disables
+the limit, which is not recommended. Increasing the limit can increase peak
+memory consumption. Only raise it when the node has sufficient RAM, and monitor
+node memory usage under RPC load.
+
 #### Expose RPC
 
 By default, the RPC service listens on `localhost` which means it can't
@@ -3931,28 +3966,32 @@ rather than the address, the registered host can be an IP address or a DNS
 name. Restart Fibre after changing `--signer-grpc-address` so the certificate
 is endorsed with the right key.
 
-The application gRPC connection shown here is unencrypted. Keep it on loopback.
-The signing connection can also use plaintext on `127.0.0.1`, as in this guide.
+### Connections between Fibre and your validator
 
-celestia-core v0.42.2 introduced mutual TLS (mTLS) for non-localhost
-`priv_validator_grpc_laddr` listeners, including private-network addresses.
-The node refuses to start without mTLS unless the operator explicitly sets
-`priv_validator_grpc_allow_insecure = true`. That override permits unauthenticated
-signing requests and is not a substitute for mTLS.
+**On the same server:** keep the `127.0.0.1` addresses used in this guide.
+Traffic to these addresses stays on that server. No extra TLS configuration
+is needed.
 
-This behaviour depends on the celestia-core version bundled with your
-celestia-app binary, not the chain's active app version. Check the celestia-core
-replacement in the release's
-[`go.mod`](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/go.mod).
-Before moving the signer connection off localhost, use a matching Fibre release
-with signer mTLS support and configure both ends following the
-[privval mTLS guide](https://github.com/celestiaorg/celestia-core/blob/v0.42.2/docs/guides/privval-grpc-tls.md).
-Keep the loopback setup if your Fibre release does not support signer mTLS.
+**On separate servers:** Fibre's automatic TLS does not protect its connections
+to your validator. Keep the same-server setup until you have configured and
+tested security for both the application and signing connections.
 
-The signer mTLS configuration is separate from Fibre's automatic client-facing
-TLS. See the
+celestia-core v0.42.2 adds a requirement for the signing connection: by default,
+the validator will not start if its signing service is accessible from another
+server without mutual TLS (mTLS). This uses certificates to encrypt the
+connection and authenticate both ends. A private network alone is not enough.
+See the [signing connection mTLS guide](https://github.com/celestiaorg/celestia-core/blob/v0.42.2/docs/guides/privval-grpc-tls.md)
+for the certificate settings. Your Fibre release must also support those
+settings.
+
+This requirement takes effect when you install a celestia-app binary that
+includes celestia-core v0.42.2. It was introduced after the Mocha v10.2.0
+release and is not a requirement of Mocha's v10 network activation. The
+same-server setup needs no changes in either case.
+
+See the
 [Fibre server specification](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/specs/src/fibre_server.md)
-for the endorsement scheme.
+for details of how clients verify Fibre's certificate.
 
 ## Troubleshoot startup
 
@@ -7699,6 +7738,12 @@ until it is in sync.
 
 ## Data availability nodes
 
+Before creating either service, replace `<network>` in `ExecStart` with
+`mainnet` for Mainnet Beta or `mocha` for Mocha. Use the same network and
+user account as the corresponding `celestia bridge init` or `celestia light init`
+command. The network determines the default node store; omitting the flag selects
+Mainnet Beta, which may leave the service looking for an uninitialised store.
+
 ### Celestia bridge node
 
 Create Celestia Bridge systemd file:
@@ -7711,7 +7756,7 @@ After=network-online.target
 
 [Service]
 User=$USER
-ExecStart=$(which celestia) bridge start
+ExecStart=$(which celestia) bridge start --p2p.network <network>
 Restart=on-failure
 RestartSec=3
 LimitNOFILE=1400000
@@ -7761,7 +7806,7 @@ After=network-online.target
 
 [Service]
 User=$USER
-ExecStart=$(which celestia) light start --core.ip <URI> --core.port <port>
+ExecStart=$(which celestia) light start --p2p.network <network> --core.ip <URI> --core.port <port>
 Restart=on-failure
 RestartSec=3
 
