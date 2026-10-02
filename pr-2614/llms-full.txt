@@ -3909,7 +3909,13 @@ fibre start \
 Use your actual node addresses if different. On first start, Fibre creates
 `<fibre_home>/config/server_config.toml`. The corresponding keys are `app_grpc_address`,
 `signer_grpc_address`, and `server_listen_address`; command-line flags override
-the file. Check the startup log for the chain ID and connected addresses.
+the file. Fibre rejects unknown keys and tables instead of silently ignoring
+them. If startup reports an unknown field, correct or remove the reported
+setting before restarting.
+
+Check the startup log for the chain ID, connected addresses, and effective
+storage backend. When object storage is configured, the log also includes its
+canonical bucket, prefix, chain ID, and validator address.
 
 ### Connection limits
 
@@ -3968,26 +3974,36 @@ is endorsed with the right key.
 
 ### Connections between Fibre and your validator
 
-**On the same server:** keep the `127.0.0.1` addresses used in this guide.
-Traffic to these addresses stays on that server. No extra TLS configuration
-is needed.
+The default signing address, `127.0.0.1:26669`, allows unencrypted connections
+from the same host. No TLS certificates or extra flags are needed when Fibre
+connects to this address.
 
-**On separate servers:** Fibre's automatic TLS does not protect its connections
-to your validator. Keep the same-server setup until you have configured and
-tested security for both the application and signing connections.
+For a remote signing connection, use binaries with mTLS support. The
+[`v10.4.0-mocha` release](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
+includes this support in both celestia-app and Fibre. The `v10.2.0-mocha`
+release does not; keep its signing connection on `127.0.0.1`.
 
-celestia-core v0.42.2 adds a requirement for the signing connection: by default,
-the validator will not start if its signing service is accessible from another
-server without mutual TLS (mTLS). This uses certificates to encrypt the
-connection and authenticate both ends. A private network alone is not enough.
-See the [signing connection mTLS guide](https://github.com/celestiaorg/celestia-core/blob/v0.42.2/docs/guides/privval-grpc-tls.md)
-for the certificate settings. Your Fibre release must also support those
-settings.
+If Fibre connects from another host or through a container network, configure
+mutual TLS (mTLS) on both sides. mTLS encrypts the connection and uses
+certificates to authenticate the node and Fibre. Without it, the node refuses
+to start with a signing address such as `0.0.0.0:26669`, and Fibre refuses to
+connect to a remote signer.
 
-This requirement takes effect when you install a celestia-app binary that
-includes celestia-core v0.42.2. It was introduced after the Mocha v10.2.0
-release and is not a requirement of Mocha's v10 network activation. The
-same-server setup needs no changes in either case.
+Follow the [core privval TLS guide](https://github.com/celestiaorg/celestia-core/blob/main/docs/guides/privval-grpc-tls.md)
+to generate certificates and configure the node and Fibre. The server
+certificate must match the IP address or DNS name Fibre connects to. Restart
+both services after configuring or replacing certificates.
+
+Keep the signing port on a private network and restrict access to the Fibre
+host. For local development only, `--privval-grpc-allow-insecure` on the node
+and `--signer-grpc-allow-insecure` on Fibre allow remote connections without
+TLS. Do not use these overrides in production: anyone who can reach the
+unprotected endpoint can request signatures from the validator key.
+
+These settings protect the signing connection only. The application gRPC
+connection shown in this guide is still unencrypted; keep it on the same host
+or a trusted private network. Fibre's automatic client TLS does not protect
+either connection.
 
 See the
 [Fibre server specification](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/specs/src/fibre_server.md)
@@ -4001,6 +4017,7 @@ for details of how clients verify Fibre's certificate.
 | Missing Fibre or valaddr services | Wait for app version 10 to activate before starting Fibre or registering. |
 | Application connection refused | Enable `[grpc]` in `app.toml`, restart the node, and check addresses and flag overrides. |
 | Signer connection failed | Match Fibre's signer address to `priv_validator_grpc_laddr`; check for a disabled value or a port conflict. |
+| Configuration decode error reports an unknown field | Correct or remove the reported key or table in `<fibre_home>/config/server_config.toml`, then restart Fibre. |
 | TLS identity verification failed | Check that the signing service holds your validator's consensus key, then restart Fibre after correcting the signer address. |
 | `derived storage budget is 0` warning | The app node reports no stake for your validator. Check that the validator is bonded and that `--app-grpc-address` points at a synced node on the right network. Fibre keeps running and re-derives the budget periodically. |
 | Server runs but no uploads arrive | Check that `query valaddr provider` finds your host, that the registered `host:port` is reachable from outside your network, and that the validator is bonded. Clients only dial registered, bonded validators. |
