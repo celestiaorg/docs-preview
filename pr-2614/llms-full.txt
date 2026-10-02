@@ -3870,6 +3870,20 @@ In `config/config.toml`, edit the top-level setting before the first section:
 priv_validator_grpc_laddr = "127.0.0.1:26669"
 ```
 
+> **Signer address compatibility:** In celestia-app builds that include
+> [celestia-core #3379](https://github.com/celestiaorg/celestia-core/pull/3379),
+> the hostname `localhost` no longer counts as loopback for
+> `priv_validator_grpc_laddr`. Only loopback IP literals qualify. Before upgrading,
+> replace `localhost:26669` with `127.0.0.1:26669` or `[::1]:26669` for a local
+> plaintext signer, preserving your configured port. Update Fibre's
+> `--signer-grpc-address` or `signer_grpc_address` to match, then restart both
+> services. The node refuses to start with a hostname or non-loopback address
+> unless mutual TLS is fully configured or `priv_validator_grpc_allow_insecure`
+> is explicitly enabled. Use loopback IPs for local signing rather than bypassing
+> the check; for remote signing, follow the
+> [mutual TLS setup](#connections-between-fibre-and-your-validator)
+> and use binaries with TLS support on both sides.
+
 Fresh v10 configs use `26669` to avoid a port clash with TMKMS. Existing
 configs may still have `26659`, a custom address, or an empty value, which
 disables the service. Replacing the binary does not rewrite the saved value.
@@ -4808,6 +4822,19 @@ Follow
 You have successfully set up a bridge node that is syncing with the network.
 
 ## Run the validator node
+
+> **Fibre signer compatibility:** Before starting an upgraded celestia-app build
+> that includes
+> [celestia-core #3379](https://github.com/celestiaorg/celestia-core/pull/3379),
+> check `priv_validator_grpc_laddr` in `config/config.toml` if you use the signing
+> service. The hostname `localhost` no longer counts as loopback. For local
+> plaintext signing, replace `localhost:26669` with `127.0.0.1:26669` or
+> `[::1]:26669`, preserving your port, and update Fibre's signer address to match.
+> Without mutual TLS or an explicit insecure override, a hostname or non-loopback
+> address prevents the node from starting. Follow the
+> [Fibre signing connection guide](/operate/consensus-validators/fibre#configure-the-signing-connection)
+> for configuration and restart instructions. This check applies to the
+> priv-validator signing service, not application gRPC in `app.toml`.
 
 In order to create a validator on-chain, follow the steps below.
 
