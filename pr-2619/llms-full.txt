@@ -875,7 +875,7 @@ You need:
 
 - A Mocha light or bridge node with Fibre support. The examples use
   celestia-node `v0.34.2-mocha` and a core endpoint running
-  celestia-app `v10.2.0-mocha` on `mocha-5`.
+  celestia-app `v10.4.0-mocha` on `mocha-5`.
   Follow [Install celestia-node](/operate/data-availability/install-celestia-node).
 - Bash, `curl`, `jq` and Python 3 for the commands below.
 - A local signer funded with Mocha testnet TIA.
@@ -4154,10 +4154,10 @@ celestia-app. Clients upload blob shards to validator-operated Fibre servers
 and download them from there, and each server's storage budget is derived from
 the validator's stake. Starting with app version 10, every bonded validator is
 expected to run one. See the
-[Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/fibre/cmd/README.md)
+[Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/fibre/cmd/README.md)
 for the protocol details.
 
-The examples use the Mocha release `v10.2.0-mocha`, its
+The examples use the Mocha release `v10.4.0-mocha`, its
 matching Fibre binary, and the Mocha chain ID. Substitute the values for your
 network.
 
@@ -4175,7 +4175,7 @@ for timing.
 - A running, synced [validator node](/operate/consensus-validators/validator-node)
   in the bonded validator set. Fibre derives its storage budget from your stake.
 - The v10 multiplexer celestia-app binary installed before activation. Follow the
-  [release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)
+  [release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
   and check the [celestia-app installation requirements](/operate/consensus-validators/install-celestia-app#linux-requirements).
 - Separate disks for Fibre data and celestia-app data, and enough memory for
   the receive buffers described in [Plan capacity](#plan-capacity).
@@ -4185,7 +4185,7 @@ for timing.
   requests to the KMS.
 
 Any KMS may be used if it meets these requirements. Review the release's
-[KMS policy](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/docs/release-notes/release-notes.md#key-management-systems-kms)
+[KMS policy](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/docs/release-notes/release-notes.md#key-management-systems-kms)
 before choosing or upgrading a signer. It describes Horcrux's maintenance
 risks and the risk of double signing and slashing from incorrect KMS
 configuration.
@@ -4236,7 +4236,7 @@ Download the Fibre archive and checksums from the same release as celestia-app.
 For Linux x86_64:
 
 ```bash
-fibre_version=v10.2.0-mocha
+fibre_version=v10.4.0-mocha
 curl -fLO "https://github.com/celestiaorg/celestia-app/releases/download/$fibre_version/fibre_Linux_x86_64.tar.gz"
 curl -fLO "https://github.com/celestiaorg/celestia-app/releases/download/$fibre_version/checksums.txt"
 sha256sum --ignore-missing --check checksums.txt
@@ -4251,13 +4251,13 @@ Place the verified binary on your executable path before using `fibre` below.
 ### Build from source
 
 Install Git, Make, a C compiler, and the Go version required by the release's
-[`go.mod`](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/go.mod).
+[`go.mod`](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/go.mod).
 Clone the same release used by your celestia-app node:
 
 ```bash
-git clone --branch v10.2.0-mocha --depth 1 https://github.com/celestiaorg/celestia-app.git celestia-app-fibre
+git clone --branch v10.4.0-mocha --depth 1 https://github.com/celestiaorg/celestia-app.git celestia-app-fibre
 cd celestia-app-fibre
-make build-fibre-server VERSION=v10.2.0-mocha
+make build-fibre-server VERSION=v10.4.0-mocha
 ./build/fibre version
 ```
 
@@ -4385,6 +4385,78 @@ max_concurrent_streams = 13
 Add either key if it is missing from an existing file, then restart Fibre for
 the change to take effect.
 
+### Object storage
+
+Object storage is supported in `v10.4.0-mocha`. The older `v10.2.0-mocha`
+binary ignores `storage_backend` and `[object_storage]` and continues writing
+shards to local disk. Check `fibre version` before continuing. If upgrading,
+follow the [release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
+to replace both celestia-app and Fibre, sync their configuration, and check
+[signer TLS compatibility](#connections-between-fibre-and-your-validator).
+Use the matching binaries from [Install Fibre](#install-fibre).
+
+Fibre stores blob shards on local disk by default. To store them in
+S3-compatible object storage instead, such as Amazon S3 or Cloudflare R2, set
+the backend and bucket in `<fibre_home>/config/server_config.toml`:
+
+```toml
+storage_backend = "object"
+
+[object_storage]
+endpoint = "https://s3.us-east-1.amazonaws.com"
+region = "us-east-1"
+bucket = "<bucket_name>"
+prefix = "fibre"
+```
+
+Use your bucket's endpoint and region. For Cloudflare R2, use its S3 API
+endpoint and `region = "auto"`. Fibre's metadata database still needs
+persistent local storage.
+
+Fibre reads the bucket credentials from its environment through the standard
+AWS variables and refuses to start if none are found. There is no credentials
+field in the config file. To provide them to a systemd service:
+
+1. Create an access key in your storage provider with read, write, and delete
+   permissions on the bucket. On Amazon S3, create an IAM user with
+   `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject`, and `s3:ListBucket` on
+   the bucket. On Cloudflare R2, create an API token with **Object Read &
+   Write** permission scoped to the bucket.
+
+2. Save the key in a file readable only by root:
+
+   ```bash
+   sudo mkdir -p /etc/fibre
+   sudo tee /etc/fibre/s3.env > /dev/null <<'EOT'
+   AWS_ACCESS_KEY_ID=<access_key_id>
+   AWS_SECRET_ACCESS_KEY=<secret_access_key>
+   EOT
+   sudo chmod 0600 /etc/fibre/s3.env
+   ```
+
+   If AWS gave you temporary credentials, add a third line with
+   `AWS_SESSION_TOKEN=<session_token>`.
+
+3. Point the Fibre service at the file. Run `sudo systemctl edit fibre.service`,
+   using your service name if it differs, and add:
+
+   ```ini
+   [Service]
+   EnvironmentFile=/etc/fibre/s3.env
+   ```
+
+4. Restart Fibre and confirm it started:
+
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl restart fibre.service
+   sudo systemctl status fibre.service
+   ```
+
+To rotate keys, update the file and restart Fibre. If the host already has
+credentials from an IAM role or the shared AWS credentials file, Fibre uses
+them and you can skip the environment file.
+
 ### Switching shard storage backends
 
 Fibre can store blob shards locally or in S3-compatible object storage, such
@@ -4490,7 +4562,7 @@ or a trusted private network. Fibre's automatic client TLS does not protect
 either connection.
 
 See the
-[Fibre server specification](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/specs/src/fibre_server.md)
+[Fibre server specification](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/specs/src/fibre_server.md)
 for details of how clients verify Fibre's certificate.
 
 ## Troubleshoot startup
@@ -4501,6 +4573,7 @@ for details of how clients verify Fibre's certificate.
 | Missing Fibre or valaddr services | Wait for app version 10 to activate before starting Fibre or registering. |
 | Application connection refused | Enable `[grpc]` in `app.toml`, restart the node, and check addresses and flag overrides. |
 | Signer connection failed | Match Fibre's signer address to `priv_validator_grpc_laddr`; check for a disabled value or a port conflict. |
+| `loading object storage credentials` | The service did not receive the bucket key. Check the environment file and the `EnvironmentFile=` override in [Object storage](#object-storage), then restart Fibre. |
 | Configuration decode error reports an unknown field | Correct or remove the reported key or table in `<fibre_home>/config/server_config.toml`, then restart Fibre. |
 | TLS identity verification failed | Check that the signing service holds your validator's consensus key, then restart Fibre after correcting the signer address. |
 | `derived storage budget is 0` warning | The app node reports no stake for your validator. Check that the validator is bonded and that `--app-grpc-address` points at a synced node on the right network. Fibre keeps running and re-derives the budget periodically. |
@@ -4509,7 +4582,7 @@ for details of how clients verify Fibre's certificate.
 
 For logging, metrics, tracing, and profiling, see
 [Fibre monitoring](/operate/consensus-validators/fibre/metrics).
-The [Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/fibre/cmd/README.md)
+The [Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/fibre/cmd/README.md)
 has further configuration details.
 
 ---
@@ -4520,7 +4593,7 @@ Source: app/operate/consensus-validators/fibre/metrics/page.mdx
 
 # Fibre monitoring
 
-This page covers observability in Fibre `v10.2.0-mocha`.
+This page covers observability in Fibre `v10.4.0-mocha`.
 Complete the [server setup](/operate/consensus-validators/fibre) first. Add the
 flags below to your existing start command, keeping your home and node addresses.
 All observability flags apply to every subcommand.
@@ -4542,9 +4615,9 @@ Fibre sends traces and metrics over OTLP/HTTP to an OpenTelemetry collector,
 such as Grafana Alloy or the OTel Collector. The collector must accept both
 signals and forward them to your tracing and metrics backends. The celestia-app
 repository ships a reference
-[collector configuration](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/observability/docker/otel-collector/config.yml)
+[collector configuration](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/observability/docker/otel-collector/config.yml)
 and a
-[Docker Compose stack](https://github.com/celestiaorg/celestia-app/tree/v10.2.0-mocha/observability/docker)
+[Docker Compose stack](https://github.com/celestiaorg/celestia-app/tree/v10.4.0-mocha/observability/docker)
 with Prometheus, Tempo, and Grafana that you can start from. The stack
 publishes Prometheus on host port `9090`, which the setup guide uses for
 application gRPC. When running it on the validator host, change that mapping
@@ -4565,12 +4638,12 @@ For example, `https://collector.example.com/otel` sends data to
 ### Grafana dashboard
 
 Import the release's
-[Fibre dashboard JSON](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/observability/docker/grafana/dashboards/fibre.json)
+[Fibre dashboard JSON](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/observability/docker/grafana/dashboards/fibre.json)
 into Grafana. The dashboard expects a Prometheus data source with UID
 `prometheus`; use that UID or update the dashboard to match your data source.
 Client panels need telemetry from Fibre clients as well as the server. The same
 directory has a
-[Fibre runtime dashboard](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/observability/docker/grafana/dashboards/fibre-runtime.json)
+[Fibre runtime dashboard](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/observability/docker/grafana/dashboards/fibre-runtime.json)
 for Go runtime metrics such as memory and goroutines.
 
 To verify the pipeline, start Fibre with `--otel-endpoint` set, open the Fibre
@@ -4718,7 +4791,7 @@ fibre start \
 | No continuous profiles | Check the Pyroscope endpoint, authentication values, and Fibre logs for export errors. |
 
 See the release's
-[observability reference](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/fibre/cmd/README.md#observability)
+[observability reference](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/fibre/cmd/README.md#observability)
 for more details.
 
 ---
@@ -4897,7 +4970,7 @@ ldd --version
 ```
 
 See the [celestia-app v9 release notes](https://github.com/celestiaorg/celestia-app/blob/v9.0.4/docs/release-notes/release-notes.md#supported-operating-systems)
-and the [Mocha release requirements](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)
+and the [Mocha release requirements](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
 for the supported operating system details.
 
 ## Building binary from source
@@ -4935,7 +5008,7 @@ terminal:
 bash -c "$(curl -sL https://docs.celestia.org/celestia-app.sh)"
 
 # Install specific version, latest version for Mocha testnet in this example
-bash -c "$(curl -sL https://docs.celestia.org/celestia-app.sh)" -- -v v10.2.0-mocha
+bash -c "$(curl -sL https://docs.celestia.org/celestia-app.sh)" -- -v v10.4.0-mocha
 ```
 
 Follow the instructions in the terminal output to choose your installation
@@ -8029,7 +8102,7 @@ is optional and does not enable pruning. When enabled, it compacts the pruned
 range in the background. To compact an existing blockstore once, stop the node
 and run `celestia-appd compact-blockstore`.
 
-See the [Mocha release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)
+See the [Mocha release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
 for details. Follow the upgrade announcement for your network before replacing
 its binary.
 
@@ -9270,7 +9343,7 @@ to the correct instructions on this page on how to connect to Mocha.
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
 | celestia-node  | [v0.34.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha) |
-| celestia-app   | [v10.2.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)   |
+| celestia-app   | [v10.4.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)   |
 
 ## Network status
 
@@ -9495,7 +9568,7 @@ with the validator community.
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
 | celestia-node  | [v0.34.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha) |
-| celestia-app   | [v10.2.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)   |
+| celestia-app   | [v10.4.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)   |
 
 ## Network upgrades
 

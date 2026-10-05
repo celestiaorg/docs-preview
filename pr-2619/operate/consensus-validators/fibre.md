@@ -5,10 +5,10 @@ celestia-app. Clients upload blob shards to validator-operated Fibre servers
 and download them from there, and each server's storage budget is derived from
 the validator's stake. Starting with app version 10, every bonded validator is
 expected to run one. See the
-[Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/fibre/cmd/README.md)
+[Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/fibre/cmd/README.md)
 for the protocol details.
 
-The examples use the Mocha release `v10.2.0-mocha`, its
+The examples use the Mocha release `v10.4.0-mocha`, its
 matching Fibre binary, and the Mocha chain ID. Substitute the values for your
 network.
 
@@ -26,7 +26,7 @@ for timing.
 - A running, synced [validator node](/operate/consensus-validators/validator-node)
   in the bonded validator set. Fibre derives its storage budget from your stake.
 - The v10 multiplexer celestia-app binary installed before activation. Follow the
-  [release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)
+  [release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
   and check the [celestia-app installation requirements](/operate/consensus-validators/install-celestia-app#linux-requirements).
 - Separate disks for Fibre data and celestia-app data, and enough memory for
   the receive buffers described in [Plan capacity](#plan-capacity).
@@ -36,7 +36,7 @@ for timing.
   requests to the KMS.
 
 Any KMS may be used if it meets these requirements. Review the release's
-[KMS policy](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/docs/release-notes/release-notes.md#key-management-systems-kms)
+[KMS policy](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/docs/release-notes/release-notes.md#key-management-systems-kms)
 before choosing or upgrading a signer. It describes Horcrux's maintenance
 risks and the risk of double signing and slashing from incorrect KMS
 configuration.
@@ -87,7 +87,7 @@ Download the Fibre archive and checksums from the same release as celestia-app.
 For Linux x86_64:
 
 ```bash
-fibre_version=v10.2.0-mocha
+fibre_version=v10.4.0-mocha
 curl -fLO "https://github.com/celestiaorg/celestia-app/releases/download/$fibre_version/fibre_Linux_x86_64.tar.gz"
 curl -fLO "https://github.com/celestiaorg/celestia-app/releases/download/$fibre_version/checksums.txt"
 sha256sum --ignore-missing --check checksums.txt
@@ -102,13 +102,13 @@ Place the verified binary on your executable path before using `fibre` below.
 ### Build from source
 
 Install Git, Make, a C compiler, and the Go version required by the release's
-[`go.mod`](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/go.mod).
+[`go.mod`](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/go.mod).
 Clone the same release used by your celestia-app node:
 
 ```bash
-git clone --branch v10.2.0-mocha --depth 1 https://github.com/celestiaorg/celestia-app.git celestia-app-fibre
+git clone --branch v10.4.0-mocha --depth 1 https://github.com/celestiaorg/celestia-app.git celestia-app-fibre
 cd celestia-app-fibre
-make build-fibre-server VERSION=v10.2.0-mocha
+make build-fibre-server VERSION=v10.4.0-mocha
 ./build/fibre version
 ```
 
@@ -236,6 +236,78 @@ max_concurrent_streams = 13
 Add either key if it is missing from an existing file, then restart Fibre for
 the change to take effect.
 
+### Object storage
+
+Object storage is supported in `v10.4.0-mocha`. The older `v10.2.0-mocha`
+binary ignores `storage_backend` and `[object_storage]` and continues writing
+shards to local disk. Check `fibre version` before continuing. If upgrading,
+follow the [release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
+to replace both celestia-app and Fibre, sync their configuration, and check
+[signer TLS compatibility](#connections-between-fibre-and-your-validator).
+Use the matching binaries from [Install Fibre](#install-fibre).
+
+Fibre stores blob shards on local disk by default. To store them in
+S3-compatible object storage instead, such as Amazon S3 or Cloudflare R2, set
+the backend and bucket in `<fibre_home>/config/server_config.toml`:
+
+```toml
+storage_backend = "object"
+
+[object_storage]
+endpoint = "https://s3.us-east-1.amazonaws.com"
+region = "us-east-1"
+bucket = "<bucket_name>"
+prefix = "fibre"
+```
+
+Use your bucket's endpoint and region. For Cloudflare R2, use its S3 API
+endpoint and `region = "auto"`. Fibre's metadata database still needs
+persistent local storage.
+
+Fibre reads the bucket credentials from its environment through the standard
+AWS variables and refuses to start if none are found. There is no credentials
+field in the config file. To provide them to a systemd service:
+
+1. Create an access key in your storage provider with read, write, and delete
+   permissions on the bucket. On Amazon S3, create an IAM user with
+   `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject`, and `s3:ListBucket` on
+   the bucket. On Cloudflare R2, create an API token with **Object Read &
+   Write** permission scoped to the bucket.
+
+2. Save the key in a file readable only by root:
+
+   ```bash
+   sudo mkdir -p /etc/fibre
+   sudo tee /etc/fibre/s3.env > /dev/null <<'EOT'
+   AWS_ACCESS_KEY_ID=<access_key_id>
+   AWS_SECRET_ACCESS_KEY=<secret_access_key>
+   EOT
+   sudo chmod 0600 /etc/fibre/s3.env
+   ```
+
+   If AWS gave you temporary credentials, add a third line with
+   `AWS_SESSION_TOKEN=<session_token>`.
+
+3. Point the Fibre service at the file. Run `sudo systemctl edit fibre.service`,
+   using your service name if it differs, and add:
+
+   ```ini
+   [Service]
+   EnvironmentFile=/etc/fibre/s3.env
+   ```
+
+4. Restart Fibre and confirm it started:
+
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl restart fibre.service
+   sudo systemctl status fibre.service
+   ```
+
+To rotate keys, update the file and restart Fibre. If the host already has
+credentials from an IAM role or the shared AWS credentials file, Fibre uses
+them and you can skip the environment file.
+
 ### Switching shard storage backends
 
 Fibre can store blob shards locally or in S3-compatible object storage, such
@@ -341,7 +413,7 @@ or a trusted private network. Fibre's automatic client TLS does not protect
 either connection.
 
 See the
-[Fibre server specification](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/specs/src/fibre_server.md)
+[Fibre server specification](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/specs/src/fibre_server.md)
 for details of how clients verify Fibre's certificate.
 
 ## Troubleshoot startup
@@ -352,6 +424,7 @@ for details of how clients verify Fibre's certificate.
 | Missing Fibre or valaddr services | Wait for app version 10 to activate before starting Fibre or registering. |
 | Application connection refused | Enable `[grpc]` in `app.toml`, restart the node, and check addresses and flag overrides. |
 | Signer connection failed | Match Fibre's signer address to `priv_validator_grpc_laddr`; check for a disabled value or a port conflict. |
+| `loading object storage credentials` | The service did not receive the bucket key. Check the environment file and the `EnvironmentFile=` override in [Object storage](#object-storage), then restart Fibre. |
 | Configuration decode error reports an unknown field | Correct or remove the reported key or table in `<fibre_home>/config/server_config.toml`, then restart Fibre. |
 | TLS identity verification failed | Check that the signing service holds your validator's consensus key, then restart Fibre after correcting the signer address. |
 | `derived storage budget is 0` warning | The app node reports no stake for your validator. Check that the validator is bonded and that `--app-grpc-address` points at a synced node on the right network. Fibre keeps running and re-derives the budget periodically. |
@@ -360,5 +433,5 @@ for details of how clients verify Fibre's certificate.
 
 For logging, metrics, tracing, and profiling, see
 [Fibre monitoring](/operate/consensus-validators/fibre/metrics).
-The [Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/fibre/cmd/README.md)
+The [Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/fibre/cmd/README.md)
 has further configuration details.

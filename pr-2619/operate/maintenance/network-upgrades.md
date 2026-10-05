@@ -67,7 +67,7 @@ is optional and does not enable pruning. When enabled, it compacts the pruned
 range in the background. To compact an existing blockstore once, stop the node
 and run `celestia-appd compact-blockstore`.
 
-See the [Mocha release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)
+See the [Mocha release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
 for details. Follow the upgrade announcement for your network before replacing
 its binary.
 

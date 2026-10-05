@@ -16,7 +16,7 @@ You need:
 
 - A Mocha light or bridge node with Fibre support. The examples use
   celestia-node `v0.34.2-mocha` and a core endpoint running
-  celestia-app `v10.2.0-mocha` on `mocha-5`.
+  celestia-app `v10.4.0-mocha` on `mocha-5`.
   Follow [Install celestia-node](/operate/data-availability/install-celestia-node).
 - Bash, `curl`, `jq` and Python 3 for the commands below.
 - A local signer funded with Mocha testnet TIA.
