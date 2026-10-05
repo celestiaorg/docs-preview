@@ -15,6 +15,11 @@ to show you how to connect to them.
 
 ## Mocha-5 network restart
 
+Mocha-5 is a new chain that started at height 1; it is not an in-place
+upgrade from `mocha-4`. Existing consensus operators must initialize
+`mocha-5` in a separate home directory, as described below. You do not
+need to keep your own copy of `mocha-4` chain data.
+
 Mocha-5 is live. It is a hardspoon of `mocha-4` at block
 [13205115](https://celestia.explorers.guru/block/13205115): only account
 balances recorded at that height carried over. Transactions and balance
@@ -45,6 +50,12 @@ expected to retain `mocha-4` data. An exported copy of the final
 
 If you depend on specific `mocha-4` transaction history, export what you
 need before the September 1, 2026 shutdown.
+
+An archival `mocha-4` node snapshot taken on 2026-08-19 is available at
+[snaps.qubelabs.io/celestia/mocha-4_2026-08-19.tar](https://snaps.qubelabs.io/celestia/mocha-4_2026-08-19.tar).
+Note that it is approximately 12.3 TB. Follow the
+[status page announcement](https://status.celestia.org/incidents/nc1nkb54)
+for updates.
 
 ### Prepare a separate consensus-node home
 
@@ -141,6 +152,12 @@ and service availability, visit the
 
 For the current Mocha testnet network constants, see
 [mocha.celenium.io/constants](https://mocha.celenium.io/constants).
+
+Some community infrastructure is still migrating from `mocha-4` to
+`mocha-5`. The endpoints listed below were verified to serve `mocha-5`
+on September 1, 2026. Services still serving `mocha-4` are omitted until
+they migrate. Explorers, faucets, indexers, and analytics services may
+also still show `mocha-4` data.
 
 ## RPC for DA bridge, full, and light nodes
 
@@ -281,6 +298,9 @@ The following websites provide visual maps of Celestia DA nodes:
 - [https://probelab.io/celestia/](https://probelab.io/celestia/) (community contribution)
 
 ## Explorers
+
+Most explorers are still indexing `mocha-4` and will switch to `mocha-5`
+as they migrate.
 
 There are several explorers you can use for Mocha:
 

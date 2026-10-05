@@ -24,6 +24,16 @@ private key is encrypted at rest.
 | `test` | **Unencrypted on disk, with no password** | Local development and testnets |
 | `memory` | Process memory, discarded when the process exits | Throwaway scripts |
 
+The Cosmos SDK describes `test` as "a password-less variation of the file
+backend. Keys are stored unencrypted on disk" and states that it is "not
+recommended for use in production environments". Anyone who can read the
+directory can spend from the account and sign on behalf of the validator.
+
+Do not use `test` for a wallet that holds real funds or operates a Mainnet Beta
+validator. Use a hardware wallet, or a
+[multisig account](/operate/keys-wallets/multisig) so that no single key can
+move funds on its own.
+
 You can set the backend for a single command with `--keyring-backend`, which is
 what the examples in these docs do. Pass it on every command that touches a key:
 without the flag, `celestia-appd` falls back to the default backend and will not
@@ -38,6 +48,8 @@ You can pick whatever wallet name you want. The examples below and the
 `$VALIDATOR_WALLET`, so set it to the name you chose:
 
 ```sh
+export VALIDATOR_WALLET=validator
+export KEYRING_BACKEND=file # use `test` only on a testnet
 
 celestia-appd keys add $VALIDATOR_WALLET \
   --keyring-backend=$KEYRING_BACKEND \
@@ -115,3 +127,5 @@ address with your own:
 celestia-appd start
 celestia-appd query bank balances celestia1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
+
+Refer to the ports section of the celestia-node troubleshooting page for information on which ports are required to be open on your machine.

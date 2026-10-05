@@ -35,7 +35,7 @@ core endpoint, use its store, key and RPC address. Otherwise, initialise a
 separate light-node store:
 
 ```bash
-
+export FIBRE_HOME="$HOME/.celestia-fibre-mocha-guide"
 celestia light init --p2p.network mocha --node.store "$FIBRE_HOME"
 ```
 
@@ -66,6 +66,9 @@ store and local RPC address:
 
 ```bash
 set -o pipefail
+export FIBRE_HOME="$HOME/.celestia-fibre-mocha-guide"
+export NODE_RPC=http://127.0.0.1:27658
+export KEY_NAME=my_celes_key
 
 celestia state account-address --node.store "$FIBRE_HOME" --url "$NODE_RPC"
 ```
@@ -76,6 +79,11 @@ Check the wallet balance:
 ```bash
 celestia state balance --node.store "$FIBRE_HOME" --url "$NODE_RPC"
 ```
+
+With celestia-node v0.34.2-mocha, restart the node after funding a signer that
+was unfunded when the node started. Otherwise, `fibre.Deposit` can panic during
+gas estimation. Stop the node with Ctrl+C in the first terminal, then run the
+same start command again.
 
 Wait for header sync to catch up before submitting:
 
@@ -89,9 +97,9 @@ has a non-zero `end` timestamp. The node should continue following new headers.
 Generate a token that permits writes. It also permits the read calls used here:
 
 ```bash
-
+export AUTH_TOKEN=$(celestia light auth write \
   --p2p.network mocha --node.store "$FIBRE_HOME")
-
+export SIGNER=$(celestia state account-address \
   --node.store "$FIBRE_HOME" --url "$NODE_RPC" | jq -er '.result')
 
 rpc() {
@@ -287,8 +295,10 @@ settlement and verified downloaded bytes against the original payload and hash.
 The maximum-size run's SHA-256 was
 `53a0a70e69fac696d73438aada6cfa989c5a36c90c3164525f262fed2775721f`.
 Its blob ID was `AJ+0/lcm8YgL/06EFKHMnnMaQfJp/ChDQskMk7rkd8FQ`;
-the [Tensile record](https://tensile.huginn.tech/blob/?hash=481498948d4e9ee30ad214ab22d1d2005c7c218e9db95dabfd5b4e42d5e88a95)
-uses the payment promise hash instead. The native test trusted the selected
+the [Tensile record](https://tensile.huginn.tech/blob/?tx=ADD4C5190131D0AFB55AF3341B347700B2ADEC2B128FAF3C7CA06495852C5C16)
+links to the settlement transaction. Tensile accepts transaction hashes, blob IDs
+(base64 or hexadecimal), and payment promise hashes. If an identifier matches
+multiple records, it shows all matches. The native test trusted the selected
 core endpoint for validator state; the light-node path uses locally verified
 headers.
 

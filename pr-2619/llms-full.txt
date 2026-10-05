@@ -744,6 +744,10 @@ Blob 8 submitted at height 1234568
 
 **Important considerations:**
 
+**Ordering**: Parallel submission does NOT guarantee transaction ordering. Blobs may be included in blocks in a different order than submitted.
+
+**Default account only**: Queued and parallel submission modes always use your default account (`DefaultKeyName`). If you specify a different account in `TxConfig` (via `WithKeyName` or `WithSignerAddress`), it will be ignored and the default account will be used instead.
+
 **Retrieving blobs from parallel submission:**
 
 Since you don't know which subaccount submitted each blob, retrieve them using namespace, height, and commitment:
@@ -890,7 +894,7 @@ core endpoint, use its store, key and RPC address. Otherwise, initialise a
 separate light-node store:
 
 ```bash
-
+export FIBRE_HOME="$HOME/.celestia-fibre-mocha-guide"
 celestia light init --p2p.network mocha --node.store "$FIBRE_HOME"
 ```
 
@@ -921,6 +925,9 @@ store and local RPC address:
 
 ```bash
 set -o pipefail
+export FIBRE_HOME="$HOME/.celestia-fibre-mocha-guide"
+export NODE_RPC=http://127.0.0.1:27658
+export KEY_NAME=my_celes_key
 
 celestia state account-address --node.store "$FIBRE_HOME" --url "$NODE_RPC"
 ```
@@ -931,6 +938,11 @@ Check the wallet balance:
 ```bash
 celestia state balance --node.store "$FIBRE_HOME" --url "$NODE_RPC"
 ```
+
+With celestia-node v0.34.2-mocha, restart the node after funding a signer that
+was unfunded when the node started. Otherwise, `fibre.Deposit` can panic during
+gas estimation. Stop the node with Ctrl+C in the first terminal, then run the
+same start command again.
 
 Wait for header sync to catch up before submitting:
 
@@ -944,9 +956,9 @@ has a non-zero `end` timestamp. The node should continue following new headers.
 Generate a token that permits writes. It also permits the read calls used here:
 
 ```bash
-
+export AUTH_TOKEN=$(celestia light auth write \
   --p2p.network mocha --node.store "$FIBRE_HOME")
-
+export SIGNER=$(celestia state account-address \
   --node.store "$FIBRE_HOME" --url "$NODE_RPC" | jq -er '.result')
 
 rpc() {
@@ -1142,8 +1154,10 @@ settlement and verified downloaded bytes against the original payload and hash.
 The maximum-size run's SHA-256 was
 `53a0a70e69fac696d73438aada6cfa989c5a36c90c3164525f262fed2775721f`.
 Its blob ID was `AJ+0/lcm8YgL/06EFKHMnnMaQfJp/ChDQskMk7rkd8FQ`;
-the [Tensile record](https://tensile.huginn.tech/blob/?hash=481498948d4e9ee30ad214ab22d1d2005c7c218e9db95dabfd5b4e42d5e88a95)
-uses the payment promise hash instead. The native test trusted the selected
+the [Tensile record](https://tensile.huginn.tech/blob/?tx=ADD4C5190131D0AFB55AF3341B347700B2ADEC2B128FAF3C7CA06495852C5C16)
+links to the settlement transaction. Tensile accepts transaction hashes, blob IDs
+(base64 or hexadecimal), and payment promise hashes. If an identifier matches
+multiple records, it shows all matches. The native test trusted the selected
 core endpoint for validator state; the light-node path uses locally verified
 headers.
 
@@ -2561,6 +2575,8 @@ Source: app/learn/features/bridging/ibc/page.mdx
 
 You can use IBC to bridge assets between Celestia-native chains along with other chains.
 
+Celestia uses relayers to forward packets between chains. Relayers are processes that can be run by anyone which constantly scan for outbound packets on one chain and submits these packets alongside corresponding proofs on the destination chain. This doc covers using IBC to bridge assets; see also [how to run a relayer](/operate/data-availability/ibc-relayer). 
+
 ## How bridging works
 
 ```mermaid
@@ -2961,6 +2977,11 @@ Celestia-node provides flexible fee estimation options for submitting transactio
 
 3. **Maximum gas price**: Users can set a maximum gas price they're willing to pay for transactions using the `--max.gas.price` flag. If the estimated gas price exceeds this maximum, the transaction will not be submitted. The default maximum is set to 100 times the minimum gas price (0.2 TIA).
 
+- PayForBlobs (PFB) transactions: Only the gas price (cost per unit) is dynamically estimated. The gas usage (number of units) uses a fixed calculation method.
+- All other transactions: Both gas price and gas usage are dynamically estimated.
+
+When using third-party estimation, the consensus endpoint must be running celestia-app v3.8.1 or higher.
+
 ### Fees and gas limits
 
 As of version v1.0.0 of the application (celestia-app), there is no protocol
@@ -2985,9 +3006,18 @@ by the gas limit.
 Generally, the gas used by a PFB transaction involves a static fixed cost and
 a dynamic cost based on the size of each blob in the transaction.
 
+For a general use case of a normal account submitting a PFB, the static
+costs can be treated as such. However, due to the description above of how gas
+works in the Cosmos-SDK this is not always the case. Notably, if a
+vesting account or the `feegrant` modules are used, then these static costs change.
+
 The fixed cost is an approximation of the gas consumed by operations outside
 the function `GasToConsume` (for example, signature verification, tx size, read
 access to accounts), which has a default value of 65,000 gas.
+
+The first transaction sent by an account (sequence number == 0) has an
+additional one time gas cost of 10,000 gas. If this is the case, this
+should be accounted for.
 
 Each blob in the PFB contributes to the total gas cost based on its size. The
 function `GasToConsume` calculates the total gas consumed by all the blobs
@@ -3089,6 +3119,9 @@ a block) or dropped after timing out.
 By default, nodes will drop a transaction if it does not get included in 12 blocks (roughly 72 seconds). At this point, you must
 resubmit your transaction if you want it to eventually be included.
 
+As of v1.0.0 of celestia-app, you cannot replace an existing transaction with a higher-fee version. You must wait 5 blocks from the
+original submission time and then resubmit the transaction.
+
 ### Synchronous submission (TxWorkerAccounts = 1)
 
 Setting `TxWorkerAccounts` to `1` enables synchronous, queued transaction submission:
@@ -3105,7 +3138,12 @@ Characteristics:
 - Avoids sequence mismatch errors
 - Throughput: approximately 1 PayForBlobs transaction every other block
 
+If you specify an account other than the default account in TxConfig, the queue is bypassed and transactions enter the mempool
+directly without waiting for confirmations.
+
 ### Parallel transaction submission (TxWorkerAccounts > 1)
+
+This feature is currently available on Mocha testnet.
 
 For high-throughput applications that do not require sequential transaction ordering, you can enable parallel transaction submission
 by setting `TxWorkerAccounts` to a value > 1:
@@ -3132,6 +3170,9 @@ Example: TxWorkerAccounts = 8 creates 7 subaccounts plus your 1 default account,
 block.
 
 #### Important considerations
+
+Parallel submission is not suitable for implementations that require sequential transaction ordering. Only use this mode for
+unordered transaction workflows where your system requires a single signer, a.k.a. authored blobs.
 
 #### Key points to understand:
 
@@ -3255,6 +3296,11 @@ Available Commands:
 ```
 
 ## Updating node configuration
+
+The `celestia-appd update-config` command is deprecated as of v9. Required
+configuration values are now enforced by the binary at startup, so do not add
+this command to new node initialisation or upgrade procedures. It currently
+prints a deprecation warning and will be removed in a future release.
 
 See the [celestia-app v9 release notes](https://github.com/celestiaorg/celestia-app/blob/v9.0.4/docs/release-notes/release-notes.md#update-config-command-deprecated)
 for details.
@@ -3624,6 +3670,8 @@ instance machine.
 
 #### Optional: Set persistent peers
 
+You can set persistent peers in your `config.toml` file. If you set persistent peers, your node will **always** try to connect to these peers. This is useful when running a local devnet, for example, when you would always want to connect to the same local nodes in your devnet. In production, setting persistent peers is advised only if you are running a [sentry node](https://hub.cosmos.network/main/validators/security.html#sentry-nodes-ddos-protection).
+
 You can get the persistent peers from the [@cosmos/chain-registry](https://github.com/cosmos/chain-registry) repository (for Mainnet Beta) or [@celestiaorg/networks repository](https://github.com/celestiaorg/networks) repo (for Mocha) with the following commands:
 
 ## Storage and pruning configurations
@@ -3684,6 +3732,11 @@ significant storage:
 pruning = "nothing"
 min-retain-blocks = 0
 ```
+
+`min-retain-blocks` defaults to `0`. Any non-zero value enables block pruning,
+so archival operators must keep the value at `0`. Changing the value from `0`
+to a non-zero value starts pruning the existing backlog when the node restarts
+and can temporarily increase sync time.
 
 ### Save on storage requirements
 
@@ -3797,6 +3850,12 @@ copied from.
 
 Run the following command to quick-sync from a snapshot:
 
+The [Node snapshots guide](/operate/maintenance/snapshots) provides everything you need to quick sync your node:
+
+- Details about pruned and archive snapshots
+- A list of snapshot providers for different node types
+- Installation and usage instructions for `celestia-snapshot-finder` - a tool that automatically finds and downloads the fastest snapshot for your server location
+
 ## Start the consensus node
 
 If you are running celestia-app >= v4.0.0, the `rpc.grpc_laddr` config option is required. This option can be set via the CLI flag `--rpc.grpc_laddr tcp://0.0.0.0:9098` or in the `config.toml`.
@@ -3892,6 +3951,15 @@ It's recommended to test these commands on a testnet first before applying them 
 You can configure your consensus node to be a public RPC endpoint.
 This allows it to accept connections from data availability nodes and
 serve requests for the data availability API.
+
+If you're running a bridge node that connects to your consensus node, ensure that gRPC is properly configured in your `app.toml` file. Bridge nodes require gRPC access (typically on port 9090) to communicate with the consensus layer.
+
+The Cosmos SDK REST API also requires application gRPC. If you enable
+`[api]` with `enable = true` in `config/app.toml`, keep `enable = true`
+in the existing `[grpc]` section. The equivalent CLI flags are
+`--api.enable=true --grpc.enable=true`. The `rpc.grpc_laddr` setting in
+`config.toml` configures a separate service and does not satisfy this
+dependency.
 
 #### Configure heavy RPC concurrency
 
@@ -4097,6 +4165,11 @@ Mocha has activated app version 10. Bonded Mocha validators can now start Fibre
 and register their public address. See the
 [Mocha-5 upgrade history](/operate/maintenance/network-upgrades#mocha-5).
 
+Installing a v10 binary does not activate app version 10 on the chain. Prepare
+the binaries and configuration before activation, then start Fibre and register
+its address after activation. Follow the upgrade announcement for your network
+for timing.
+
 ## Prerequisites
 
 - A running, synced [validator node](/operate/consensus-validators/validator-node)
@@ -4232,6 +4305,20 @@ In `config/config.toml`, edit the top-level setting before the first section:
 priv_validator_grpc_laddr = "127.0.0.1:26669"
 ```
 
+> **Signer address compatibility:** In celestia-app builds that include
+> [celestia-core #3379](https://github.com/celestiaorg/celestia-core/pull/3379),
+> the hostname `localhost` no longer counts as loopback for
+> `priv_validator_grpc_laddr`. Only loopback IP literals qualify. Before upgrading,
+> replace `localhost:26669` with `127.0.0.1:26669` or `[::1]:26669` for a local
+> plaintext signer, preserving your configured port. Update Fibre's
+> `--signer-grpc-address` or `signer_grpc_address` to match, then restart both
+> services. The node refuses to start with a hostname or non-loopback address
+> unless mutual TLS is fully configured or `priv_validator_grpc_allow_insecure`
+> is explicitly enabled. Use loopback IPs for local signing rather than bypassing
+> the check; for remote signing, follow the
+> [mutual TLS setup](#connections-between-fibre-and-your-validator)
+> and use binaries with TLS support on both sides.
+
 Fresh v10 configs use `26669` to avoid a port clash with TMKMS. Existing
 configs may still have `26659`, a custom address, or an empty value, which
 disables the service. Replacing the binary does not rewrite the saved value.
@@ -4245,6 +4332,12 @@ Application and signing addresses, including Fibre's connection options, use
 Restart the node after editing and confirm it resumes syncing and signing.
 Check service-manager flags for overrides. If deployment tooling manages the
 configuration, update its source templates too.
+
+The `127.0.0.1` addresses shown above allow unencrypted connections on the
+same host. If Fibre connects from another host or through a container network,
+configure [mutual TLS for the signing connection](#connections-between-fibre-and-your-validator).
+Keep the application and signing ports private. Open Fibre's client port
+(default `7980`) so clients can reach it.
 
 ## Start after activation
 
@@ -4292,6 +4385,23 @@ max_concurrent_streams = 13
 Add either key if it is missing from an existing file, then restart Fibre for
 the change to take effect.
 
+### Switching shard storage backends
+
+Fibre can store blob shards locally or in S3-compatible object storage, such
+as Amazon S3 or Cloudflare R2. Changing `storage_backend` between `local` and
+`object` changes where new shards are stored. Existing shards stay on their
+original backend.
+
+**After switching back to `local`, keep access to object storage until pruning finishes.**
+Keep `[object_storage]` configured and
+preserve access to the same bucket and prefix with valid credentials until
+all object-stored shards have been pruned. Do not delete the retained objects
+or change the bucket or prefix while those shards remain.
+
+Fibre still needs the bucket to read and prune retained shards, even in local
+mode. Removing the object storage configuration or credentials prevents
+startup while those shards remain.
+
 ## Register the public address
 
 Once Fibre is running and reachable, register its public host using your
@@ -4334,10 +4444,54 @@ rather than the address, the registered host can be an IP address or a DNS
 name. Restart Fibre after changing `--signer-grpc-address` so the certificate
 is endorsed with the right key.
 
-The application and signing connections are not encrypted. Keep them on
-loopback or a trusted private network, and expose only the client port. See the
+### Connections between Fibre and your validator
+
+The default signing address, `127.0.0.1:26669`, allows unencrypted connections
+from the same host. No TLS certificates or extra flags are needed when Fibre
+connects to this address.
+
+For a remote signing connection, use binaries with mTLS support. The
+[`v10.4.0-mocha` release](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
+includes this support in both celestia-app and Fibre. The `v10.2.0-mocha`
+release does not; keep its signing connection on `127.0.0.1`.
+
+If Fibre connects from another host or through a container network, configure
+mutual TLS (mTLS) on both sides. mTLS encrypts the connection and uses
+certificates to authenticate the node and Fibre. Without it, the node refuses
+to start with a signing address such as `0.0.0.0:26669`, and Fibre refuses to
+connect to a remote signer.
+
+Follow the [core privval TLS guide](https://github.com/celestiaorg/celestia-core/blob/main/docs/guides/privval-grpc-tls.md)
+to generate certificates and configure the node and Fibre. The server
+certificate must match the IP address or DNS name Fibre connects to. Restart
+both services after configuring or replacing certificates.
+
+On Fibre, set all three certificate flags together when running `fibre start`,
+or set their equivalent keys in `server_config.toml`:
+
+| Fibre flag | Configuration key | File |
+|---|---|---|
+| `--signer-grpc-ca-file` | `signer_grpc_ca_file` | CA certificate used to verify the node |
+| `--signer-grpc-cert-file` | `signer_grpc_cert_file` | Fibre's client certificate |
+| `--signer-grpc-key-file` | `signer_grpc_key_file` | Private key for Fibre's client certificate |
+
+These flags configure Fibre only; configure the node's certificates using
+the guide above as well.
+
+Keep the signing port on a private network and restrict access to the Fibre
+host. For local development only, `--privval-grpc-allow-insecure` on the node
+and `--signer-grpc-allow-insecure` on Fibre allow remote connections without
+TLS. Do not use these overrides in production: anyone who can reach the
+unprotected endpoint can request signatures from the validator key.
+
+These settings protect the signing connection only. The application gRPC
+connection shown in this guide is still unencrypted; keep it on the same host
+or a trusted private network. Fibre's automatic client TLS does not protect
+either connection.
+
+See the
 [Fibre server specification](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/specs/src/fibre_server.md)
-for the endorsement scheme.
+for details of how clients verify Fibre's certificate.
 
 ## Troubleshoot startup
 
@@ -4732,6 +4886,10 @@ Only these four architectures are officially tested and supported.
 
 ## Linux requirements
 
+celestia-app v9 and later multiplexer binaries require glibc 2.38 or later. Use Ubuntu
+24.04 LTS or an equivalent Linux distribution. Ubuntu 22.04 and older are not
+supported and the binary will fail to start with a glibc version mismatch.
+
 Check the installed glibc version before installing or upgrading:
 
 ```bash
@@ -4909,9 +5067,10 @@ scrape_configs:
 Note, that Prometheus by default runs its server on `:9090`.
 If you are running this on the same machine as your consensus
 node, it will collide with gRPC which runs on the same port.
-To avoid this, either switch off gRPC (if it's not needed),
-change the gRPC port in `app.toml`, or run Prometheus on a
-different port e.g. `--web.listen-address="0.0.0.0:8000"`
+To avoid this, change the gRPC port in `app.toml`, or run Prometheus on a
+different port, _e.g._ `--web.listen-address="0.0.0.0:8000"`.
+When `[api]` has `enable = true` in `app.toml`, `[grpc]` must also
+have `enable = true` because the REST API uses Cosmos SDK gRPC.
 
 To run the prometheus server:
 
@@ -5083,6 +5242,8 @@ Run the following:
 celestia bridge init --core.ip <URI> --core.port <port>
 ```
 
+Refer to [the ports section of the celestia-node troubleshooting page](/operate/maintenance/troubleshooting#ports) for information on which ports are required to be open on your machine.
+
 When connecting your bridge node to a localhost consensus node, ensure that gRPC
 is properly configured in your consensus node's `app.toml` file. The `[grpc]`
 section should have `enable = true` and the appropriate address setting for the
@@ -5109,6 +5270,19 @@ Follow
 You have successfully set up a bridge node that is syncing with the network.
 
 ## Run the validator node
+
+> **Fibre signer compatibility:** Before starting an upgraded celestia-app build
+> that includes
+> [celestia-core #3379](https://github.com/celestiaorg/celestia-core/pull/3379),
+> check `priv_validator_grpc_laddr` in `config/config.toml` if you use the signing
+> service. The hostname `localhost` no longer counts as loopback. For local
+> plaintext signing, replace `localhost:26669` with `127.0.0.1:26669` or
+> `[::1]:26669`, preserving your port, and update Fibre's signer address to match.
+> Without mutual TLS or an explicit insecure override, a hostname or non-loopback
+> address prevents the node from starting. Follow the
+> [Fibre signing connection guide](/operate/consensus-validators/fibre#configure-the-signing-connection)
+> for configuration and restart instructions. This check applies to the
+> priv-validator signing service, not application gRPC in `app.toml`.
 
 In order to create a validator on-chain, follow the steps below.
 
@@ -5442,6 +5616,9 @@ You can find the address by running the following command:
 ./cel-key list --node.type bridge --keyring-backend test --p2p.network <network>
 ```
 
+You do not need to declare a network for Mainnet Beta. Refer to
+[the chain ID section on the troubleshooting page for more information](/operate/maintenance/troubleshooting).
+
 You can get testnet tokens from:
 
 - [Mocha](/operate/networks/mocha-testnet)
@@ -5599,14 +5776,20 @@ If you have a custom network you can export `CELESTIA_CUSTOM`, which will
 look something like:
 
 ```bash
-
+export BRIDGE="/ip4/<ip-address>/tcp/2121/p2p/<node-ID>"
+export GENESIS_HASH=<genesis-hash>
+export NETWORK=<network-name>
+export CELESTIA_CUSTOM="${NETWORK}:${GENESIS_HASH}:${BRIDGE}"
 ```
 
 Query your node ID [from the CLI](/operate/data-availability/light-node/advanced#find-your-node-id).
 These values with examples would look like:
 
 ```bash
-
+export BRIDGE="/ip4/151.115.14.33/tcp/2121/p2p/12D3KooWKEeRtzVMPUdxYsZo2edqps6mS67n6LT5mPdULSkPSxBQ"
+export GENESIS_HASH=580B3DFF8A7C716968161D91116A1E171F486298D582874E93714E489C9E6E88
+export NETWORK=custom
+export CELESTIA_CUSTOM="${NETWORK}:${GENESIS_HASH}:${BRIDGE}"
 ```
 
 Then, start your node with:
@@ -5635,6 +5818,8 @@ Check the [latest celestia-app release's `go.mod`](https://github.com/celestiaor
 ## Hermes
 
 [Hermes](https://github.com/informalsystems/hermes) is an open-source Rust relayer. Follow the [Hermes Quick Start](https://hermes.informal.systems/quick-start/) to install, then verify with `hermes version`.
+
+Hermes currently doesn't support configuring Tendermint `CompatMode` in chain config. Use Hermes [v1.7.0+](https://github.com/informalsystems/hermes/releases/tag/v1.7.0), which falls back to Tendermint `CompatMode` v0.34 (compatible with Celestia).
 
 ### Configuration
 
@@ -5969,6 +6154,9 @@ Where `/path-to-directory` contains `xtoken.json` (recommended: `chmod 600`):
 To use a non-default key, make sure the key exists in your node store and pass
 `--keyring.keyname` on `start`:
 
+For key creation, backup, import/recover, and Docker setups, see
+[Create a wallet with celestia-node](/operate/keys-wallets/celestia-node-key).
+
 ---
 
 ## Run the light node with SystemD
@@ -5984,6 +6172,9 @@ SystemD:
 Setting and syncing to a trusted height and hash means your light node will not
 sample the entire chain from genesis. This is useful when you want to sync your
 light node quickly.
+
+This adds the trust assumption that you trust the source of the height and
+hash.
 
 Celestia also supports initializing from a trusted hash via
 [trusted hash recovery](/operate/maintenance/trusted-hash-recovery).
@@ -6043,6 +6234,10 @@ parallel submission by setting `TxWorkerAccounts` to a value greater than 1.
 - Higher throughput for applications that can handle unordered transactions
 
 **Use case:** High-throughput, unordered workflows
+
+  **Important:** When retrieving blobs submitted in parallel mode, you must
+  track the height, namespace, and commitment for each blob submission, as you
+  won't know which subaccount was used.
 
 **Subaccount management:**
 
@@ -6791,6 +6986,16 @@ private key is encrypted at rest.
 | `test` | **Unencrypted on disk, with no password** | Local development and testnets |
 | `memory` | Process memory, discarded when the process exits | Throwaway scripts |
 
+The Cosmos SDK describes `test` as "a password-less variation of the file
+backend. Keys are stored unencrypted on disk" and states that it is "not
+recommended for use in production environments". Anyone who can read the
+directory can spend from the account and sign on behalf of the validator.
+
+Do not use `test` for a wallet that holds real funds or operates a Mainnet Beta
+validator. Use a hardware wallet, or a
+[multisig account](/operate/keys-wallets/multisig) so that no single key can
+move funds on its own.
+
 You can set the backend for a single command with `--keyring-backend`, which is
 what the examples in these docs do. Pass it on every command that touches a key:
 without the flag, `celestia-appd` falls back to the default backend and will not
@@ -6805,6 +7010,8 @@ You can pick whatever wallet name you want. The examples below and the
 `$VALIDATOR_WALLET`, so set it to the name you chose:
 
 ```sh
+export VALIDATOR_WALLET=validator
+export KEYRING_BACKEND=file # use `test` only on a testnet
 
 celestia-appd keys add $VALIDATOR_WALLET \
   --keyring-backend=$KEYRING_BACKEND \
@@ -6883,6 +7090,8 @@ celestia-appd start
 celestia-appd query bank balances celestia1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
+Refer to the ports section of the celestia-node troubleshooting page for information on which ports are required to be open on your machine.
+
 ---
 Title: Create a wallet with celestia-node
 URL: https://docs.celestia.org/operate/keys-wallets/celestia-node-key.md
@@ -6939,6 +7148,8 @@ For the purpose of this guide, we will use the `make cel-key` command.
 
 To generate a key for a Celestia node, select
 the tab for your node type:
+
+You do not need to declare a network for Mainnet Beta. Refer to [the chain ID section on the troubleshooting page for more information](/operate/maintenance/troubleshooting).
 
 ```bash
 ./cel-key add <key-name> --keyring-backend test --node.type bridge \
@@ -7140,6 +7351,8 @@ ghcr.io/celestiaorg/celestia-node:v0.34.2-mocha celestia light start \
 --core.ip public-endpoint.celestia-mocha.quiknode.pro --core.port 9090 \
 --core.tls --p2p.network mocha
 ```
+
+Refer to [the ports section of the celestia-node troubleshooting page](/operate/maintenance/troubleshooting#ports) for information on which ports are required to be open on your machine. You do not need to declare a network for Mainnet Beta. Refer to [the chain ID section on the troubleshooting page for more information](/operate/maintenance/troubleshooting).
 
 List active containers in another window with:
 
@@ -7355,7 +7568,7 @@ And set the location as the `CELESTIA_APP_HOME` variable. We will use this
 for the remainder of the devnet section.
 
 ```bash
-
+export CELESTIA_APP_HOME=/var/folders/_8/ljj6hspn0kn09qf9fy8kdyh40000gn/T/celestia_app_XXXXXXXXXXXXX.XV92a3qx
 ```
 
 > **Note:** This does not replace the `celestia-appd` binary that was installed with `celestia-appd`, but builds and runs one in the `$HOME/celestia-app/build` directory.
@@ -7433,7 +7646,8 @@ Set the keys as variables, using the validator address as the `FROM_ADDRESS`
 and the vesting-key as the `TO_ADDRESS`.
 
 ```bash
-
+export FROM_ADDRESS=celestia1adgkqcmzuxvg7x5avx8a8rjwpmxgzex3ztef6j
+export TO_ADDRESS=celestia127fpaygehlsgjdknwvlr2mux7h5uvhkxktgkc5
 ```
 
 #### Create your devnet vesting account
@@ -7620,7 +7834,8 @@ celestia-appd keys list
 Set your keys as variables:
 
 ```bash
-
+export FROM_ADDRESS=address_of_origin_account
+export TO_ADDRESS=address_of_vesting_account
 ```
 
 ### Fund your account
@@ -7639,7 +7854,7 @@ If you are running a production application, use a production endpoint.
 Set your RPC URL:
 
 ```bash
-
+export RPC_URL=https://public-endpoint.celestia-mocha.quiknode.pro
 ```
 
 We will use a few flags in our vesting command that are different than the
@@ -8221,6 +8436,8 @@ celestia <node-type> start --p2p.network <network> \
     --core.ip <URI> --core.port <port>
 ```
 
+Refer to [the ports section of this page](#ports) for information on which ports are required to be open on your machine.
+
 > **Note:** It is advised before switching networks to reinitialize your node via `init` command. This is due to an old config being present. Re-initialisation will reset the config.
 
 ### Chain ID
@@ -8372,6 +8589,8 @@ Error: nodebuilder/share: interval must be positive
 
 You can re-initialize your node's config with the following commands:
 
+Save your config so custom values are not lost.
+
 Run the following command to update your config:
 
 ```bash
@@ -8380,6 +8599,8 @@ celestia <node-type> config-update --p2p.network <network>
 
 This will pull in any new values from new configuration
 and merge them into the existing configuration.
+
+After using the `config-update` command, double-check that your custom values are preserved.
 
 Then, to start your node again:
 
@@ -8808,6 +9029,12 @@ The following table lists community-provided consensus node endpoints that you c
 
 Data availability (DA) nodes need to connect to consensus nodes to sync blocks and access state. When starting a DA node, you'll need to provide a consensus node endpoint using the `--core.ip` parameter and the port.
 
+Example command for starting a DA node with a consensus endpoint:
+
+```bash
+celestia <da_type> start --core.ip <consensus_node_url> --core.port <port>
+```
+
 You can use the [public endpoint](#public-rpc-endpoint) or any of the RPC
 endpoints from the [community consensus endpoints](#community-consensus-endpoints)
 table above. The default port is 9090, where gRPC is used for both block sync
@@ -8918,6 +9145,11 @@ to show you how to connect to them.
 
 ## Mocha-5 network restart
 
+Mocha-5 is a new chain that started at height 1; it is not an in-place
+upgrade from `mocha-4`. Existing consensus operators must initialize
+`mocha-5` in a separate home directory, as described below. You do not
+need to keep your own copy of `mocha-4` chain data.
+
 Mocha-5 is live. It is a hardspoon of `mocha-4` at block
 [13205115](https://celestia.explorers.guru/block/13205115): only account
 balances recorded at that height carried over. Transactions and balance
@@ -8948,6 +9180,12 @@ expected to retain `mocha-4` data. An exported copy of the final
 
 If you depend on specific `mocha-4` transaction history, export what you
 need before the September 1, 2026 shutdown.
+
+An archival `mocha-4` node snapshot taken on 2026-08-19 is available at
+[snaps.qubelabs.io/celestia/mocha-4_2026-08-19.tar](https://snaps.qubelabs.io/celestia/mocha-4_2026-08-19.tar).
+Note that it is approximately 12.3 TB. Follow the
+[status page announcement](https://status.celestia.org/incidents/nc1nkb54)
+for updates.
 
 ### Prepare a separate consensus-node home
 
@@ -9044,6 +9282,12 @@ and service availability, visit the
 
 For the current Mocha testnet network constants, see
 [mocha.celenium.io/constants](https://mocha.celenium.io/constants).
+
+Some community infrastructure is still migrating from `mocha-4` to
+`mocha-5`. The endpoints listed below were verified to serve `mocha-5`
+on September 1, 2026. Services still serving `mocha-4` are omitted until
+they migrate. Explorers, faucets, indexers, and analytics services may
+also still show `mocha-4` data.
 
 ## RPC for DA bridge, full, and light nodes
 
@@ -9184,6 +9428,9 @@ The following websites provide visual maps of Celestia DA nodes:
 - [https://probelab.io/celestia/](https://probelab.io/celestia/) (community contribution)
 
 ## Explorers
+
+Most explorers are still indexing `mocha-4` and will switch to `mocha-5`
+as they migrate.
 
 There are several explorers you can use for Mocha:
 

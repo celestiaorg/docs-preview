@@ -34,6 +34,11 @@ Available Commands:
 
 ## Updating node configuration
 
+The `celestia-appd update-config` command is deprecated as of v9. Required
+configuration values are now enforced by the binary at startup, so do not add
+this command to new node initialisation or upgrade procedures. It currently
+prints a deprecation warning and will be removed in a future release.
+
 See the [celestia-app v9 release notes](https://github.com/celestiaorg/celestia-app/blob/v9.0.4/docs/release-notes/release-notes.md#update-config-command-deprecated)
 for details.
 

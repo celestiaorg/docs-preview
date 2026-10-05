@@ -36,6 +36,11 @@ Celestia-node provides flexible fee estimation options for submitting transactio
 
 3. **Maximum gas price**: Users can set a maximum gas price they're willing to pay for transactions using the `--max.gas.price` flag. If the estimated gas price exceeds this maximum, the transaction will not be submitted. The default maximum is set to 100 times the minimum gas price (0.2 TIA).
 
+- PayForBlobs (PFB) transactions: Only the gas price (cost per unit) is dynamically estimated. The gas usage (number of units) uses a fixed calculation method.
+- All other transactions: Both gas price and gas usage are dynamically estimated.
+
+When using third-party estimation, the consensus endpoint must be running celestia-app v3.8.1 or higher.
+
 ### Fees and gas limits
 
 As of version v1.0.0 of the application (celestia-app), there is no protocol
@@ -60,9 +65,18 @@ by the gas limit.
 Generally, the gas used by a PFB transaction involves a static fixed cost and
 a dynamic cost based on the size of each blob in the transaction.
 
+For a general use case of a normal account submitting a PFB, the static
+costs can be treated as such. However, due to the description above of how gas
+works in the Cosmos-SDK this is not always the case. Notably, if a
+vesting account or the `feegrant` modules are used, then these static costs change.
+
 The fixed cost is an approximation of the gas consumed by operations outside
 the function `GasToConsume` (for example, signature verification, tx size, read
 access to accounts), which has a default value of 65,000 gas.
+
+The first transaction sent by an account (sequence number == 0) has an
+additional one time gas cost of 10,000 gas. If this is the case, this
+should be accounted for.
 
 Each blob in the PFB contributes to the total gas cost based on its size. The
 function `GasToConsume` calculates the total gas consumed by all the blobs
@@ -164,6 +178,9 @@ a block) or dropped after timing out.
 By default, nodes will drop a transaction if it does not get included in 12 blocks (roughly 72 seconds). At this point, you must
 resubmit your transaction if you want it to eventually be included.
 
+As of v1.0.0 of celestia-app, you cannot replace an existing transaction with a higher-fee version. You must wait 5 blocks from the
+original submission time and then resubmit the transaction.
+
 ### Synchronous submission (TxWorkerAccounts = 1)
 
 Setting `TxWorkerAccounts` to `1` enables synchronous, queued transaction submission:
@@ -180,7 +197,12 @@ Characteristics:
 - Avoids sequence mismatch errors
 - Throughput: approximately 1 PayForBlobs transaction every other block
 
+If you specify an account other than the default account in TxConfig, the queue is bypassed and transactions enter the mempool
+directly without waiting for confirmations.
+
 ### Parallel transaction submission (TxWorkerAccounts > 1)
+
+This feature is currently available on Mocha testnet.
 
 For high-throughput applications that do not require sequential transaction ordering, you can enable parallel transaction submission
 by setting `TxWorkerAccounts` to a value > 1:
@@ -207,6 +229,9 @@ Example: TxWorkerAccounts = 8 creates 7 subaccounts plus your 1 default account,
 block.
 
 #### Important considerations
+
+Parallel submission is not suitable for implementations that require sequential transaction ordering. Only use this mode for
+unordered transaction workflows where your system requires a single signer, a.k.a. authored blobs.
 
 #### Key points to understand:
 

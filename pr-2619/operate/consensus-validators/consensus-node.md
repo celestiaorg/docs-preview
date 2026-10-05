@@ -17,6 +17,8 @@ instance machine.
 
 #### Optional: Set persistent peers
 
+You can set persistent peers in your `config.toml` file. If you set persistent peers, your node will **always** try to connect to these peers. This is useful when running a local devnet, for example, when you would always want to connect to the same local nodes in your devnet. In production, setting persistent peers is advised only if you are running a [sentry node](https://hub.cosmos.network/main/validators/security.html#sentry-nodes-ddos-protection).
+
 You can get the persistent peers from the [@cosmos/chain-registry](https://github.com/cosmos/chain-registry) repository (for Mainnet Beta) or [@celestiaorg/networks repository](https://github.com/celestiaorg/networks) repo (for Mocha) with the following commands:
 
 ## Storage and pruning configurations
@@ -77,6 +79,11 @@ significant storage:
 pruning = "nothing"
 min-retain-blocks = 0
 ```
+
+`min-retain-blocks` defaults to `0`. Any non-zero value enables block pruning,
+so archival operators must keep the value at `0`. Changing the value from `0`
+to a non-zero value starts pruning the existing backlog when the node restarts
+and can temporarily increase sync time.
 
 ### Save on storage requirements
 
@@ -190,6 +197,12 @@ copied from.
 
 Run the following command to quick-sync from a snapshot:
 
+The [Node snapshots guide](/operate/maintenance/snapshots) provides everything you need to quick sync your node:
+
+- Details about pruned and archive snapshots
+- A list of snapshot providers for different node types
+- Installation and usage instructions for `celestia-snapshot-finder` - a tool that automatically finds and downloads the fastest snapshot for your server location
+
 ## Start the consensus node
 
 If you are running celestia-app >= v4.0.0, the `rpc.grpc_laddr` config option is required. This option can be set via the CLI flag `--rpc.grpc_laddr tcp://0.0.0.0:9098` or in the `config.toml`.
@@ -285,6 +298,15 @@ It's recommended to test these commands on a testnet first before applying them 
 You can configure your consensus node to be a public RPC endpoint.
 This allows it to accept connections from data availability nodes and
 serve requests for the data availability API.
+
+If you're running a bridge node that connects to your consensus node, ensure that gRPC is properly configured in your `app.toml` file. Bridge nodes require gRPC access (typically on port 9090) to communicate with the consensus layer.
+
+The Cosmos SDK REST API also requires application gRPC. If you enable
+`[api]` with `enable = true` in `config/app.toml`, keep `enable = true`
+in the existing `[grpc]` section. The equivalent CLI flags are
+`--api.enable=true --grpc.enable=true`. The `rpc.grpc_laddr` setting in
+`config.toml` configures a separate service and does not satisfy this
+dependency.
 
 #### Configure heavy RPC concurrency
 

@@ -20,6 +20,10 @@ Only these four architectures are officially tested and supported.
 
 ## Linux requirements
 
+celestia-app v9 and later multiplexer binaries require glibc 2.38 or later. Use Ubuntu
+24.04 LTS or an equivalent Linux distribution. Ubuntu 22.04 and older are not
+supported and the binary will fail to start with a glibc version mismatch.
+
 Check the installed glibc version before installing or upgrading:
 
 ```bash

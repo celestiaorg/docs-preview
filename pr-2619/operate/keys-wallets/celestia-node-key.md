@@ -49,6 +49,8 @@ For the purpose of this guide, we will use the `make cel-key` command.
 To generate a key for a Celestia node, select
 the tab for your node type:
 
+You do not need to declare a network for Mainnet Beta. Refer to [the chain ID section on the troubleshooting page for more information](/operate/maintenance/troubleshooting).
+
 ```bash
 ./cel-key add <key-name> --keyring-backend test --node.type bridge \
   --p2p.network <network>
@@ -249,6 +251,8 @@ ghcr.io/celestiaorg/celestia-node:v0.34.2-mocha celestia light start \
 --core.ip public-endpoint.celestia-mocha.quiknode.pro --core.port 9090 \
 --core.tls --p2p.network mocha
 ```
+
+Refer to [the ports section of the celestia-node troubleshooting page](/operate/maintenance/troubleshooting#ports) for information on which ports are required to be open on your machine. You do not need to declare a network for Mainnet Beta. Refer to [the chain ID section on the troubleshooting page for more information](/operate/maintenance/troubleshooting).
 
 List active containers in another window with:
 

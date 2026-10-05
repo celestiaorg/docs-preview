@@ -178,6 +178,12 @@ The following table lists community-provided consensus node endpoints that you c
 
 Data availability (DA) nodes need to connect to consensus nodes to sync blocks and access state. When starting a DA node, you'll need to provide a consensus node endpoint using the `--core.ip` parameter and the port.
 
+Example command for starting a DA node with a consensus endpoint:
+
+```bash
+celestia <da_type> start --core.ip <consensus_node_url> --core.port <port>
+```
+
 You can use the [public endpoint](#public-rpc-endpoint) or any of the RPC
 endpoints from the [community consensus endpoints](#community-consensus-endpoints)
 table above. The default port is 9090, where gRPC is used for both block sync
