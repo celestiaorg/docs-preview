@@ -887,7 +887,8 @@ You need:
 Check `celestia version` before starting. Older node releases without the
 `fibre` API cannot run these requests. The
 [released Node API reference](/build/rpc/node-api)
-covers these methods when you select `v0.34.2-mocha`; the older v0.31.4 specification does not.
+covers these methods when you select `v0.34.2-mocha`.
+Select the specification that matches your node version.
 
 If you already have a synced Mocha light or bridge node with a Fibre-capable
 core endpoint, use its store, key and RPC address. Otherwise, initialise a
@@ -1472,9 +1473,13 @@ Celestia node RPC reference for blob, blobstream, da, das, header, node, p2p, sh
 
 Select `v0.34.2-mocha` in the version selector below for the
 released Fibre API, or download its [OpenRPC specification](/specs/openrpc-v0.34.2-mocha.json).
-The [Mocha Fibre walkthrough](/build/post-retrieve-blob/fibre) provides tested
-request encodings and explains the JSON-RPC size limit. The older v0.31.4
+The [Mocha Fibre walkthrough](/build/post-retrieve-blob/fibre) covers node setup,
+escrow funding, submission and retrieval, including tested request encodings
+and the JSON-RPC size limit. The Mainnet Beta `v0.33.2`
 specification does not include Fibre.
+
+The Mocha specification also includes `blob.SubscribeFromStartHeight`, which
+replays blobs for a namespace from a start height, then streams new blobs.
 
 ## celestia-node v0.31.3 breaking changes
 
@@ -3687,8 +3692,9 @@ to migrate its databases.
 ### Optional: Connect a consensus node to a bridge node
 
 If your consensus node is being connected to a celestia-node bridge node,
-you will need to enable transaction indexing and retain all block
-data. This can be achieved with the following settings in your `config.toml`.
+configure indexing in `config.toml` and block retention in `app.toml` as
+described below. The consensus node does not need to retain the full block
+history for either a pruned or an archival bridge node.
 
 #### Enable transaction indexing
 
@@ -3702,9 +3708,18 @@ indexer = "null"
 The `null` indexer is a lightweight indexer that is sufficient for bridge
 nodes.
 
-#### Retain all block data
+#### Retain blocks for bridge nodes
 
-In your `app.toml`, explicitly set `min-retain-blocks` to `0`:
+Retain blocks within the bridge storage window
+(`169h`). The bridge node's live listener
+fetches newly announced blocks from consensus; older header ranges and share
+data can come from DA peers that retain them. Peer availability is not a
+guarantee of complete history.
+
+`min-retain-blocks` in `app.toml` is a block count, not a duration. If you enable
+block pruning, size it for the storage window using the network's block rate
+and allow headroom for changes in that rate. To retain all block data instead,
+set it to `0`:
 
 ```toml
 min-retain-blocks = 0 # retain all block data
@@ -5726,14 +5741,23 @@ while keeping the original data and headers.
 > **Warning:** Choose archival mode before the node's first start and include
 > `--archival` every time it starts, including in a systemd service or another
 > process manager. A store previously started in pruned mode cannot switch to
-> archival mode; initialise a fresh store to sync from genesis.
+> archival mode; initialise a fresh store to sync from genesis. Omitting
+> `--archival` on a later start converts an archival store to pruned mode
+> without refusing startup. It deletes historical headers and original data
+> outside the storage window, not just redundant erasure-coded data. Adding
+> `--archival` again does not restore the deleted history or reverse the conversion.
 
-Both modes can use a non-archival consensus endpoint, provided it retains the
-recent blocks needed for syncing. During header sync, the bridge node routes
-recent ranges to the consensus endpoint and older ranges to the peer-to-peer
-network. Historical data is fetched separately from DA peers. This routing is
-automatic, but it does not replace missing recent blocks at the consensus
-endpoint or guarantee that peers retain the full history.
+Both modes can use a non-archival consensus endpoint. Provision it to retain
+blocks within the storage window (`169h`)
+so the bridge node can fetch recent blocks from consensus. The live block
+listener still fetches newly announced blocks from that endpoint.
+
+During header sync, the bridge node routes recent ranges to the consensus
+endpoint and older ranges to the header peer exchange. Header fetches can also
+fall back to peers when the consensus endpoint lacks a requested height.
+The data availability sampler (DASer) retrieves the corresponding share data
+separately from DA peers. This fallback does not guarantee that peers retain
+the full history.
 
 ## Hardware requirements
 
@@ -5959,9 +5983,17 @@ export NETWORK=custom
 export CELESTIA_CUSTOM="${NETWORK}:${GENESIS_HASH}:${BRIDGE}"
 ```
 
-If you provide `GENESIS_HASH`, make sure it matches the network genesis. Bridge
-nodes prune by default. To run the bridge node without pruning, pass
-`--archival` every time you start it.
+For an archival bridge node, include the genesis field in `CELESTIA_CUSTOM`.
+Setting only `CELESTIA_CUSTOM="${NETWORK}"` omits that field and prevents
+archival startup with a `genesis hash not found` error. A non-empty
+`GENESIS_HASH` must identify the network's genesis block: archival startup
+uses it as `SyncFromHash`, so an incorrect hash prevents syncing from the
+correct starting point. An explicitly empty field, as in
+`CELESTIA_CUSTOM="${NETWORK}:"`, starts archival sync from height 1 instead.
+
+Bridge nodes prune by default. To retain historical headers and original
+data, pass `--archival` every time you start the node. Archival nodes still
+trim redundant erasure-coded data outside the storage window.
 
 Then, start your node with:
 
@@ -8727,9 +8759,15 @@ celestia <node-type> init --node.store /home/user/celestia-<node-type>-location/
 Next, start your node:
 
 ```bash
-celestia bridge start --core.ip <archival-consensus-endpoint> --p2p.network mocha \
+celestia bridge start --core.ip <consensus_endpoint> --p2p.network mocha \
     --node.store /home/user/celestia-bridge-location/ --core.port <port>
 ```
+
+The consensus endpoint can be pruned, but should retain blocks within the
+bridge storage window (`169h`). If this
+fresh store is intended to be archival, add `--archival` on its first start
+and every subsequent start. Older headers and share data still require peers
+that retain them.
 
 If you choose to change the location of your node store,
 you will need to execute each command on your node with
@@ -9168,11 +9206,9 @@ to connect to them. Learn about the different endpoint types
 
 ### Production RPC endpoints
 
-These RPC providers are meant to be used in production environments
-and for specific use cases that require reliable access to full block
-history, such as:
+Use production RPC providers for workloads that need reliable service, such as:
 
-- Applications that need Bridge Node endpoints with guaranteed uptime and SLAs
+- Applications that need bridge node endpoints with uptime commitments and SLAs
 - Submitting blobs in production settings (free RPC endpoints have no guarantees, even for submitting transactions)
 
 | Provider  | URL                                                                                       |
@@ -9256,18 +9292,23 @@ celestia light start \
 ### Bridge node requirements
 
 Bridge nodes run in pruned mode by default. Both pruned and archival bridge
-nodes can use a non-archival consensus endpoint that retains the recent blocks
-needed for syncing. Older header ranges and historical data are retrieved from
-DA peers that still hold them; full historical availability is not guaranteed.
+nodes can use a non-archival consensus endpoint. Provision it to retain blocks
+within the storage window (`169h`);
+the live block listener still fetches newly announced blocks from consensus.
+Older header ranges come from the header peer exchange. Header fetches can
+also fall back to peers when consensus lacks a requested height, and the
+data availability sampler (DASer) retrieves share data from DA peers.
+Full historical availability depends on peers retaining that history.
 
 To retain full history locally, start the bridge node with `--archival` and
 provision the [archival hardware requirements](/operate/getting-started/hardware-requirements#archival-data-availability-nodes).
 
 ### Archival DA RPC endpoints
 
-By default, light nodes prune recent data to save on storage space. Archival
-data availability (DA) nodes store the entire history of the chain without
-pruning any data so all data available data is retrievable. You can
+By default, light nodes prune data outside their sampling window to save
+storage space. Archival data availability (DA) nodes retain historical headers
+and original data, while trimming redundant erasure-coded data outside the
+storage window. This trimming preserves the original data for retrieval. You can
 [read more about light vs archival nodes](/learn/celestia-101/retrievability/).
 
 | Provider                         | Endpoint                                                                                  | RPC Port | Gateway Port |
@@ -9504,12 +9545,9 @@ also still show `mocha-4` data.
 
 ### Production RPC endpoints
 
-These RPC providers are meant to be used in production environments
-and for specific use cases that require reliable access to full block
-history, such as:
+Use production RPC providers for workloads that need reliable service, such as:
 
-- Running Bridge Nodes that download data from core RPC endpoints
-- Applications that need Bridge Node endpoints with guaranteed uptime and SLAs
+- Applications that need bridge node endpoints with uptime commitments and SLAs
 - Submitting blobs in production settings (free RPC endpoints have no guarantees, even for submitting transactions)
 
 | Provider  | URL                                                                                       |
@@ -9531,7 +9569,11 @@ endpoint:
 | DA JSON-RPC | `https://public-endpoint.celestia-mocha.quiknode.pro` |
 
 This shared endpoint is pruned and does not provide a production SLA. Do not
-use it for historical queries or bridge node sync from genesis.
+rely on it for historical queries. Bridge nodes can use a pruned consensus
+endpoint, but operators should confirm that it retains blocks within the
+storage window (`169h`). Archival bridge
+nodes retrieve older header ranges and share data from peers that still hold
+them; a pruned consensus endpoint alone does not guarantee sync from genesis.
 
 ### Community consensus endpoints
 
