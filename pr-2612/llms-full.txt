@@ -20,6 +20,25 @@ Source: app/build/blobstream/proof-queries/page.mdx
 
 To prove PFBs, blobs or shares, we can use the Celestia consensus node's RPC to query proofs for them:
 
+### Heavy RPC request limit
+
+Proof queries such as `data_root_inclusion_proof` and `prove_shares` are
+memory-intensive. They share the consensus node's process-wide heavy RPC
+request limit with other heavy endpoints and transports.
+
+When the limit is reached, clients receive a temporary capacity response:
+
+- HTTP GET requests return `503 Service Unavailable`.
+- JSON-RPC and WebSocket requests return a JSON-RPC error with
+  `server busy: too many concurrent heavy RPC requests, retry later` in the
+  error's `data` field. Use this message to distinguish temporary overload from
+  other JSON-RPC errors.
+- gRPC requests return `ResourceExhausted`.
+
+These responses indicate that the node is busy, not that proof generation
+failed. Retry with exponential backoff and jitter. Where appropriate, bound the
+maximum delay or number of retries.
+
 ### 1. Data root inclusion proof
 
 To prove the data root is committed to by the Blobstream smart contract, we will need to provide a Merkle proof of the data root tuple to a data root tuple root. This can be created using the [`data_root_inclusion_proof`](https://github.com/celestiaorg/celestia-core/blob/c3ab251659f6fe0f36d10e0dbd14c29a78a85352/rpc/client/http/http.go#L492-L511) query.
@@ -725,6 +744,10 @@ Blob 8 submitted at height 1234568
 
 **Important considerations:**
 
+**Ordering**: Parallel submission does NOT guarantee transaction ordering. Blobs may be included in blocks in a different order than submitted.
+
+**Default account only**: Queued and parallel submission modes always use your default account (`DefaultKeyName`). If you specify a different account in `TxConfig` (via `WithKeyName` or `WithSignerAddress`), it will be ignored and the default account will be used instead.
+
 **Retrieving blobs from parallel submission:**
 
 Since you don't know which subaccount submitted each blob, retrieve them using namespace, height, and commitment:
@@ -829,6 +852,369 @@ The crate re-exports common Celestia types (namespaces, blobs, app versions, etc
 [2]: https://docs.rs/celestia-client/latest/celestia_client/ "celestia-client, in Rust // Docs.rs"
 
 ---
+Title: Submit and retrieve a Fibre blob on Mocha
+URL: https://docs.celestia.org/build/post-retrieve-blob/fibre.md
+Source: app/build/post-retrieve-blob/fibre/page.mdx
+---
+
+# Submit and retrieve a Fibre blob on Mocha
+
+Fibre stores blob shards on validator-operated servers and settles payment
+on-chain with `MsgPayForFibre`. This walkthrough deposits testnet TIA into
+escrow, submits a namespaced payload, waits for settlement, and downloads the
+original bytes.
+
+Use `fibre.Submit` for this first test: it waits for transaction confirmation.
+Fibre is separate from the [blob/transaction client flow](/build/post-retrieve-blob/overview)
+that uses `blob.Submit` and PayForBlob. Fibre retrieval uses a `blob_id`, rather
+than the height, namespace and commitment tuple used by `blob.Get`.
+
+## Prepare a Mocha node
+
+You need:
+
+- A Mocha light or bridge node with Fibre support. The examples use
+  celestia-node `v0.34.2-mocha` and a core endpoint running
+  celestia-app `v10.4.0-mocha` on `mocha-5`.
+  Follow [Install celestia-node](/operate/data-availability/install-celestia-node).
+- Bash, `curl`, `jq` and Python 3 for the commands below.
+- A local signer funded with Mocha testnet TIA.
+- Enough reachable Fibre providers to collect signatures representing the
+  required two-thirds of voting power. Check the
+  [Mocha Fibre dashboard](https://testnet.celestia.valopers.com/fibre).
+  App v10 activation alone does not establish provider readiness.
+
+Check `celestia version` before starting. Older node releases without the
+`fibre` API cannot run these requests. The
+[released Node API reference](/build/rpc/node-api)
+covers these methods when you select `v0.34.2-mocha`.
+Select the specification that matches your node version.
+
+If you already have a synced Mocha light or bridge node with a Fibre-capable
+core endpoint, use its store, key and RPC address. Otherwise, initialise a
+separate light-node store:
+
+```bash
+export FIBRE_HOME="$HOME/.celestia-fibre-mocha-guide"
+celestia light init --p2p.network mocha --node.store "$FIBRE_HOME"
+```
+
+Initialisation creates a signer. Keep the recovery phrase private. If another
+node is running on this machine, stop it or configure different P2P listen
+ports before starting this node. For faster initial sync, see
+[Syncing from a trusted hash](/operate/maintenance/trusted-hash-recovery), including
+its checkpoint trust assumption.
+
+Start the node in one terminal and leave it running:
+
+```bash
+celestia light start --p2p.network mocha --node.store "$FIBRE_HOME" \
+  --core.ip grpc-mocha.pops.one \
+  --core.port 443 --core.tls \
+  --rpc.addr 127.0.0.1 --rpc.port 27658
+```
+
+This core endpoint is a public community service and may rate-limit requests.
+For repeated or large tests, use your own Fibre-capable core endpoint or a
+provider with suitable limits. Fibre discovers validator upload/download hosts
+from the network; the core address is not a Fibre storage server address.
+
+## Fund the signer and authenticate
+
+In a second Bash terminal, enable pipeline failure reporting and set the same
+store and local RPC address:
+
+```bash
+set -o pipefail
+export FIBRE_HOME="$HOME/.celestia-fibre-mocha-guide"
+export NODE_RPC=http://127.0.0.1:27658
+export KEY_NAME=my_celes_key
+
+celestia state account-address --node.store "$FIBRE_HOME" --url "$NODE_RPC"
+```
+
+Fund the returned address using the [Mocha faucet](https://mocha.celenium.io/faucet).
+Check the wallet balance:
+
+```bash
+celestia state balance --node.store "$FIBRE_HOME" --url "$NODE_RPC"
+```
+
+With celestia-node v0.34.2-mocha, restart the node after funding a signer that
+was unfunded when the node started. Otherwise, `fibre.Deposit` can panic during
+gas estimation. Stop the node with Ctrl+C in the first terminal, then run the
+same start command again.
+
+Wait for header sync to catch up before submitting:
+
+```bash
+celestia header sync-state --node.store "$FIBRE_HOME" --url "$NODE_RPC"
+```
+
+Check that the reported `height` has reached `to_height` and the initial sync
+has a non-zero `end` timestamp. The node should continue following new headers.
+
+Generate a token that permits writes. It also permits the read calls used here:
+
+```bash
+export AUTH_TOKEN=$(celestia light auth write \
+  --p2p.network mocha --node.store "$FIBRE_HOME")
+export SIGNER=$(celestia state account-address \
+  --node.store "$FIBRE_HOME" --url "$NODE_RPC" | jq -er '.result')
+
+rpc() {
+  curl --fail-with-body --silent --show-error \
+    --connect-timeout 10 --max-time 180 \
+    -H "Authorization: Bearer $AUTH_TOKEN" \
+    -H 'Content-Type: application/json' \
+    --data-binary @- "$NODE_RPC"
+}
+```
+
+The examples select `my_celes_key`, the default key created by initialisation.
+To use another key, start the node with `--keyring.keyname <key_name>` and set
+`KEY_NAME` to that name. `SIGNER` must be that key's public address. The key must
+exist in this node's keyring; an address alone does not give the node signing
+access. See [Node key management](/operate/keys-wallets/celestia-node-key).
+
+## Query and deposit escrow
+
+Wallet funds pay transaction gas. Fibre escrow pays for blob storage. Keep
+some TIA in the wallet when depositing; escrow cannot pay transaction gas.
+Amounts use `utia`, where 1 TIA is 1,000,000 utia.
+
+Query this signer's escrow:
+
+```bash
+jq -nc --arg signer "$SIGNER" \
+  '{jsonrpc:"2.0",id:1,method:"fibre.QueryEscrowAccount",params:[$signer]}' | rpc
+```
+
+For a new signer, `escrow account not found for signer` is expected. Deposit
+2 testnet TIA for the small example below, after confirming the wallet holds
+more than 2 TIA:
+
+```bash
+jq -nc --arg key "$KEY_NAME" \
+  '{jsonrpc:"2.0",id:2,method:"fibre.Deposit",
+    params:[{denom:"utia",amount:"2000000"},{key_name:$key}]}' \
+  | rpc > deposit.json &&
+jq -es '
+  length == 1 and (.[0] | type == "object" and
+    (has("error") | not) and has("result") and .result == null)
+' deposit.json
+```
+
+Success returns `{"jsonrpc":"2.0","id":2,"result":null}`, not a transaction
+receipt. Query escrow again and confirm the deposit before proceeding:
+
+```bash
+jq -nc --arg signer "$SIGNER" \
+  '{jsonrpc:"2.0",id:3,method:"fibre.QueryEscrowAccount",params:[$signer]}' \
+  | rpc > escrow.json &&
+jq -es '
+  length == 1 and (.[0] | type == "object" and
+    (has("error") | not) and (.result | type == "object" and
+      (.available_balance | type == "object" and .denom == "utia" and
+        (.amount | type == "string" and test("^[0-9]+$")))))
+' escrow.json &&
+jq '.result.available_balance' escrow.json
+```
+
+A newly deposited account has these balance fields:
+
+```json
+{
+  "balance": {"denom": "utia", "amount": "2000000"},
+  "available_balance": {"denom": "utia", "amount": "2000000"}
+}
+```
+
+These are fields inside `result`, alongside `signer`. Pending withdrawals
+reduce `available_balance` before they reduce the total `balance`.
+
+## Submit and save the receipt
+
+Both the full 29-byte namespace and the payload are base64 strings in JSON.
+Create a version-0 namespace with the ID `fibre-demo` and a small file:
+
+```bash
+printf 'Hello, Fibre!\n' > original.bin
+NS=$(python3 -c 'import base64; print(base64.b64encode(bytes(19)+b"fibre-demo").decode())')
+DATA=$(python3 -c 'import base64; print(base64.b64encode(open("original.bin","rb").read()).decode())')
+
+jq -nc --arg ns "$NS" --arg data "$DATA" --arg key "$KEY_NAME" \
+  '{jsonrpc:"2.0",id:4,method:"fibre.Submit",params:[$ns,$data,{key_name:$key}]}' \
+  | rpc > submit.json &&
+jq -es '
+  length == 1 and (.[0] | type == "object" and
+    (has("error") | not) and (.result | type == "object" and
+      (.height | type == "number" and . > 0 and . == floor) and
+      (.tx_hash | type == "string" and length > 0) and
+      (.blob_id | type == "string" and length > 0)))
+' submit.json &&
+jq '.result | {blob_id,height,tx_hash}' submit.json > receipt.json &&
+cat receipt.json
+```
+
+Stop if any command reports an error or a validation prints `false`. The
+`&&` chains run each next command only after the previous command succeeds.
+The checks require exactly one JSON response with the expected result fields,
+including when the response is empty. A failed submission or validation leaves
+any existing `receipt.json` unchanged; do not use an old receipt for this attempt.
+An empty response or timeout does not prove that payment failed. Reconcile
+settlement as described below before retrying.
+
+On success, `Submit` has uploaded the shards, collected signatures and confirmed
+the payment transaction. Save all three receipt fields. For example, the
+validated small-blob run returned:
+
+```json
+{
+  "blob_id": "AMGy8xgg3+lxgxQxMedurPYBoj8Q9V1eZWH05AEyeNTk",
+  "height": 1111896,
+  "tx_hash": "26E4B81DC2E88F41301F89FD36B7852B049653CFC7F03DF7153AEBDA5F3F49BE"
+}
+```
+
+Your transaction hash and height will differ. The full response also contains
+`validator_signatures` and `payment_promise`. Download your own freshly
+submitted blob rather than relying on the historical example remaining stored.
+
+## Download and verify the bytes
+
+Pass the returned `blob_id` unchanged. In JSON-RPC it is base64, whereas the
+native Go client's `BlobID.String()` prints hexadecimal. A payment promise
+hash shown by an explorer is a separate identifier, not the download blob ID.
+
+```bash
+BLOB_ID=$(jq -er '.blob_id' receipt.json)
+jq -nc --arg id "$BLOB_ID" \
+  '{jsonrpc:"2.0",id:5,method:"fibre.Download",params:[$id]}' \
+  | rpc > download.json
+
+python3 - <<'PY'
+import base64, hashlib, json
+response = json.load(open('download.json'))
+if 'error' in response:
+    raise SystemExit(response['error'])
+data = base64.b64decode(response['result']['data'], validate=True)
+if data != open('original.bin', 'rb').read():
+    raise SystemExit('Downloaded bytes differ from original')
+open('downloaded.bin', 'wb').write(data)
+print('Verified identical bytes; SHA-256:', hashlib.sha256(data).hexdigest())
+PY
+```
+
+The response's `result` is `{"data":"SGVsbG8sIEZpYnJlIQo="}` for this payload.
+The expected SHA-256 is:
+
+```text
+f0e7fdccb71e36e867930a1f6f0b55bf5cdb5d0d8eca369a8675a7c1cec64cba
+```
+
+## Larger blobs and the native client
+
+There are two different size limits in the tested releases:
+
+| Path | Limit |
+|---|---|
+| Fibre version-0 payload | 128 MiB minus the 5-byte header: 134,217,723 bytes |
+| Node HTTP JSON-RPC request | 16 MiB including JSON and base64, leaving slightly less than 12 MiB for payload |
+
+The [node RPC server](https://github.com/celestiaorg/celestia-node/blob/v0.34.2-mocha/api/rpc/server.go)
+limits the request body independently of the
+[Fibre protocol](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/fibre/protocol_params.go).
+For larger blobs, use the native celestia-app
+[Fibre client](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/fibre/client.go).
+Its upload sends shards directly to validators; only the payment transaction
+goes through core. See
+[`fibre.Put`](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/fibre/client_put.go)
+for a combined upload/settlement example and
+[`tools/fibre-txsim`](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/tools/fibre-txsim/main.go)
+for the separate upload, transaction and download steps.
+
+Storage charges use the encoded, padded size, not just the original file's
+length. The release's
+[payment calculation](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/x/fibre/types/gas.go)
+explains the charge. The observations below are test results, not permanent
+prices or performance guarantees. Budget escrow and transaction gas separately.
+
+### Verified Mocha results
+
+Tests on 25 September 2026 used celestia-node v0.34.2-mocha for JSON-RPC and
+celestia-app v10.2.0-mocha for the native client. Each successful run confirmed
+settlement and verified downloaded bytes against the original payload and hash.
+
+| Payload | Path | Settlement height | Escrow charge, excluding gas |
+|---|---|---|---|
+| 14 bytes | JSON-RPC | [1,111,896](https://testnet.celestia.valopers.com/transactions/26E4B81DC2E88F41301F89FD36B7852B049653CFC7F03DF7153AEBDA5F3F49BE) | 0.695 testnet TIA |
+| 10 MiB | JSON-RPC | [1,112,086](https://testnet.celestia.valopers.com/transactions/B937331E897D90D6B50AD6F7630AF681F970D2577D1D3463A067F1D386A8832C) | 2.495 testnet TIA |
+| 128 MiB minus 5 bytes | Native Go | [1,113,071](https://testnet.celestia.valopers.com/transactions/ADD4C5190131D0AFB55AF3341B347700B2ADEC2B128FAF3C7CA06495852C5C16) | 23.69 testnet TIA |
+
+The maximum-size run's SHA-256 was
+`53a0a70e69fac696d73438aada6cfa989c5a36c90c3164525f262fed2775721f`.
+Its blob ID was `AJ+0/lcm8YgL/06EFKHMnnMaQfJp/ChDQskMk7rkd8FQ`;
+the [Tensile record](https://tensile.huginn.tech/blob/?tx=ADD4C5190131D0AFB55AF3341B347700B2ADEC2B128FAF3C7CA06495852C5C16)
+links to the settlement transaction. Tensile accepts transaction hashes, blob IDs
+(base64 or hexadecimal), and payment promise hashes. If an identifier matches
+multiple records, it shows all matches. The native test trusted the selected
+core endpoint for validator state; the light-node path uses locally verified
+headers.
+
+## Retention and withdrawals
+
+Fibre storage is time-limited. Query current Mocha parameters before planning
+retention or a withdrawal:
+
+```bash
+curl --fail --silent --show-error \
+  https://api-mocha.pops.one/fibre/v1/params | jq '.params'
+```
+
+`shard_retention` determines the minimum shard-retention period;
+`payment_promise_timeout` bounds the settlement promise. Keep your own copy of
+the data: a confirmed payment is not a permanent storage guarantee.
+
+`fibre.Withdraw` requests a withdrawal, reducing available escrow. The chain
+processes it after `withdrawal_delay`; it is not an immediate wallet transfer.
+Use `fibre.PendingWithdrawals` with the signer's address to inspect the amount
+and `available_timestamp`. Do not reuse escrow committed to outstanding payment
+promises, including uploads whose settlement outcome is still unknown.
+
+## Asynchronous uploads and recovery
+
+`fibre.Upload` returns after upload and starts settlement in the background.
+In v0.34.2-mocha, background settlement errors are logged. An upload result is
+not proof of confirmed payment. Use `Submit` for the first walkthrough.
+
+A timeout or rate limit while confirming a transaction does not prove that it
+failed. In the maximum-size test, the core endpoint returned HTTP 429 during
+confirmation even though the transaction had settled. A second endpoint
+confirmed execution code `0` and the matching Fibre event.
+
+Before resubmitting, check the transaction hash, node logs and chain state
+through a working endpoint or explorer. Native clients should retain the
+broadcast transaction hash before waiting for confirmation. If the client
+returns no hash, inspect the signer's transactions and match the namespace and
+commitment. Signed promises can also be charged through the timeout path after
+an upload failure; blindly retrying can create another payment obligation.
+
+## Troubleshoot the walkthrough
+
+| Symptom | Check |
+|---|---|
+| `fibre client is not available` | Configure a Fibre-capable core endpoint, then restart the node. |
+| Missing Fibre services or method not found | Check both the node release and the core endpoint's app version and exposed services. |
+| Unfunded signer or insufficient escrow | Verify the selected key/address; fund the wallet and deposit into that signer's escrow. Retain wallet funds for gas. |
+| Deposit gas-estimation panic after faucet funding | Restart v0.34.2-mocha after the signer is funded, then query escrow before retrying. |
+| Header syncing or historical state unavailable | Wait for header sync and use a core endpoint that serves the required state. |
+| Not enough voting power, unreachable providers or TLS failures | Check registered/reachable provider stake and client logs. Some stored shards may be retrievable even when signature quorum was not reached. |
+| HTTP 429 or uncertain settlement | Back off or use another endpoint; reconcile payment status before resubmitting. |
+| Large JSON-RPC request rejected | Account for base64 and JSON overhead, or use the native client. |
+| Download fails after retention expires | Recover from your own stored copy. The on-chain receipt does not contain the blob bytes. |
+
+---
 Title: Overview to posting and retrieving blobs on Celestia
 URL: https://docs.celestia.org/build/post-retrieve-blob/overview.md
 Source: app/build/post-retrieve-blob/overview/page.mdx
@@ -844,6 +1230,8 @@ There are two transaction clients available:
 | ---------- | ----------------------------------- | --------------------------------- | --------------------------------------------------------- |
 | **Golang** | Local keyring handled by the client | **2** — DA bridge RPC + Core gRPC | [Go client tutorial](/build/post-retrieve-blob/client/go) |
 | **Rust**   | Local keyring handled by the client | **2** — DA bridge RPC + Core gRPC | [Rust client](/build/post-retrieve-blob/client/rust)      |
+
+For Fibre storage on Mocha, follow [Submit and retrieve a Fibre blob](/build/post-retrieve-blob/fibre). That guide covers escrow, on-chain settlement, retrieval and the separate Fibre size limits.
 
 ---
 Title: About Private Blockspace
@@ -1081,22 +1469,17 @@ Celestia node RPC reference for blob, blobstream, da, das, header, node, p2p, sh
 
 </div>
 
-## Fibre API on Mocha
+## Fibre on Mocha
 
-Select `v0.34.2-mocha` in the API version dropdown to browse the `fibre`
-namespace: `Submit`, `Upload`, `Download`, `Deposit`, `Withdraw`,
-`QueryEscrowAccount`, and `PendingWithdrawals`.
+Select `v0.34.2-mocha` in the version selector below for the
+released Fibre API, or download its [OpenRPC specification](/specs/openrpc-v0.34.2-mocha.json).
+The [Mocha Fibre walkthrough](/build/post-retrieve-blob/fibre) covers node setup,
+escrow funding, submission and retrieval, including tested request encodings
+and the JSON-RPC size limit. The Mainnet Beta `v0.33.2`
+specification does not include Fibre.
 
-Fibre is available on light and bridge nodes in this release. It requires a
-configured core endpoint running celestia-app v10 with the `x/fibre` and
-`x/valaddr` modules. If Fibre is unavailable, check that the core endpoint is
-configured. Fund the Fibre escrow account with `fibre.Deposit` before uploading
-blobs. `fibre.Submit` uploads and settles the payment in one call;
-`fibre.Upload` settles the payment in the background.
-
-See the [celestia-node release notes](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha)
-for requirements and changes. The Mainnet Beta `v0.33.2` specification does not
-include the `fibre` namespace.
+The Mocha specification also includes `blob.SubscribeFromStartHeight`, which
+replays blobs for a namespace from a start height, then streams new blobs.
 
 ## celestia-node v0.31.3 breaking changes
 
@@ -1788,7 +2171,7 @@ A collection of useful tools, dashboards, and analytics platforms for exploring 
 
 | Resource                       | Description                                                     | URL                                                                                                                    |
 | ------------------------------ | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **Blockworks research (paid)** | In-depth analytics and research on TIA and the Celestia network | [View analytics](https://app.blockworksresearch.com/analytics/tia?dashboard=celestia&interval=weekly)                  |
+| **Blockworks research (paid)** | In-depth analytics and research on TIA and the Celestia network | [View analytics](https://app.blockworks.com/analytics/celestia)                  |
 | **Numia blocks dashboard**     | Blocks analytics dashboard                                      | [View dashboard](https://lookerstudio.google.com/u/0/reporting/6d5530fd-4115-4951-8a79-644842f6a2b3/page/Tn17D)        |
 | **Numia rollups dashboard**    | Rollups analytics dashboard                                     | [View dashboard](https://lookerstudio.google.com/u/0/reporting/8853db32-fe0b-4a39-b4d7-3b9efd9e5226/page/p_da0hhwxfjd) |
 
@@ -2197,6 +2580,8 @@ Source: app/learn/features/bridging/ibc/page.mdx
 
 You can use IBC to bridge assets between Celestia-native chains along with other chains.
 
+Celestia uses relayers to forward packets between chains. Relayers are processes that can be run by anyone which constantly scan for outbound packets on one chain and submits these packets alongside corresponding proofs on the destination chain. This doc covers using IBC to bridge assets; see also [how to run a relayer](/operate/data-availability/ibc-relayer). 
+
 ## How bridging works
 
 ```mermaid
@@ -2597,6 +2982,11 @@ Celestia-node provides flexible fee estimation options for submitting transactio
 
 3. **Maximum gas price**: Users can set a maximum gas price they're willing to pay for transactions using the `--max.gas.price` flag. If the estimated gas price exceeds this maximum, the transaction will not be submitted. The default maximum is set to 100 times the minimum gas price (0.2 TIA).
 
+- PayForBlobs (PFB) transactions: Only the gas price (cost per unit) is dynamically estimated. The gas usage (number of units) uses a fixed calculation method.
+- All other transactions: Both gas price and gas usage are dynamically estimated.
+
+When using third-party estimation, the consensus endpoint must be running celestia-app v3.8.1 or higher.
+
 ### Fees and gas limits
 
 As of version v1.0.0 of the application (celestia-app), there is no protocol
@@ -2621,9 +3011,18 @@ by the gas limit.
 Generally, the gas used by a PFB transaction involves a static fixed cost and
 a dynamic cost based on the size of each blob in the transaction.
 
+For a general use case of a normal account submitting a PFB, the static
+costs can be treated as such. However, due to the description above of how gas
+works in the Cosmos-SDK this is not always the case. Notably, if a
+vesting account or the `feegrant` modules are used, then these static costs change.
+
 The fixed cost is an approximation of the gas consumed by operations outside
 the function `GasToConsume` (for example, signature verification, tx size, read
 access to accounts), which has a default value of 65,000 gas.
+
+The first transaction sent by an account (sequence number == 0) has an
+additional one time gas cost of 10,000 gas. If this is the case, this
+should be accounted for.
 
 Each blob in the PFB contributes to the total gas cost based on its size. The
 function `GasToConsume` calculates the total gas consumed by all the blobs
@@ -2725,6 +3124,9 @@ a block) or dropped after timing out.
 By default, nodes will drop a transaction if it does not get included in 12 blocks (roughly 72 seconds). At this point, you must
 resubmit your transaction if you want it to eventually be included.
 
+As of v1.0.0 of celestia-app, you cannot replace an existing transaction with a higher-fee version. You must wait 5 blocks from the
+original submission time and then resubmit the transaction.
+
 ### Synchronous submission (TxWorkerAccounts = 1)
 
 Setting `TxWorkerAccounts` to `1` enables synchronous, queued transaction submission:
@@ -2741,7 +3143,12 @@ Characteristics:
 - Avoids sequence mismatch errors
 - Throughput: approximately 1 PayForBlobs transaction every other block
 
+If you specify an account other than the default account in TxConfig, the queue is bypassed and transactions enter the mempool
+directly without waiting for confirmations.
+
 ### Parallel transaction submission (TxWorkerAccounts > 1)
+
+This feature is currently available on Mocha testnet.
 
 For high-throughput applications that do not require sequential transaction ordering, you can enable parallel transaction submission
 by setting `TxWorkerAccounts` to a value > 1:
@@ -2768,6 +3175,9 @@ Example: TxWorkerAccounts = 8 creates 7 subaccounts plus your 1 default account,
 block.
 
 #### Important considerations
+
+Parallel submission is not suitable for implementations that require sequential transaction ordering. Only use this mode for
+unordered transaction workflows where your system requires a single signer, a.k.a. authored blobs.
 
 #### Key points to understand:
 
@@ -2891,6 +3301,11 @@ Available Commands:
 ```
 
 ## Updating node configuration
+
+The `celestia-appd update-config` command is deprecated as of v9. Required
+configuration values are now enforced by the binary at startup, so do not add
+this command to new node initialisation or upgrade procedures. It currently
+prints a deprecation warning and will be removed in a future release.
 
 See the [celestia-app v9 release notes](https://github.com/celestiaorg/celestia-app/blob/v9.0.4/docs/release-notes/release-notes.md#update-config-command-deprecated)
 for details.
@@ -3260,6 +3675,8 @@ instance machine.
 
 #### Optional: Set persistent peers
 
+You can set persistent peers in your `config.toml` file. If you set persistent peers, your node will **always** try to connect to these peers. This is useful when running a local devnet, for example, when you would always want to connect to the same local nodes in your devnet. In production, setting persistent peers is advised only if you are running a [sentry node](https://hub.cosmos.network/main/validators/security.html#sentry-nodes-ddos-protection).
+
 You can get the persistent peers from the [@cosmos/chain-registry](https://github.com/cosmos/chain-registry) repository (for Mainnet Beta) or [@celestiaorg/networks repository](https://github.com/celestiaorg/networks) repo (for Mocha) with the following commands:
 
 ## Storage and pruning configurations
@@ -3320,6 +3737,11 @@ significant storage:
 pruning = "nothing"
 min-retain-blocks = 0
 ```
+
+`min-retain-blocks` defaults to `0`. Any non-zero value enables block pruning,
+so archival operators must keep the value at `0`. Changing the value from `0`
+to a non-zero value starts pruning the existing backlog when the node restarts
+and can temporarily increase sync time.
 
 ### Save on storage requirements
 
@@ -3433,6 +3855,12 @@ copied from.
 
 Run the following command to quick-sync from a snapshot:
 
+The [Node snapshots guide](/operate/maintenance/snapshots) provides everything you need to quick sync your node:
+
+- Details about pruned and archive snapshots
+- A list of snapshot providers for different node types
+- Installation and usage instructions for `celestia-snapshot-finder` - a tool that automatically finds and downloads the fastest snapshot for your server location
+
 ## Start the consensus node
 
 If you are running celestia-app >= v4.0.0, the `rpc.grpc_laddr` config option is required. This option can be set via the CLI flag `--rpc.grpc_laddr tcp://0.0.0.0:9098` or in the `config.toml`.
@@ -3528,6 +3956,31 @@ It's recommended to test these commands on a testnet first before applying them 
 You can configure your consensus node to be a public RPC endpoint.
 This allows it to accept connections from data availability nodes and
 serve requests for the data availability API.
+
+If you're running a bridge node that connects to your consensus node, ensure that gRPC is properly configured in your `app.toml` file. Bridge nodes require gRPC access (typically on port 9090) to communicate with the consensus layer.
+
+The Cosmos SDK REST API also requires application gRPC. If you enable
+`[api]` with `enable = true` in `config/app.toml`, keep `enable = true`
+in the existing `[grpc]` section. The equivalent CLI flags are
+`--api.enable=true --grpc.enable=true`. The `rpc.grpc_laddr` setting in
+`config.toml` configures a separate service and does not satisfy this
+dependency.
+
+#### Configure heavy RPC concurrency
+
+Memory-intensive RPC endpoints share a process-wide concurrency limit across
+HTTP, WebSocket and gRPC. The default limit is `20` concurrent requests. Set it
+under `[rpc]` in `config.toml`:
+
+```toml
+[rpc]
+max_concurrent_heavy_requests = 20
+```
+
+A value of `0` selects the built-in default of `20`. A negative value disables
+the limit, which is not recommended. Increasing the limit can increase peak
+memory consumption. Only raise it when the node has sufficient RAM, and monitor
+node memory usage under RPC load.
 
 #### Expose RPC
 
@@ -3706,10 +4159,10 @@ celestia-app. Clients upload blob shards to validator-operated Fibre servers
 and download them from there, and each server's storage budget is derived from
 the validator's stake. Starting with app version 10, every bonded validator is
 expected to run one. See the
-[Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/fibre/cmd/README.md)
+[Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/fibre/cmd/README.md)
 for the protocol details.
 
-The examples use the Mocha release `v10.2.0-mocha`, its
+The examples use the Mocha release `v10.4.0-mocha`, its
 matching Fibre binary, and the Mocha chain ID. Substitute the values for your
 network.
 
@@ -3717,12 +4170,17 @@ Mocha has activated app version 10. Bonded Mocha validators can now start Fibre
 and register their public address. See the
 [Mocha-5 upgrade history](/operate/maintenance/network-upgrades#mocha-5).
 
+Installing a v10 binary does not activate app version 10 on the chain. Prepare
+the binaries and configuration before activation, then start Fibre and register
+its address after activation. Follow the upgrade announcement for your network
+for timing.
+
 ## Prerequisites
 
 - A running, synced [validator node](/operate/consensus-validators/validator-node)
   in the bonded validator set. Fibre derives its storage budget from your stake.
 - The v10 multiplexer celestia-app binary installed before activation. Follow the
-  [release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)
+  [release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
   and check the [celestia-app installation requirements](/operate/consensus-validators/install-celestia-app#linux-requirements).
 - Separate disks for Fibre data and celestia-app data, and enough memory for
   the receive buffers described in [Plan capacity](#plan-capacity).
@@ -3732,7 +4190,7 @@ and register their public address. See the
   requests to the KMS.
 
 Any KMS may be used if it meets these requirements. Review the release's
-[KMS policy](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/docs/release-notes/release-notes.md#key-management-systems-kms)
+[KMS policy](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/docs/release-notes/release-notes.md#key-management-systems-kms)
 before choosing or upgrading a signer. It describes Horcrux's maintenance
 risks and the risk of double signing and slashing from incorrect KMS
 configuration.
@@ -3783,7 +4241,7 @@ Download the Fibre archive and checksums from the same release as celestia-app.
 For Linux x86_64:
 
 ```bash
-fibre_version=v10.2.0-mocha
+fibre_version=v10.4.0-mocha
 curl -fLO "https://github.com/celestiaorg/celestia-app/releases/download/$fibre_version/fibre_Linux_x86_64.tar.gz"
 curl -fLO "https://github.com/celestiaorg/celestia-app/releases/download/$fibre_version/checksums.txt"
 sha256sum --ignore-missing --check checksums.txt
@@ -3798,13 +4256,13 @@ Place the verified binary on your executable path before using `fibre` below.
 ### Build from source
 
 Install Git, Make, a C compiler, and the Go version required by the release's
-[`go.mod`](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/go.mod).
+[`go.mod`](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/go.mod).
 Clone the same release used by your celestia-app node:
 
 ```bash
-git clone --branch v10.2.0-mocha --depth 1 https://github.com/celestiaorg/celestia-app.git celestia-app-fibre
+git clone --branch v10.4.0-mocha --depth 1 https://github.com/celestiaorg/celestia-app.git celestia-app-fibre
 cd celestia-app-fibre
-make build-fibre-server VERSION=v10.2.0-mocha
+make build-fibre-server VERSION=v10.4.0-mocha
 ./build/fibre version
 ```
 
@@ -3852,6 +4310,20 @@ In `config/config.toml`, edit the top-level setting before the first section:
 priv_validator_grpc_laddr = "127.0.0.1:26669"
 ```
 
+> **Signer address compatibility:** In celestia-app builds that include
+> [celestia-core #3379](https://github.com/celestiaorg/celestia-core/pull/3379),
+> the hostname `localhost` no longer counts as loopback for
+> `priv_validator_grpc_laddr`. Only loopback IP literals qualify. Before upgrading,
+> replace `localhost:26669` with `127.0.0.1:26669` or `[::1]:26669` for a local
+> plaintext signer, preserving your configured port. Update Fibre's
+> `--signer-grpc-address` or `signer_grpc_address` to match, then restart both
+> services. The node refuses to start with a hostname or non-loopback address
+> unless mutual TLS is fully configured or `priv_validator_grpc_allow_insecure`
+> is explicitly enabled. Use loopback IPs for local signing rather than bypassing
+> the check; for remote signing, follow the
+> [mutual TLS setup](#connections-between-fibre-and-your-validator)
+> and use binaries with TLS support on both sides.
+
 Fresh v10 configs use `26669` to avoid a port clash with TMKMS. Existing
 configs may still have `26659`, a custom address, or an empty value, which
 disables the service. Replacing the binary does not rewrite the saved value.
@@ -3865,6 +4337,12 @@ Application and signing addresses, including Fibre's connection options, use
 Restart the node after editing and confirm it resumes syncing and signing.
 Check service-manager flags for overrides. If deployment tooling manages the
 configuration, update its source templates too.
+
+The `127.0.0.1` addresses shown above allow unencrypted connections on the
+same host. If Fibre connects from another host or through a container network,
+configure [mutual TLS for the signing connection](#connections-between-fibre-and-your-validator).
+Keep the application and signing ports private. Open Fibre's client port
+(default `7980`) so clients can reach it.
 
 ## Start after activation
 
@@ -3891,7 +4369,13 @@ fibre start \
 Use your actual node addresses if different. On first start, Fibre creates
 `<fibre_home>/config/server_config.toml`. The corresponding keys are `app_grpc_address`,
 `signer_grpc_address`, and `server_listen_address`; command-line flags override
-the file. Check the startup log for the chain ID and connected addresses.
+the file. Fibre rejects unknown keys and tables instead of silently ignoring
+them. If startup reports an unknown field, correct or remove the reported
+setting before restarting.
+
+Check the startup log for the chain ID, connected addresses, and effective
+storage backend. When object storage is configured, the log also includes its
+canonical bucket, prefix, chain ID, and validator address.
 
 ### Connection limits
 
@@ -3905,6 +4389,137 @@ max_concurrent_streams = 13
 
 Add either key if it is missing from an existing file, then restart Fibre for
 the change to take effect.
+
+### Object storage
+
+Object storage is supported in `v10.4.0-mocha`. The older `v10.2.0-mocha`
+binary ignores `storage_backend` and `[object_storage]` and continues writing
+shards to local disk. Check `fibre version` before continuing. If upgrading,
+follow the [release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
+to replace both celestia-app and Fibre, sync their configuration, and check
+[signer TLS compatibility](#connections-between-fibre-and-your-validator).
+Use the matching binaries from [Install Fibre](#install-fibre).
+
+Fibre stores blob shards on local disk by default. To store them in
+S3-compatible object storage instead, such as Amazon S3 or Cloudflare R2, set
+the backend and bucket in `<fibre_home>/config/server_config.toml`:
+
+```toml
+storage_backend = "object"
+
+[object_storage]
+endpoint = "https://s3.us-east-1.amazonaws.com"
+region = "us-east-1"
+bucket = "<bucket_name>"
+prefix = "fibre"
+```
+
+Use your bucket's endpoint and region. For Cloudflare R2, use its S3 API
+endpoint and `region = "auto"`. Fibre's metadata database still needs
+persistent local storage.
+
+Fibre reads the bucket credentials from its environment through the standard
+AWS variables and refuses to start if none are found. There is no credentials
+field in the config file. To provide them to a systemd service:
+
+1. Create an access key in your storage provider with read, write, and delete
+   permissions on the bucket. On Amazon S3, create an IAM user with
+   `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject`, and `s3:ListBucket` on
+   the bucket. On Cloudflare R2, create an API token with **Object Read &
+   Write** permission scoped to the bucket.
+
+2. Save the key in a file readable only by root:
+
+   ```bash
+   sudo mkdir -p /etc/fibre
+   sudo tee /etc/fibre/s3.env > /dev/null <<'EOT'
+   AWS_ACCESS_KEY_ID=<access_key_id>
+   AWS_SECRET_ACCESS_KEY=<secret_access_key>
+   EOT
+   sudo chmod 0600 /etc/fibre/s3.env
+   ```
+
+   If AWS gave you temporary credentials, add a third line with
+   `AWS_SESSION_TOKEN=<session_token>`.
+
+3. Point the Fibre service at the file. Run `sudo systemctl edit fibre.service`,
+   using your service name if it differs, and add:
+
+   ```ini
+   [Service]
+   EnvironmentFile=/etc/fibre/s3.env
+   ```
+
+4. Restart Fibre and confirm it started:
+
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl restart fibre.service
+   sudo systemctl status fibre.service
+   ```
+
+To rotate keys, update the file and restart Fibre. If the host already has
+credentials from an IAM role or the shared AWS credentials file, Fibre uses
+them and you can skip the environment file.
+
+### Switching shard storage backends
+
+Fibre can store blob shards locally or in S3-compatible object storage, such
+as Amazon S3 or Cloudflare R2. Create the bucket in the same region as the
+Fibre host. A bucket in another region adds latency to every upload and
+download. Changing `storage_backend` between `local` and `object` changes
+where new shards are stored. Existing shards stay on their original backend.
+
+**After switching back to `local`, keep access to object storage until pruning finishes.**
+Keep `[object_storage]` configured and
+preserve access to the same bucket and prefix with valid credentials until
+all object-stored shards have been pruned. Do not delete the retained objects
+or change the bucket or prefix while those shards remain.
+
+Fibre still needs the bucket to read and prune retained shards, even in local
+mode. Removing the object storage configuration or credentials prevents
+startup while those shards remain.
+
+### Migrate to another bucket
+
+At startup, Fibre records the object endpoint, bucket, prefix, chain ID, and
+validator address it uses. While object shards remain, starting with a
+different endpoint, bucket, or prefix fails with `object namespace mismatch`,
+in either storage mode. This stops retained shards from becoming unreachable
+by accident. If it happens, restore the previous configuration to recover
+access. To move the shards on purpose:
+
+1. Stop Fibre, so no new shards are written to the old bucket during the copy.
+
+2. Create the new bucket in the same region as the Fibre host.
+
+3. Copy every object under the old prefix to the new bucket with the same key
+   layout. Fibre looks shards up by key, so a different layout makes them
+   unavailable. For example, with the AWS CLI:
+
+   ```bash
+   aws s3 sync s3://<old_bucket>/<old_prefix> s3://<new_bucket>/<new_prefix>
+   ```
+
+4. Set the new endpoint, bucket, or prefix in `[object_storage]` in
+   `<fibre_home>/config/server_config.toml`. If the new bucket uses different
+   keys, update the [credentials](#object-storage) too.
+
+5. Start Fibre once with `--override-object-namespace` added to your usual
+   start command. Fibre logs the old and new namespaces and records the new
+   one. The flag does not copy or verify objects, so an override before the
+   copy is complete makes shards unavailable and leaves orphaned objects after
+   pruning.
+
+6. Remove the flag and restart Fibre. The flag is not saved in the config
+   file. Leaving it in the start command would accept any future mismatch
+   without protection.
+
+7. Once Fibre serves from the new bucket, delete the old bucket and revoke its
+   credentials.
+
+After all object shards are pruned, changing the bucket or prefix needs no
+override.
 
 ## Register the public address
 
@@ -3948,10 +4563,54 @@ rather than the address, the registered host can be an IP address or a DNS
 name. Restart Fibre after changing `--signer-grpc-address` so the certificate
 is endorsed with the right key.
 
-The application and signing connections are not encrypted. Keep them on
-loopback or a trusted private network, and expose only the client port. See the
-[Fibre server specification](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/specs/src/fibre_server.md)
-for the endorsement scheme.
+### Connections between Fibre and your validator
+
+The default signing address, `127.0.0.1:26669`, allows unencrypted connections
+from the same host. No TLS certificates or extra flags are needed when Fibre
+connects to this address.
+
+For a remote signing connection, use binaries with mTLS support. The
+[`v10.4.0-mocha` release](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
+includes this support in both celestia-app and Fibre. The `v10.2.0-mocha`
+release does not; keep its signing connection on `127.0.0.1`.
+
+If Fibre connects from another host or through a container network, configure
+mutual TLS (mTLS) on both sides. mTLS encrypts the connection and uses
+certificates to authenticate the node and Fibre. Without it, the node refuses
+to start with a signing address such as `0.0.0.0:26669`, and Fibre refuses to
+connect to a remote signer.
+
+Follow the [core privval TLS guide](https://github.com/celestiaorg/celestia-core/blob/main/docs/guides/privval-grpc-tls.md)
+to generate certificates and configure the node and Fibre. The server
+certificate must match the IP address or DNS name Fibre connects to. Restart
+both services after configuring or replacing certificates.
+
+On Fibre, set all three certificate flags together when running `fibre start`,
+or set their equivalent keys in `server_config.toml`:
+
+| Fibre flag | Configuration key | File |
+|---|---|---|
+| `--signer-grpc-ca-file` | `signer_grpc_ca_file` | CA certificate used to verify the node |
+| `--signer-grpc-cert-file` | `signer_grpc_cert_file` | Fibre's client certificate |
+| `--signer-grpc-key-file` | `signer_grpc_key_file` | Private key for Fibre's client certificate |
+
+These flags configure Fibre only; configure the node's certificates using
+the guide above as well.
+
+Keep the signing port on a private network and restrict access to the Fibre
+host. For local development only, `--privval-grpc-allow-insecure` on the node
+and `--signer-grpc-allow-insecure` on Fibre allow remote connections without
+TLS. Do not use these overrides in production: anyone who can reach the
+unprotected endpoint can request signatures from the validator key.
+
+These settings protect the signing connection only. The application gRPC
+connection shown in this guide is still unencrypted; keep it on the same host
+or a trusted private network. Fibre's automatic client TLS does not protect
+either connection.
+
+See the
+[Fibre server specification](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/specs/src/fibre_server.md)
+for details of how clients verify Fibre's certificate.
 
 ## Troubleshoot startup
 
@@ -3961,6 +4620,9 @@ for the endorsement scheme.
 | Missing Fibre or valaddr services | Wait for app version 10 to activate before starting Fibre or registering. |
 | Application connection refused | Enable `[grpc]` in `app.toml`, restart the node, and check addresses and flag overrides. |
 | Signer connection failed | Match Fibre's signer address to `priv_validator_grpc_laddr`; check for a disabled value or a port conflict. |
+| `loading object storage credentials` | The service did not receive the bucket key. Check the environment file and the `EnvironmentFile=` override in [Object storage](#object-storage), then restart Fibre. |
+| `object namespace mismatch` | The object endpoint, bucket, prefix, chain ID, or validator address changed while object shards remain. Restore the previous bucket settings and node connections, or follow [Migrate to another bucket](#migrate-to-another-bucket) when moving objects. |
+| Configuration decode error reports an unknown field | Correct or remove the reported key or table in `<fibre_home>/config/server_config.toml`, then restart Fibre. |
 | TLS identity verification failed | Check that the signing service holds your validator's consensus key, then restart Fibre after correcting the signer address. |
 | `derived storage budget is 0` warning | The app node reports no stake for your validator. Check that the validator is bonded and that `--app-grpc-address` points at a synced node on the right network. Fibre keeps running and re-derives the budget periodically. |
 | Server runs but no uploads arrive | Check that `query valaddr provider` finds your host, that the registered `host:port` is reachable from outside your network, and that the validator is bonded. Clients only dial registered, bonded validators. |
@@ -3968,7 +4630,7 @@ for the endorsement scheme.
 
 For logging, metrics, tracing, and profiling, see
 [Fibre monitoring](/operate/consensus-validators/fibre/metrics).
-The [Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/fibre/cmd/README.md)
+The [Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/fibre/cmd/README.md)
 has further configuration details.
 
 ---
@@ -3979,7 +4641,7 @@ Source: app/operate/consensus-validators/fibre/metrics/page.mdx
 
 # Fibre monitoring
 
-This page covers observability in Fibre `v10.2.0-mocha`.
+This page covers observability in Fibre `v10.4.0-mocha`.
 Complete the [server setup](/operate/consensus-validators/fibre) first. Add the
 flags below to your existing start command, keeping your home and node addresses.
 All observability flags apply to every subcommand.
@@ -4001,9 +4663,9 @@ Fibre sends traces and metrics over OTLP/HTTP to an OpenTelemetry collector,
 such as Grafana Alloy or the OTel Collector. The collector must accept both
 signals and forward them to your tracing and metrics backends. The celestia-app
 repository ships a reference
-[collector configuration](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/observability/docker/otel-collector/config.yml)
+[collector configuration](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/observability/docker/otel-collector/config.yml)
 and a
-[Docker Compose stack](https://github.com/celestiaorg/celestia-app/tree/v10.2.0-mocha/observability/docker)
+[Docker Compose stack](https://github.com/celestiaorg/celestia-app/tree/v10.4.0-mocha/observability/docker)
 with Prometheus, Tempo, and Grafana that you can start from. The stack
 publishes Prometheus on host port `9090`, which the setup guide uses for
 application gRPC. When running it on the validator host, change that mapping
@@ -4024,12 +4686,12 @@ For example, `https://collector.example.com/otel` sends data to
 ### Grafana dashboard
 
 Import the release's
-[Fibre dashboard JSON](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/observability/docker/grafana/dashboards/fibre.json)
+[Fibre dashboard JSON](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/observability/docker/grafana/dashboards/fibre.json)
 into Grafana. The dashboard expects a Prometheus data source with UID
 `prometheus`; use that UID or update the dashboard to match your data source.
 Client panels need telemetry from Fibre clients as well as the server. The same
 directory has a
-[Fibre runtime dashboard](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/observability/docker/grafana/dashboards/fibre-runtime.json)
+[Fibre runtime dashboard](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/observability/docker/grafana/dashboards/fibre-runtime.json)
 for Go runtime metrics such as memory and goroutines.
 
 To verify the pipeline, start Fibre with `--otel-endpoint` set, open the Fibre
@@ -4177,7 +4839,7 @@ fibre start \
 | No continuous profiles | Check the Pyroscope endpoint, authentication values, and Fibre logs for export errors. |
 
 See the release's
-[observability reference](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/fibre/cmd/README.md#observability)
+[observability reference](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/fibre/cmd/README.md#observability)
 for more details.
 
 ---
@@ -4219,12 +4881,12 @@ Every 6 months, the Celestia Foundation will distribute a portion of the Foundat
 - The bottom 7 validators renew every 6 months.
 - Open slots may be filled by existing Cohort members up for renewal or new applicants.
 
-| Cohort   | Cohort Size | Delegation Duration | Renewal By Cohort |
-| -------- | ----------- | ------------------- | ----------------- |
-| Cohort 9 | 35          | 12 months           |  Cohort 11          |
-| Cohort 10 | 7          | 6 months           |  Cohort 11          |
-| Cohort 11 | 35          | 12 months           |  Cohort 13         |
-| Cohort 12 | 7          | 6 months           |  Cohort 13         |
+| Cohort    | Cohort size | Delegation duration | Renewal by cohort | Applications open | Applications close | Delegation begins |
+| --------- | ----------- | ------------------- | ----------------- | ----------------- | ------------------ | ----------------- |
+| Cohort 9  | 35          | 12 months           | Cohort 11         | 1 October 2026    | 1 November 2026    | 1 December 2026   |
+| Cohort 10 | 7           | 6 months            | Cohort 11         | 1 April 2027      | 1 May 2027         | 1 June 2027       |
+| Cohort 11 | 35          | 12 months           | Cohort 13         | 1 October 2027    | 1 November 2027    | 1 December 2027   |
+| Cohort 12 | 7           | 6 months            | Cohort 13         | 1 April 2028      | 1 May 2028         | 1 June 2028       |
 
 This structure allows for a steady flow of both existing applicants and new applicants to maintain a stable set of participants in the program.
 
@@ -4345,6 +5007,10 @@ Only these four architectures are officially tested and supported.
 
 ## Linux requirements
 
+celestia-app v9 and later multiplexer binaries require glibc 2.38 or later. Use Ubuntu
+24.04 LTS or an equivalent Linux distribution. Ubuntu 22.04 and older are not
+supported and the binary will fail to start with a glibc version mismatch.
+
 Check the installed glibc version before installing or upgrading:
 
 ```bash
@@ -4352,7 +5018,7 @@ ldd --version
 ```
 
 See the [celestia-app v9 release notes](https://github.com/celestiaorg/celestia-app/blob/v9.0.4/docs/release-notes/release-notes.md#supported-operating-systems)
-and the [Mocha release requirements](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)
+and the [Mocha release requirements](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
 for the supported operating system details.
 
 ## Building binary from source
@@ -4390,7 +5056,7 @@ terminal:
 bash -c "$(curl -sL https://docs.celestia.org/celestia-app.sh)"
 
 # Install specific version, latest version for Mocha testnet in this example
-bash -c "$(curl -sL https://docs.celestia.org/celestia-app.sh)" -- -v v10.2.0-mocha
+bash -c "$(curl -sL https://docs.celestia.org/celestia-app.sh)" -- -v v10.4.0-mocha
 ```
 
 Follow the instructions in the terminal output to choose your installation
@@ -4522,9 +5188,10 @@ scrape_configs:
 Note, that Prometheus by default runs its server on `:9090`.
 If you are running this on the same machine as your consensus
 node, it will collide with gRPC which runs on the same port.
-To avoid this, either switch off gRPC (if it's not needed),
-change the gRPC port in `app.toml`, or run Prometheus on a
-different port e.g. `--web.listen-address="0.0.0.0:8000"`
+To avoid this, change the gRPC port in `app.toml`, or run Prometheus on a
+different port, _e.g._ `--web.listen-address="0.0.0.0:8000"`.
+When `[api]` has `enable = true` in `app.toml`, `[grpc]` must also
+have `enable = true` because the REST API uses Cosmos SDK gRPC.
 
 To run the prometheus server:
 
@@ -4696,6 +5363,8 @@ Run the following:
 celestia bridge init --core.ip <URI> --core.port <port>
 ```
 
+Refer to [the ports section of the celestia-node troubleshooting page](/operate/maintenance/troubleshooting#ports) for information on which ports are required to be open on your machine.
+
 When connecting your bridge node to a localhost consensus node, ensure that gRPC
 is properly configured in your consensus node's `app.toml` file. The `[grpc]`
 section should have `enable = true` and the appropriate address setting for the
@@ -4722,6 +5391,19 @@ Follow
 You have successfully set up a bridge node that is syncing with the network.
 
 ## Run the validator node
+
+> **Fibre signer compatibility:** Before starting an upgraded celestia-app build
+> that includes
+> [celestia-core #3379](https://github.com/celestiaorg/celestia-core/pull/3379),
+> check `priv_validator_grpc_laddr` in `config/config.toml` if you use the signing
+> service. The hostname `localhost` no longer counts as loopback. For local
+> plaintext signing, replace `localhost:26669` with `127.0.0.1:26669` or
+> `[::1]:26669`, preserving your port, and update Fibre's signer address to match.
+> Without mutual TLS or an explicit insecure override, a hostname or non-loopback
+> address prevents the node from starting. Follow the
+> [Fibre signing connection guide](/operate/consensus-validators/fibre#configure-the-signing-connection)
+> for configuration and restart instructions. This check applies to the
+> priv-validator signing service, not application gRPC in `app.toml`.
 
 In order to create a validator on-chain, follow the steps below.
 
@@ -5055,6 +5737,9 @@ You can find the address by running the following command:
 ./cel-key list --node.type bridge --keyring-backend test --p2p.network <network>
 ```
 
+You do not need to declare a network for Mainnet Beta. Refer to
+[the chain ID section on the troubleshooting page for more information](/operate/maintenance/troubleshooting).
+
 You can get testnet tokens from:
 
 - [Mocha](/operate/networks/mocha-testnet)
@@ -5212,14 +5897,20 @@ If you have a custom network you can export `CELESTIA_CUSTOM`, which will
 look something like:
 
 ```bash
-
+export BRIDGE="/ip4/<ip-address>/tcp/2121/p2p/<node-ID>"
+export GENESIS_HASH=<genesis-hash>
+export NETWORK=<network-name>
+export CELESTIA_CUSTOM="${NETWORK}:${GENESIS_HASH}:${BRIDGE}"
 ```
 
 Query your node ID [from the CLI](/operate/data-availability/light-node/advanced#find-your-node-id).
 These values with examples would look like:
 
 ```bash
-
+export BRIDGE="/ip4/151.115.14.33/tcp/2121/p2p/12D3KooWKEeRtzVMPUdxYsZo2edqps6mS67n6LT5mPdULSkPSxBQ"
+export GENESIS_HASH=580B3DFF8A7C716968161D91116A1E171F486298D582874E93714E489C9E6E88
+export NETWORK=custom
+export CELESTIA_CUSTOM="${NETWORK}:${GENESIS_HASH}:${BRIDGE}"
 ```
 
 Then, start your node with:
@@ -5248,6 +5939,8 @@ Check the [latest celestia-app release's `go.mod`](https://github.com/celestiaor
 ## Hermes
 
 [Hermes](https://github.com/informalsystems/hermes) is an open-source Rust relayer. Follow the [Hermes Quick Start](https://hermes.informal.systems/quick-start/) to install, then verify with `hermes version`.
+
+Hermes currently doesn't support configuring Tendermint `CompatMode` in chain config. Use Hermes [v1.7.0+](https://github.com/informalsystems/hermes/releases/tag/v1.7.0), which falls back to Tendermint `CompatMode` v0.34 (compatible with Celestia).
 
 ### Configuration
 
@@ -5481,17 +6174,14 @@ Pre-built binaries are available for:
 - Operating systems: Darwin (Apple), Linux
 - Architectures: x86_64 (amd64), arm64
 
-### Installation Options
+### Installation options
 
-You can install the latest version or specify a particular version:
+Pass the `-v` flag to install the recommended version for your network:
 
-```bash
-# Install latest version
-bash -c "$(curl -sL https://docs.celestia.org/celestia-node.sh)"
-
-# Install specific version, Mainnet Beta in this example
-bash -c "$(curl -sL https://docs.celestia.org/celestia-node.sh)" -- -v v0.33.2
-```
+If you omit `-v`, the script installs the
+[latest stable GitHub release](https://github.com/celestiaorg/celestia-node/releases/latest).
+This does not select a version for your network and excludes releases marked as
+pre-releases, including Mocha releases. Use the network-specific command above.
 
 The script will:
 
@@ -5530,7 +6220,8 @@ we recommend the [quick-start guide](/operate/data-availability/light-node/quick
 
 ## Upgrading your binary
 
-To upgrade your binary, install the latest version using the instructions above.
+To upgrade your binary, install the recommended version for your network using
+the instructions above.
 
 When upgrading from a version earlier than celestia-node v0.31.3 to v0.31.3 or later, update the node configuration after replacing the binary and before starting the node:
 
@@ -5582,6 +6273,9 @@ Where `/path-to-directory` contains `xtoken.json` (recommended: `chmod 600`):
 To use a non-default key, make sure the key exists in your node store and pass
 `--keyring.keyname` on `start`:
 
+For key creation, backup, import/recover, and Docker setups, see
+[Create a wallet with celestia-node](/operate/keys-wallets/celestia-node-key).
+
 ---
 
 ## Run the light node with SystemD
@@ -5597,6 +6291,9 @@ SystemD:
 Setting and syncing to a trusted height and hash means your light node will not
 sample the entire chain from genesis. This is useful when you want to sync your
 light node quickly.
+
+This adds the trust assumption that you trust the source of the height and
+hash.
 
 Celestia also supports initializing from a trusted hash via
 [trusted hash recovery](/operate/maintenance/trusted-hash-recovery).
@@ -5656,6 +6353,10 @@ parallel submission by setting `TxWorkerAccounts` to a value greater than 1.
 - Higher throughput for applications that can handle unordered transactions
 
 **Use case:** High-throughput, unordered workflows
+
+  **Important:** When retrieving blobs submitted in parallel mode, you must
+  track the height, namespace, and commitment for each blob submission, as you
+  won't know which subaccount was used.
 
 **Subaccount management:**
 
@@ -5879,6 +6580,30 @@ celestia <node-type> start --metrics.tls=false --metrics \
     --metrics.endpoint <URI> \
     --p2p.network <network> --core.ip <URI> --core.port <port>
 ```
+
+## DAS sampling head lag
+
+Use `das_sampling_head_lag` to monitor how far data availability sampling (DAS)
+is behind the network head known to your node. Enable metrics with the flags
+above and view the gauge in your metrics backend.
+
+> This metric requires a celestia-node build that includes
+> [celestia-node #5307](https://github.com/celestiaorg/celestia-node/pull/5307).
+> The change is merged but is not included in a published release as of
+> 5 October 2026.
+
+The gauge reports `max(NetworkHead - SampledChainHead, 0)` in headers.
+`SampledChainHead` is the head of the continuously sampled chain. For example,
+a network head of 100 and a sampled chain head of 90 produce a lag of 10.
+This measures a difference in height, not elapsed time.
+
+A sustained or growing positive value means sampling remains behind the node's
+known network head; check the node logs for sampling errors. A value of zero means
+the sampled chain head has reached or exceeded that known head. It does not
+by itself prove the node has the latest network header.
+
+If the metric is missing, check that your build includes the change and that
+metrics are enabled and reaching your collector.
 
 ## Metrics endpoint design considerations
 
@@ -6404,6 +7129,16 @@ private key is encrypted at rest.
 | `test` | **Unencrypted on disk, with no password** | Local development and testnets |
 | `memory` | Process memory, discarded when the process exits | Throwaway scripts |
 
+The Cosmos SDK describes `test` as "a password-less variation of the file
+backend. Keys are stored unencrypted on disk" and states that it is "not
+recommended for use in production environments". Anyone who can read the
+directory can spend from the account and sign on behalf of the validator.
+
+Do not use `test` for a wallet that holds real funds or operates a Mainnet Beta
+validator. Use a hardware wallet, or a
+[multisig account](/operate/keys-wallets/multisig) so that no single key can
+move funds on its own.
+
 You can set the backend for a single command with `--keyring-backend`, which is
 what the examples in these docs do. Pass it on every command that touches a key:
 without the flag, `celestia-appd` falls back to the default backend and will not
@@ -6418,6 +7153,8 @@ You can pick whatever wallet name you want. The examples below and the
 `$VALIDATOR_WALLET`, so set it to the name you chose:
 
 ```sh
+export VALIDATOR_WALLET=validator
+export KEYRING_BACKEND=file # use `test` only on a testnet
 
 celestia-appd keys add $VALIDATOR_WALLET \
   --keyring-backend=$KEYRING_BACKEND \
@@ -6496,6 +7233,8 @@ celestia-appd start
 celestia-appd query bank balances celestia1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
+Refer to the ports section of the celestia-node troubleshooting page for information on which ports are required to be open on your machine.
+
 ---
 Title: Create a wallet with celestia-node
 URL: https://docs.celestia.org/operate/keys-wallets/celestia-node-key.md
@@ -6552,6 +7291,8 @@ For the purpose of this guide, we will use the `make cel-key` command.
 
 To generate a key for a Celestia node, select
 the tab for your node type:
+
+You do not need to declare a network for Mainnet Beta. Refer to [the chain ID section on the troubleshooting page for more information](/operate/maintenance/troubleshooting).
 
 ```bash
 ./cel-key add <key-name> --keyring-backend test --node.type bridge \
@@ -6753,6 +7494,8 @@ ghcr.io/celestiaorg/celestia-node:v0.34.2-mocha celestia light start \
 --core.ip public-endpoint.celestia-mocha.quiknode.pro --core.port 9090 \
 --core.tls --p2p.network mocha
 ```
+
+Refer to [the ports section of the celestia-node troubleshooting page](/operate/maintenance/troubleshooting#ports) for information on which ports are required to be open on your machine. You do not need to declare a network for Mainnet Beta. Refer to [the chain ID section on the troubleshooting page for more information](/operate/maintenance/troubleshooting).
 
 List active containers in another window with:
 
@@ -6968,7 +7711,7 @@ And set the location as the `CELESTIA_APP_HOME` variable. We will use this
 for the remainder of the devnet section.
 
 ```bash
-
+export CELESTIA_APP_HOME=/var/folders/_8/ljj6hspn0kn09qf9fy8kdyh40000gn/T/celestia_app_XXXXXXXXXXXXX.XV92a3qx
 ```
 
 > **Note:** This does not replace the `celestia-appd` binary that was installed with `celestia-appd`, but builds and runs one in the `$HOME/celestia-app/build` directory.
@@ -7046,7 +7789,8 @@ Set the keys as variables, using the validator address as the `FROM_ADDRESS`
 and the vesting-key as the `TO_ADDRESS`.
 
 ```bash
-
+export FROM_ADDRESS=celestia1adgkqcmzuxvg7x5avx8a8rjwpmxgzex3ztef6j
+export TO_ADDRESS=celestia127fpaygehlsgjdknwvlr2mux7h5uvhkxktgkc5
 ```
 
 #### Create your devnet vesting account
@@ -7233,7 +7977,8 @@ celestia-appd keys list
 Set your keys as variables:
 
 ```bash
-
+export FROM_ADDRESS=address_of_origin_account
+export TO_ADDRESS=address_of_vesting_account
 ```
 
 ### Fund your account
@@ -7252,7 +7997,7 @@ If you are running a production application, use a production endpoint.
 Set your RPC URL:
 
 ```bash
-
+export RPC_URL=https://public-endpoint.celestia-mocha.quiknode.pro
 ```
 
 We will use a few flags in our vesting command that are different than the
@@ -7427,7 +8172,7 @@ is optional and does not enable pruning. When enabled, it compacts the pruned
 range in the background. To compact an existing blockstore once, stop the node
 and run `celestia-appd compact-blockstore`.
 
-See the [Mocha release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)
+See the [Mocha release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
 for details. Follow the upgrade announcement for your network before replacing
 its binary.
 
@@ -7834,6 +8579,8 @@ celestia <node-type> start --p2p.network <network> \
     --core.ip <URI> --core.port <port>
 ```
 
+Refer to [the ports section of this page](#ports) for information on which ports are required to be open on your machine.
+
 > **Note:** It is advised before switching networks to reinitialize your node via `init` command. This is due to an old config being present. Re-initialisation will reset the config.
 
 ### Chain ID
@@ -7985,6 +8732,8 @@ Error: nodebuilder/share: interval must be positive
 
 You can re-initialize your node's config with the following commands:
 
+Save your config so custom values are not lost.
+
 Run the following command to update your config:
 
 ```bash
@@ -7993,6 +8742,8 @@ celestia <node-type> config-update --p2p.network <network>
 
 This will pull in any new values from new configuration
 and merge them into the existing configuration.
+
+After using the `config-update` command, double-check that your custom values are preserved.
 
 Then, to start your node again:
 
@@ -8406,6 +9157,7 @@ The following table lists community-provided consensus node endpoints that you c
 | --------------- | --------------------------------------- | --------------------------------------- | ----------------------------------------- | -------------------------------------------------------- |
 | AlphaB          | `rpc-celestia.alphab.ai`               | `api-celestia.alphab.ai`               | `rpc-celestia.alphab.ai:9090`             | -                                                        |
 | CitizenWeb3     | `rpc.celestia.citizenweb3.com`          | `api.celestia.citizenweb3.com`          | `grpc.celestia.citizenweb3.com:443`       | -                                                        |
+| Cumulo          | `celestia.cumulo.org.es`                | `celestia.api.cumulo.org.es`            | `celestia.grpc.cumulo.org.es:443`         | `wss://celestia.cumulo.org.es/websocket`                 |
 | ITRocket        | `celestia-mainnet-rpc.itrocket.net:443` | `celestia-mainnet-api.itrocket.net:443` | `celestia-mainnet-grpc.itrocket.net:443`  | -                                                        |
 | kjnodes         | `celestia.rpc.kjnodes.com`              | `celestia.api.kjnodes.com`              | `celestia.grpc.kjnodes.com:443`           | -                                                        |
 | lunaroasis      | `rpc.lunaroasis.net`                    | -                                       | `grpc.lunaroasis.net:443`                 | -                                                        |
@@ -8420,6 +9172,12 @@ The following table lists community-provided consensus node endpoints that you c
 ### Connecting DA nodes to consensus nodes
 
 Data availability (DA) nodes need to connect to consensus nodes to sync blocks and access state. When starting a DA node, you'll need to provide a consensus node endpoint using the `--core.ip` parameter and the port.
+
+Example command for starting a DA node with a consensus endpoint:
+
+```bash
+celestia <da_type> start --core.ip <consensus_node_url> --core.port <port>
+```
 
 You can use the [public endpoint](#public-rpc-endpoint) or any of the RPC
 endpoints from the [community consensus endpoints](#community-consensus-endpoints)
@@ -8482,6 +9240,11 @@ To check the current status, uptime, and health of all community endpoints, visi
 
 This is an essential resource when selecting endpoints for your nodes or applications.
 
+For a multi-region view of public consensus RPC endpoints, use
+[Cumulo's check_d Endpoint Scan](https://cumulo.pro/services/celestia/rpcscan.php).
+It shows endpoint health, block height, historical reliability, and response
+latency from probes in the United States, Europe, Canada, and Singapore.
+
 ## Analytics
 
 The following websites provide analytics for Celestia:
@@ -8531,6 +9294,11 @@ to show you how to connect to them.
 
 ## Mocha-5 network restart
 
+Mocha-5 is a new chain that started at height 1; it is not an in-place
+upgrade from `mocha-4`. Existing consensus operators must initialize
+`mocha-5` in a separate home directory, as described below. You do not
+need to keep your own copy of `mocha-4` chain data.
+
 Mocha-5 is live. It is a hardspoon of `mocha-4` at block
 [13205115](https://celestia.explorers.guru/block/13205115): only account
 balances recorded at that height carried over. Transactions and balance
@@ -8561,6 +9329,12 @@ expected to retain `mocha-4` data. An exported copy of the final
 
 If you depend on specific `mocha-4` transaction history, export what you
 need before the September 1, 2026 shutdown.
+
+An archival `mocha-4` node snapshot taken on 2026-08-19 is available at
+[snaps.qubelabs.io/celestia/mocha-4_2026-08-19.tar](https://snaps.qubelabs.io/celestia/mocha-4_2026-08-19.tar).
+Note that it is approximately 12.3 TB. Follow the
+[status page announcement](https://status.celestia.org/incidents/nc1nkb54)
+for updates.
 
 ### Prepare a separate consensus-node home
 
@@ -8645,7 +9419,7 @@ to the correct instructions on this page on how to connect to Mocha.
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
 | celestia-node  | [v0.34.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha) |
-| celestia-app   | [v10.2.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)   |
+| celestia-app   | [v10.4.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)   |
 
 ## Network status
 
@@ -8657,6 +9431,12 @@ and service availability, visit the
 
 For the current Mocha testnet network constants, see
 [mocha.celenium.io/constants](https://mocha.celenium.io/constants).
+
+Some community infrastructure is still migrating from `mocha-4` to
+`mocha-5`. The endpoints listed below were verified to serve `mocha-5`
+on September 1, 2026. Services still serving `mocha-4` are omitted until
+they migrate. Explorers, faucets, indexers, and analytics services may
+also still show `mocha-4` data.
 
 ## RPC for DA bridge, full, and light nodes
 
@@ -8733,6 +9513,11 @@ Celestia network. The default port is 26657.
 - `rpc-2.testnet.celestia.nodes.guru`
 - `celestia-testnet-rpc.itrocket.net:443`
 
+For a multi-region view of public consensus RPC endpoints, use
+[Cumulo's check_d Endpoint Scan for Mocha](https://cumulo.pro/services/celestia_mocha/rpcscan.php).
+It shows endpoint health, block height, historical reliability, and response
+latency from probes in the United States, Europe, Canada, and Singapore.
+
 ## Community API endpoints
 
 The API endpoint is to allow users to interact with the REST API in Cosmos
@@ -8798,6 +9583,9 @@ The following websites provide visual maps of Celestia DA nodes:
 
 ## Explorers
 
+Most explorers are still indexing `mocha-4` and will switch to `mocha-5`
+as they migrate.
+
 There are several explorers you can use for Mocha:
 
 - `https://mintscan.io/celestia-testnet/`
@@ -8861,7 +9649,7 @@ with the validator community.
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
 | celestia-node  | [v0.34.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha) |
-| celestia-app   | [v10.2.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)   |
+| celestia-app   | [v10.4.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)   |
 
 ## Network upgrades
 

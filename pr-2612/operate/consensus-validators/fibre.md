@@ -5,10 +5,10 @@ celestia-app. Clients upload blob shards to validator-operated Fibre servers
 and download them from there, and each server's storage budget is derived from
 the validator's stake. Starting with app version 10, every bonded validator is
 expected to run one. See the
-[Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/fibre/cmd/README.md)
+[Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/fibre/cmd/README.md)
 for the protocol details.
 
-The examples use the Mocha release `v10.2.0-mocha`, its
+The examples use the Mocha release `v10.4.0-mocha`, its
 matching Fibre binary, and the Mocha chain ID. Substitute the values for your
 network.
 
@@ -16,12 +16,17 @@ Mocha has activated app version 10. Bonded Mocha validators can now start Fibre
 and register their public address. See the
 [Mocha-5 upgrade history](/operate/maintenance/network-upgrades#mocha-5).
 
+Installing a v10 binary does not activate app version 10 on the chain. Prepare
+the binaries and configuration before activation, then start Fibre and register
+its address after activation. Follow the upgrade announcement for your network
+for timing.
+
 ## Prerequisites
 
 - A running, synced [validator node](/operate/consensus-validators/validator-node)
   in the bonded validator set. Fibre derives its storage budget from your stake.
 - The v10 multiplexer celestia-app binary installed before activation. Follow the
-  [release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.2.0-mocha)
+  [release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
   and check the [celestia-app installation requirements](/operate/consensus-validators/install-celestia-app#linux-requirements).
 - Separate disks for Fibre data and celestia-app data, and enough memory for
   the receive buffers described in [Plan capacity](#plan-capacity).
@@ -31,7 +36,7 @@ and register their public address. See the
   requests to the KMS.
 
 Any KMS may be used if it meets these requirements. Review the release's
-[KMS policy](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/docs/release-notes/release-notes.md#key-management-systems-kms)
+[KMS policy](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/docs/release-notes/release-notes.md#key-management-systems-kms)
 before choosing or upgrading a signer. It describes Horcrux's maintenance
 risks and the risk of double signing and slashing from incorrect KMS
 configuration.
@@ -82,7 +87,7 @@ Download the Fibre archive and checksums from the same release as celestia-app.
 For Linux x86_64:
 
 ```bash
-fibre_version=v10.2.0-mocha
+fibre_version=v10.4.0-mocha
 curl -fLO "https://github.com/celestiaorg/celestia-app/releases/download/$fibre_version/fibre_Linux_x86_64.tar.gz"
 curl -fLO "https://github.com/celestiaorg/celestia-app/releases/download/$fibre_version/checksums.txt"
 sha256sum --ignore-missing --check checksums.txt
@@ -97,13 +102,13 @@ Place the verified binary on your executable path before using `fibre` below.
 ### Build from source
 
 Install Git, Make, a C compiler, and the Go version required by the release's
-[`go.mod`](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/go.mod).
+[`go.mod`](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/go.mod).
 Clone the same release used by your celestia-app node:
 
 ```bash
-git clone --branch v10.2.0-mocha --depth 1 https://github.com/celestiaorg/celestia-app.git celestia-app-fibre
+git clone --branch v10.4.0-mocha --depth 1 https://github.com/celestiaorg/celestia-app.git celestia-app-fibre
 cd celestia-app-fibre
-make build-fibre-server VERSION=v10.2.0-mocha
+make build-fibre-server VERSION=v10.4.0-mocha
 ./build/fibre version
 ```
 
@@ -151,6 +156,20 @@ In `config/config.toml`, edit the top-level setting before the first section:
 priv_validator_grpc_laddr = "127.0.0.1:26669"
 ```
 
+> **Signer address compatibility:** In celestia-app builds that include
+> [celestia-core #3379](https://github.com/celestiaorg/celestia-core/pull/3379),
+> the hostname `localhost` no longer counts as loopback for
+> `priv_validator_grpc_laddr`. Only loopback IP literals qualify. Before upgrading,
+> replace `localhost:26669` with `127.0.0.1:26669` or `[::1]:26669` for a local
+> plaintext signer, preserving your configured port. Update Fibre's
+> `--signer-grpc-address` or `signer_grpc_address` to match, then restart both
+> services. The node refuses to start with a hostname or non-loopback address
+> unless mutual TLS is fully configured or `priv_validator_grpc_allow_insecure`
+> is explicitly enabled. Use loopback IPs for local signing rather than bypassing
+> the check; for remote signing, follow the
+> [mutual TLS setup](#connections-between-fibre-and-your-validator)
+> and use binaries with TLS support on both sides.
+
 Fresh v10 configs use `26669` to avoid a port clash with TMKMS. Existing
 configs may still have `26659`, a custom address, or an empty value, which
 disables the service. Replacing the binary does not rewrite the saved value.
@@ -164,6 +183,12 @@ Application and signing addresses, including Fibre's connection options, use
 Restart the node after editing and confirm it resumes syncing and signing.
 Check service-manager flags for overrides. If deployment tooling manages the
 configuration, update its source templates too.
+
+The `127.0.0.1` addresses shown above allow unencrypted connections on the
+same host. If Fibre connects from another host or through a container network,
+configure [mutual TLS for the signing connection](#connections-between-fibre-and-your-validator).
+Keep the application and signing ports private. Open Fibre's client port
+(default `7980`) so clients can reach it.
 
 ## Start after activation
 
@@ -190,7 +215,13 @@ fibre start \
 Use your actual node addresses if different. On first start, Fibre creates
 `<fibre_home>/config/server_config.toml`. The corresponding keys are `app_grpc_address`,
 `signer_grpc_address`, and `server_listen_address`; command-line flags override
-the file. Check the startup log for the chain ID and connected addresses.
+the file. Fibre rejects unknown keys and tables instead of silently ignoring
+them. If startup reports an unknown field, correct or remove the reported
+setting before restarting.
+
+Check the startup log for the chain ID, connected addresses, and effective
+storage backend. When object storage is configured, the log also includes its
+canonical bucket, prefix, chain ID, and validator address.
 
 ### Connection limits
 
@@ -204,6 +235,137 @@ max_concurrent_streams = 13
 
 Add either key if it is missing from an existing file, then restart Fibre for
 the change to take effect.
+
+### Object storage
+
+Object storage is supported in `v10.4.0-mocha`. The older `v10.2.0-mocha`
+binary ignores `storage_backend` and `[object_storage]` and continues writing
+shards to local disk. Check `fibre version` before continuing. If upgrading,
+follow the [release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
+to replace both celestia-app and Fibre, sync their configuration, and check
+[signer TLS compatibility](#connections-between-fibre-and-your-validator).
+Use the matching binaries from [Install Fibre](#install-fibre).
+
+Fibre stores blob shards on local disk by default. To store them in
+S3-compatible object storage instead, such as Amazon S3 or Cloudflare R2, set
+the backend and bucket in `<fibre_home>/config/server_config.toml`:
+
+```toml
+storage_backend = "object"
+
+[object_storage]
+endpoint = "https://s3.us-east-1.amazonaws.com"
+region = "us-east-1"
+bucket = "<bucket_name>"
+prefix = "fibre"
+```
+
+Use your bucket's endpoint and region. For Cloudflare R2, use its S3 API
+endpoint and `region = "auto"`. Fibre's metadata database still needs
+persistent local storage.
+
+Fibre reads the bucket credentials from its environment through the standard
+AWS variables and refuses to start if none are found. There is no credentials
+field in the config file. To provide them to a systemd service:
+
+1. Create an access key in your storage provider with read, write, and delete
+   permissions on the bucket. On Amazon S3, create an IAM user with
+   `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject`, and `s3:ListBucket` on
+   the bucket. On Cloudflare R2, create an API token with **Object Read &
+   Write** permission scoped to the bucket.
+
+2. Save the key in a file readable only by root:
+
+   ```bash
+   sudo mkdir -p /etc/fibre
+   sudo tee /etc/fibre/s3.env > /dev/null <<'EOT'
+   AWS_ACCESS_KEY_ID=<access_key_id>
+   AWS_SECRET_ACCESS_KEY=<secret_access_key>
+   EOT
+   sudo chmod 0600 /etc/fibre/s3.env
+   ```
+
+   If AWS gave you temporary credentials, add a third line with
+   `AWS_SESSION_TOKEN=<session_token>`.
+
+3. Point the Fibre service at the file. Run `sudo systemctl edit fibre.service`,
+   using your service name if it differs, and add:
+
+   ```ini
+   [Service]
+   EnvironmentFile=/etc/fibre/s3.env
+   ```
+
+4. Restart Fibre and confirm it started:
+
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl restart fibre.service
+   sudo systemctl status fibre.service
+   ```
+
+To rotate keys, update the file and restart Fibre. If the host already has
+credentials from an IAM role or the shared AWS credentials file, Fibre uses
+them and you can skip the environment file.
+
+### Switching shard storage backends
+
+Fibre can store blob shards locally or in S3-compatible object storage, such
+as Amazon S3 or Cloudflare R2. Create the bucket in the same region as the
+Fibre host. A bucket in another region adds latency to every upload and
+download. Changing `storage_backend` between `local` and `object` changes
+where new shards are stored. Existing shards stay on their original backend.
+
+**After switching back to `local`, keep access to object storage until pruning finishes.**
+Keep `[object_storage]` configured and
+preserve access to the same bucket and prefix with valid credentials until
+all object-stored shards have been pruned. Do not delete the retained objects
+or change the bucket or prefix while those shards remain.
+
+Fibre still needs the bucket to read and prune retained shards, even in local
+mode. Removing the object storage configuration or credentials prevents
+startup while those shards remain.
+
+### Migrate to another bucket
+
+At startup, Fibre records the object endpoint, bucket, prefix, chain ID, and
+validator address it uses. While object shards remain, starting with a
+different endpoint, bucket, or prefix fails with `object namespace mismatch`,
+in either storage mode. This stops retained shards from becoming unreachable
+by accident. If it happens, restore the previous configuration to recover
+access. To move the shards on purpose:
+
+1. Stop Fibre, so no new shards are written to the old bucket during the copy.
+
+2. Create the new bucket in the same region as the Fibre host.
+
+3. Copy every object under the old prefix to the new bucket with the same key
+   layout. Fibre looks shards up by key, so a different layout makes them
+   unavailable. For example, with the AWS CLI:
+
+   ```bash
+   aws s3 sync s3://<old_bucket>/<old_prefix> s3://<new_bucket>/<new_prefix>
+   ```
+
+4. Set the new endpoint, bucket, or prefix in `[object_storage]` in
+   `<fibre_home>/config/server_config.toml`. If the new bucket uses different
+   keys, update the [credentials](#object-storage) too.
+
+5. Start Fibre once with `--override-object-namespace` added to your usual
+   start command. Fibre logs the old and new namespaces and records the new
+   one. The flag does not copy or verify objects, so an override before the
+   copy is complete makes shards unavailable and leaves orphaned objects after
+   pruning.
+
+6. Remove the flag and restart Fibre. The flag is not saved in the config
+   file. Leaving it in the start command would accept any future mismatch
+   without protection.
+
+7. Once Fibre serves from the new bucket, delete the old bucket and revoke its
+   credentials.
+
+After all object shards are pruned, changing the bucket or prefix needs no
+override.
 
 ## Register the public address
 
@@ -247,10 +409,54 @@ rather than the address, the registered host can be an IP address or a DNS
 name. Restart Fibre after changing `--signer-grpc-address` so the certificate
 is endorsed with the right key.
 
-The application and signing connections are not encrypted. Keep them on
-loopback or a trusted private network, and expose only the client port. See the
-[Fibre server specification](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/specs/src/fibre_server.md)
-for the endorsement scheme.
+### Connections between Fibre and your validator
+
+The default signing address, `127.0.0.1:26669`, allows unencrypted connections
+from the same host. No TLS certificates or extra flags are needed when Fibre
+connects to this address.
+
+For a remote signing connection, use binaries with mTLS support. The
+[`v10.4.0-mocha` release](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
+includes this support in both celestia-app and Fibre. The `v10.2.0-mocha`
+release does not; keep its signing connection on `127.0.0.1`.
+
+If Fibre connects from another host or through a container network, configure
+mutual TLS (mTLS) on both sides. mTLS encrypts the connection and uses
+certificates to authenticate the node and Fibre. Without it, the node refuses
+to start with a signing address such as `0.0.0.0:26669`, and Fibre refuses to
+connect to a remote signer.
+
+Follow the [core privval TLS guide](https://github.com/celestiaorg/celestia-core/blob/main/docs/guides/privval-grpc-tls.md)
+to generate certificates and configure the node and Fibre. The server
+certificate must match the IP address or DNS name Fibre connects to. Restart
+both services after configuring or replacing certificates.
+
+On Fibre, set all three certificate flags together when running `fibre start`,
+or set their equivalent keys in `server_config.toml`:
+
+| Fibre flag | Configuration key | File |
+|---|---|---|
+| `--signer-grpc-ca-file` | `signer_grpc_ca_file` | CA certificate used to verify the node |
+| `--signer-grpc-cert-file` | `signer_grpc_cert_file` | Fibre's client certificate |
+| `--signer-grpc-key-file` | `signer_grpc_key_file` | Private key for Fibre's client certificate |
+
+These flags configure Fibre only; configure the node's certificates using
+the guide above as well.
+
+Keep the signing port on a private network and restrict access to the Fibre
+host. For local development only, `--privval-grpc-allow-insecure` on the node
+and `--signer-grpc-allow-insecure` on Fibre allow remote connections without
+TLS. Do not use these overrides in production: anyone who can reach the
+unprotected endpoint can request signatures from the validator key.
+
+These settings protect the signing connection only. The application gRPC
+connection shown in this guide is still unencrypted; keep it on the same host
+or a trusted private network. Fibre's automatic client TLS does not protect
+either connection.
+
+See the
+[Fibre server specification](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/specs/src/fibre_server.md)
+for details of how clients verify Fibre's certificate.
 
 ## Troubleshoot startup
 
@@ -260,6 +466,9 @@ for the endorsement scheme.
 | Missing Fibre or valaddr services | Wait for app version 10 to activate before starting Fibre or registering. |
 | Application connection refused | Enable `[grpc]` in `app.toml`, restart the node, and check addresses and flag overrides. |
 | Signer connection failed | Match Fibre's signer address to `priv_validator_grpc_laddr`; check for a disabled value or a port conflict. |
+| `loading object storage credentials` | The service did not receive the bucket key. Check the environment file and the `EnvironmentFile=` override in [Object storage](#object-storage), then restart Fibre. |
+| `object namespace mismatch` | The object endpoint, bucket, prefix, chain ID, or validator address changed while object shards remain. Restore the previous bucket settings and node connections, or follow [Migrate to another bucket](#migrate-to-another-bucket) when moving objects. |
+| Configuration decode error reports an unknown field | Correct or remove the reported key or table in `<fibre_home>/config/server_config.toml`, then restart Fibre. |
 | TLS identity verification failed | Check that the signing service holds your validator's consensus key, then restart Fibre after correcting the signer address. |
 | `derived storage budget is 0` warning | The app node reports no stake for your validator. Check that the validator is bonded and that `--app-grpc-address` points at a synced node on the right network. Fibre keeps running and re-derives the budget periodically. |
 | Server runs but no uploads arrive | Check that `query valaddr provider` finds your host, that the registered `host:port` is reachable from outside your network, and that the validator is bonded. Clients only dial registered, bonded validators. |
@@ -267,5 +476,5 @@ for the endorsement scheme.
 
 For logging, metrics, tracing, and profiling, see
 [Fibre monitoring](/operate/consensus-validators/fibre/metrics).
-The [Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/fibre/cmd/README.md)
+The [Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/fibre/cmd/README.md)
 has further configuration details.

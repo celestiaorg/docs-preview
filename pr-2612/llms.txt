@@ -33,6 +33,7 @@ These docs are built with Next.js + Nextra and exported statically. Links below 
 
 - [Client / Go](https://docs.celestia.org/build/post-retrieve-blob/client/go.md)
 - [Client / Rust](https://docs.celestia.org/build/post-retrieve-blob/client/rust.md)
+- [Fibre](https://docs.celestia.org/build/post-retrieve-blob/fibre.md)
 - [Overview](https://docs.celestia.org/build/post-retrieve-blob/overview.md)
 
 ## Build: Private Blockspace

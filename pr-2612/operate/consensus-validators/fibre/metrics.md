@@ -1,6 +1,6 @@
 # Fibre monitoring
 
-This page covers observability in Fibre `v10.2.0-mocha`.
+This page covers observability in Fibre `v10.4.0-mocha`.
 Complete the [server setup](/operate/consensus-validators/fibre) first. Add the
 flags below to your existing start command, keeping your home and node addresses.
 All observability flags apply to every subcommand.
@@ -22,9 +22,9 @@ Fibre sends traces and metrics over OTLP/HTTP to an OpenTelemetry collector,
 such as Grafana Alloy or the OTel Collector. The collector must accept both
 signals and forward them to your tracing and metrics backends. The celestia-app
 repository ships a reference
-[collector configuration](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/observability/docker/otel-collector/config.yml)
+[collector configuration](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/observability/docker/otel-collector/config.yml)
 and a
-[Docker Compose stack](https://github.com/celestiaorg/celestia-app/tree/v10.2.0-mocha/observability/docker)
+[Docker Compose stack](https://github.com/celestiaorg/celestia-app/tree/v10.4.0-mocha/observability/docker)
 with Prometheus, Tempo, and Grafana that you can start from. The stack
 publishes Prometheus on host port `9090`, which the setup guide uses for
 application gRPC. When running it on the validator host, change that mapping
@@ -45,12 +45,12 @@ For example, `https://collector.example.com/otel` sends data to
 ### Grafana dashboard
 
 Import the release's
-[Fibre dashboard JSON](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/observability/docker/grafana/dashboards/fibre.json)
+[Fibre dashboard JSON](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/observability/docker/grafana/dashboards/fibre.json)
 into Grafana. The dashboard expects a Prometheus data source with UID
 `prometheus`; use that UID or update the dashboard to match your data source.
 Client panels need telemetry from Fibre clients as well as the server. The same
 directory has a
-[Fibre runtime dashboard](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/observability/docker/grafana/dashboards/fibre-runtime.json)
+[Fibre runtime dashboard](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/observability/docker/grafana/dashboards/fibre-runtime.json)
 for Go runtime metrics such as memory and goroutines.
 
 To verify the pipeline, start Fibre with `--otel-endpoint` set, open the Fibre
@@ -198,5 +198,5 @@ fibre start \
 | No continuous profiles | Check the Pyroscope endpoint, authentication values, and Fibre logs for export errors. |
 
 See the release's
-[observability reference](https://github.com/celestiaorg/celestia-app/blob/v10.2.0-mocha/fibre/cmd/README.md#observability)
+[observability reference](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/fibre/cmd/README.md#observability)
 for more details.

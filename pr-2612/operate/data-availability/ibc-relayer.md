@@ -13,6 +13,8 @@ Check the [latest celestia-app release's `go.mod`](https://github.com/celestiaor
 
 [Hermes](https://github.com/informalsystems/hermes) is an open-source Rust relayer. Follow the [Hermes Quick Start](https://hermes.informal.systems/quick-start/) to install, then verify with `hermes version`.
 
+Hermes currently doesn't support configuring Tendermint `CompatMode` in chain config. Use Hermes [v1.7.0+](https://github.com/informalsystems/hermes/releases/tag/v1.7.0), which falls back to Tendermint `CompatMode` v0.34 (compatible with Celestia).
+
 ### Configuration
 
 After installing Hermes, edit `config.toml` to add your chains. This tutorial uses:

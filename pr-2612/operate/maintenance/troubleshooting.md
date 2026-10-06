@@ -10,6 +10,8 @@ celestia <node-type> start --p2p.network <network> \
     --core.ip <URI> --core.port <port>
 ```
 
+Refer to [the ports section of this page](#ports) for information on which ports are required to be open on your machine.
+
 > **Note:** It is advised before switching networks to reinitialize your node via `init` command. This is due to an old config being present. Re-initialisation will reset the config.
 
 ### Chain ID
@@ -161,6 +163,8 @@ Error: nodebuilder/share: interval must be positive
 
 You can re-initialize your node's config with the following commands:
 
+Save your config so custom values are not lost.
+
 Run the following command to update your config:
 
 ```bash
@@ -169,6 +173,8 @@ celestia <node-type> config-update --p2p.network <network>
 
 This will pull in any new values from new configuration
 and merge them into the existing configuration.
+
+After using the `config-update` command, double-check that your custom values are preserved.
 
 Then, to start your node again:
 

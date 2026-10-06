@@ -328,6 +328,10 @@ Blob 8 submitted at height 1234568
 
 **Important considerations:**
 
+**Ordering**: Parallel submission does NOT guarantee transaction ordering. Blobs may be included in blocks in a different order than submitted.
+
+**Default account only**: Queued and parallel submission modes always use your default account (`DefaultKeyName`). If you specify a different account in `TxConfig` (via `WithKeyName` or `WithSignerAddress`), it will be ignored and the default account will be used instead.
+
 **Retrieving blobs from parallel submission:**
 
 Since you don't know which subaccount submitted each blob, retrieve them using namespace, height, and commitment:

@@ -1,5 +1,5 @@
 1:"$Sreact.fragment"
-2:I[27603,["2545","static/chunks/c16f53c3-91823fac9848ebbe.js","9300","static/chunks/9300-d6bb8cb609014bbf.js","4503","static/chunks/4503-7529059bc789049f.js","4661","static/chunks/app/learn/celestia-101/retrievability/page-682ef72b7094c0d6.js"],"WrapperWithFooter"]
+2:I[27603,["2545","static/chunks/c16f53c3-91823fac9848ebbe.js","9300","static/chunks/9300-60a39e3be6f00ee9.js","4503","static/chunks/4503-7529059bc789049f.js","4661","static/chunks/app/learn/celestia-101/retrievability/page-6e0dd6197da26a83.js"],"WrapperWithFooter"]
 3:Tff1,# Data retrievability and pruning
 
 The purpose of data availability layers such as Celestia is to ensure
@@ -72,8 +72,8 @@ access historical data.
     sync mechanism.7:X
 c:X
 c:C
-0:{"buildId":"JWv4ZfS6jJQHktioKKYAw","data":[{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"metadata":{"title":"Data retrievability and pruning","filePath":"app/learn/celestia-101/retrievability/page.mdx","timestamp":1790629210000},"toc":[{"value":"Data retrievability and pruning in celestia-node","id":"data-retrievability-and-pruning-in-celestia-node","depth":2},{"value":"Suggested practices for rollups","id":"suggested-practices-for-rollups","depth":2}],"sourceCode":"$3","children":"$L4"}],null,"$L5"]}],"isPartial":"$@6","staleTime":"$7","varyParams":null},{"rsc":"$L8","isPartial":"$@9","staleTime":"$7","varyParams":null},{"rsc":"$La","isPartial":"$@b","staleTime":"$7","varyParams":"$c"},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$7","varyParams":"$c"},{"rsc":"$Lf","isPartial":"$@10","staleTime":"$7","varyParams":"$c"}],"isUpgradeableISRFallback":false,"a":"$@11","rootVaryParams":null,"needsRuntimeRequest":"$@12"}
-13:I[90721,["2545","static/chunks/c16f53c3-91823fac9848ebbe.js","9300","static/chunks/9300-d6bb8cb609014bbf.js","4503","static/chunks/4503-7529059bc789049f.js","4661","static/chunks/app/learn/celestia-101/retrievability/page-682ef72b7094c0d6.js"],"HeadingAnchor"]
+0:{"buildId":"L66lWlFT701gCRijde4zG","data":[{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"metadata":{"title":"Data retrievability and pruning","filePath":"app/learn/celestia-101/retrievability/page.mdx","timestamp":1791278108000},"toc":[{"value":"Data retrievability and pruning in celestia-node","id":"data-retrievability-and-pruning-in-celestia-node","depth":2},{"value":"Suggested practices for rollups","id":"suggested-practices-for-rollups","depth":2}],"sourceCode":"$3","children":"$L4"}],null,"$L5"]}],"isPartial":"$@6","staleTime":"$7","varyParams":null},{"rsc":"$L8","isPartial":"$@9","staleTime":"$7","varyParams":null},{"rsc":"$La","isPartial":"$@b","staleTime":"$7","varyParams":"$c"},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$7","varyParams":"$c"},{"rsc":"$Lf","isPartial":"$@10","staleTime":"$7","varyParams":"$c"}],"isUpgradeableISRFallback":false,"a":"$@11","rootVaryParams":null,"needsRuntimeRequest":"$@12"}
+13:I[90721,["2545","static/chunks/c16f53c3-91823fac9848ebbe.js","9300","static/chunks/9300-60a39e3be6f00ee9.js","4503","static/chunks/4503-7529059bc789049f.js","4661","static/chunks/app/learn/celestia-101/retrievability/page-6e0dd6197da26a83.js"],"HeadingAnchor"]
 18:I[90484,[],"OutletBoundary"]
 19:"$Sreact.suspense"
 1b:I[90484,[],"ViewportBoundary"]
@@ -88,7 +88,7 @@ a:["$","$1","c",{"children":[null,["$","$L1e",null,{"parallelRouterKey":"childre
 d:["$","$1","c",{"children":[null,["$","$L1e",null,{"parallelRouterKey":"children","template":["$","$L1f",null,{}]}]]}]
 f:["$","$1","c",{"children":[null,["$","$L1e",null,{"parallelRouterKey":"children","template":["$","$L1f",null,{}]}]]}]
 12:true
-20:I[98500,["2545","static/chunks/c16f53c3-91823fac9848ebbe.js","9300","static/chunks/9300-d6bb8cb609014bbf.js","4503","static/chunks/4503-7529059bc789049f.js","4661","static/chunks/app/learn/celestia-101/retrievability/page-682ef72b7094c0d6.js"],""]
+20:I[98500,["2545","static/chunks/c16f53c3-91823fac9848ebbe.js","9300","static/chunks/9300-60a39e3be6f00ee9.js","4503","static/chunks/4503-7529059bc789049f.js","4661","static/chunks/app/learn/celestia-101/retrievability/page-6e0dd6197da26a83.js"],""]
 14:["$","$L13",null,{"id":"suggested-practices-for-rollups"}]
 15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Rollups may need to access historic data in order to allow new rollup nodes\nto reconstruct the latest state by replaying historical blocks. Once data has\nbeen published on Celestia and guaranteed to have been made available, rollups\nand applications are responsible for storing their historical data."}]
 16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["While it is possible to continue to do this by using the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"GetAll"}]," API method in\ncelestia-node on historic blocks as long as archival nodes exist on the public\nCelestia network, rollup developers should not rely on this as the only method\nto access historical data, as archival nodes serving requests for historical\ndata for free is not guaranteed. Below are some other suggested methods to\naccess historical data."]}]

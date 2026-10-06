@@ -34,6 +34,9 @@ Where `/path-to-directory` contains `xtoken.json` (recommended: `chmod 600`):
 To use a non-default key, make sure the key exists in your node store and pass
 `--keyring.keyname` on `start`:
 
+For key creation, backup, import/recover, and Docker setups, see
+[Create a wallet with celestia-node](/operate/keys-wallets/celestia-node-key).
+
 ---
 
 ## Run the light node with SystemD
@@ -49,6 +52,9 @@ SystemD:
 Setting and syncing to a trusted height and hash means your light node will not
 sample the entire chain from genesis. This is useful when you want to sync your
 light node quickly.
+
+This adds the trust assumption that you trust the source of the height and
+hash.
 
 Celestia also supports initializing from a trusted hash via
 [trusted hash recovery](/operate/maintenance/trusted-hash-recovery).
@@ -108,6 +114,10 @@ parallel submission by setting `TxWorkerAccounts` to a value greater than 1.
 - Higher throughput for applications that can handle unordered transactions
 
 **Use case:** High-throughput, unordered workflows
+
+  **Important:** When retrieving blobs submitted in parallel mode, you must
+  track the height, namespace, and commitment for each blob submission, as you
+  won't know which subaccount was used.
 
 **Subaccount management:**
 

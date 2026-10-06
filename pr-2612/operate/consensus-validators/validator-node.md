@@ -49,6 +49,8 @@ Run the following:
 celestia bridge init --core.ip <URI> --core.port <port>
 ```
 
+Refer to [the ports section of the celestia-node troubleshooting page](/operate/maintenance/troubleshooting#ports) for information on which ports are required to be open on your machine.
+
 When connecting your bridge node to a localhost consensus node, ensure that gRPC
 is properly configured in your consensus node's `app.toml` file. The `[grpc]`
 section should have `enable = true` and the appropriate address setting for the
@@ -75,6 +77,19 @@ Follow
 You have successfully set up a bridge node that is syncing with the network.
 
 ## Run the validator node
+
+> **Fibre signer compatibility:** Before starting an upgraded celestia-app build
+> that includes
+> [celestia-core #3379](https://github.com/celestiaorg/celestia-core/pull/3379),
+> check `priv_validator_grpc_laddr` in `config/config.toml` if you use the signing
+> service. The hostname `localhost` no longer counts as loopback. For local
+> plaintext signing, replace `localhost:26669` with `127.0.0.1:26669` or
+> `[::1]:26669`, preserving your port, and update Fibre's signer address to match.
+> Without mutual TLS or an explicit insecure override, a hostname or non-loopback
+> address prevents the node from starting. Follow the
+> [Fibre signing connection guide](/operate/consensus-validators/fibre#configure-the-signing-connection)
+> for configuration and restart instructions. This check applies to the
+> priv-validator signing service, not application gRPC in `app.toml`.
 
 In order to create a validator on-chain, follow the steps below.
 

@@ -163,6 +163,7 @@ The following table lists community-provided consensus node endpoints that you c
 | --------------- | --------------------------------------- | --------------------------------------- | ----------------------------------------- | -------------------------------------------------------- |
 | AlphaB          | `rpc-celestia.alphab.ai`               | `api-celestia.alphab.ai`               | `rpc-celestia.alphab.ai:9090`             | -                                                        |
 | CitizenWeb3     | `rpc.celestia.citizenweb3.com`          | `api.celestia.citizenweb3.com`          | `grpc.celestia.citizenweb3.com:443`       | -                                                        |
+| Cumulo          | `celestia.cumulo.org.es`                | `celestia.api.cumulo.org.es`            | `celestia.grpc.cumulo.org.es:443`         | `wss://celestia.cumulo.org.es/websocket`                 |
 | ITRocket        | `celestia-mainnet-rpc.itrocket.net:443` | `celestia-mainnet-api.itrocket.net:443` | `celestia-mainnet-grpc.itrocket.net:443`  | -                                                        |
 | kjnodes         | `celestia.rpc.kjnodes.com`              | `celestia.api.kjnodes.com`              | `celestia.grpc.kjnodes.com:443`           | -                                                        |
 | lunaroasis      | `rpc.lunaroasis.net`                    | -                                       | `grpc.lunaroasis.net:443`                 | -                                                        |
@@ -177,6 +178,12 @@ The following table lists community-provided consensus node endpoints that you c
 ### Connecting DA nodes to consensus nodes
 
 Data availability (DA) nodes need to connect to consensus nodes to sync blocks and access state. When starting a DA node, you'll need to provide a consensus node endpoint using the `--core.ip` parameter and the port.
+
+Example command for starting a DA node with a consensus endpoint:
+
+```bash
+celestia <da_type> start --core.ip <consensus_node_url> --core.port <port>
+```
 
 You can use the [public endpoint](#public-rpc-endpoint) or any of the RPC
 endpoints from the [community consensus endpoints](#community-consensus-endpoints)
@@ -238,6 +245,11 @@ To check the current status, uptime, and health of all community endpoints, visi
 - Last seen heights for each endpoint
 
 This is an essential resource when selecting endpoints for your nodes or applications.
+
+For a multi-region view of public consensus RPC endpoints, use
+[Cumulo's check_d Endpoint Scan](https://cumulo.pro/services/celestia/rpcscan.php).
+It shows endpoint health, block height, historical reliability, and response
+latency from probes in the United States, Europe, Canada, and Singapore.
 
 ## Analytics
 
