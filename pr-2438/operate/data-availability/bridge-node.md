@@ -59,10 +59,12 @@ You can find the address by running the following command:
 ./cel-key list --node.type bridge --keyring-backend test --p2p.network <network>
 ```
 
+You do not need to declare a network for Mainnet Beta. Refer to
+[the chain ID section on the troubleshooting page for more information](/operate/maintenance/troubleshooting).
+
 You can get testnet tokens from:
 
 - [Mocha](/operate/networks/mocha-testnet)
-- [Arabica](/operate/networks/arabica-devnet)
 
 > **Note:** If you are running a bridge node for your validator, it is highly recommended to request Mocha testnet tokens as this is the testnet used to test out validator operations.
 

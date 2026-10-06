@@ -7,14 +7,13 @@
 
 ## Blobstream
 
-- [Integrate Contracts](https://docs.celestia.org/build/blobstream/integrate-contracts.md)
-- [Integrate Offchain](https://docs.celestia.org/build/blobstream/integrate-offchain.md)
 - [Proof Queries](https://docs.celestia.org/build/blobstream/proof-queries.md)
 
 ## Post Retrieve Blob
 
 - [Client / Go](https://docs.celestia.org/build/post-retrieve-blob/client/go.md)
 - [Client / Rust](https://docs.celestia.org/build/post-retrieve-blob/client/rust.md)
+- [Fibre](https://docs.celestia.org/build/post-retrieve-blob/fibre.md)
 - [Overview](https://docs.celestia.org/build/post-retrieve-blob/overview.md)
 
 ## Private Blockspace
@@ -29,6 +28,7 @@
 
 ## Stacks
 
+- [Account Selection](https://docs.celestia.org/build/stacks/account-selection.md)
 - [Nitro Das Server](https://docs.celestia.org/build/stacks/nitro-das-server.md)
 - [Op Alt Da / Aws Kms Guide](https://docs.celestia.org/build/stacks/op-alt-da/aws-kms-guide.md)
 - [Op Alt Da / Introduction](https://docs.celestia.org/build/stacks/op-alt-da/introduction.md)

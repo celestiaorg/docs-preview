@@ -11,7 +11,7 @@ See [hardware requirements](/operate/getting-started/hardware-requirements).
 
 ## Setting up a validator node
 
-The following tutorial is done on an Ubuntu Linux 20.04 (LTS) x64
+The following tutorial is done on an Ubuntu Linux 24.04 (LTS) x64
 instance machine.
 
 First, follow the instructions on
@@ -20,6 +20,9 @@ First, follow the instructions on
 ### Wallet
 
 Follow [the tutorial on creating a wallet](/operate/keys-wallets/celestia-app-wallet).
+That page also covers the available keyring backends. Pick one before you
+create the wallet: a Mainnet Beta validator should not use the `test` backend,
+which stores the key unencrypted on disk.
 
 ## Optional: Deploy the celestia-node
 
@@ -46,15 +49,16 @@ Run the following:
 celestia bridge init --core.ip <URI> --core.port <port>
 ```
 
+Refer to [the ports section of the celestia-node troubleshooting page](/operate/maintenance/troubleshooting#ports) for information on which ports are required to be open on your machine.
+
 When connecting your bridge node to a localhost consensus node, ensure that gRPC
 is properly configured in your consensus node's `app.toml` file. The `[grpc]`
 section should have `enable = true` and the appropriate address setting for the
 bridge node to connect successfully.
 
-Using an RPC of your own, or one from
-[Mainnet Beta](/operate/networks/mainnet-beta#integrations),
-[Mocha testnet](/operate/networks/mocha-testnet#rpc-for-da-bridge-full-and-light-nodes) or
-[Arabica devnet](/operate/networks/arabica-devnet#integrations),
+Using an RPC of your own, or one listed for
+[Mainnet Beta](/operate/networks/mainnet-beta#integrations) or
+[Mocha testnet](/operate/networks/mocha-testnet#community-consensus-endpoints),
 initialize your node.
 
 ### Run the bridge node
@@ -73,6 +77,19 @@ Follow
 You have successfully set up a bridge node that is syncing with the network.
 
 ## Run the validator node
+
+> **Fibre signer compatibility:** Before starting an upgraded celestia-app build
+> that includes
+> [celestia-core #3379](https://github.com/celestiaorg/celestia-core/pull/3379),
+> check `priv_validator_grpc_laddr` in `config/config.toml` if you use the signing
+> service. The hostname `localhost` no longer counts as loopback. For local
+> plaintext signing, replace `localhost:26669` with `127.0.0.1:26669` or
+> `[::1]:26669`, preserving your port, and update Fibre's signer address to match.
+> Without mutual TLS or an explicit insecure override, a hostname or non-loopback
+> address prevents the node from starting. Follow the
+> [Fibre signing connection guide](/operate/consensus-validators/fibre#configure-the-signing-connection)
+> for configuration and restart instructions. This check applies to the
+> priv-validator signing service, not application gRPC in `app.toml`.
 
 In order to create a validator on-chain, follow the steps below.
 
@@ -95,25 +112,13 @@ In order to create a validator on-chain, follow the steps below.
    # Set VALIDATOR_WALLET to the same you defined previously.
    export VALIDATOR_WALLET="validator"
 
+   # Set KEYRING_BACKEND to the backend you chose when creating the wallet.
+   # `test` stores the key unencrypted on disk: it is a reasonable choice on
+   # Mocha, but do not use it on Mainnet Beta.
+   export KEYRING_BACKEND="file"
+
    # Set VALIDATOR_PUBKEY to the pubkey of your validator wallet.
    export VALIDATOR_PUBKEY=$(celestia-appd tendermint show-validator)
-   ```
-
-1. If you want to create a validator on a testnet that is on app version 4 (currently only Arabica), you will need to create a `validator.json` file.
-
-   **Arabica:**
-   ```bash
-   cat <<EOF > validator.json
-   {
-     "pubkey": $VALIDATOR_PUBKEY,
-     "amount": "1000000utia",
-     "moniker": "$MONIKER",
-     "commission-rate": "0.1",
-     "commission-max-rate": "0.2",
-     "commission-max-change-rate": "0.01",
-     "min-self-delegation": "1"
-   }
-   EOF
    ```
 
 1. Create a validator
@@ -147,7 +152,7 @@ celestia-appd tx staking edit-validator \
     --security-contact="<email_address_for_security_contact>" \
     --details="New description of the validator." \
     --from=$VALIDATOR_WALLET \
-    --keyring-backend=test \
+    --keyring-backend=$KEYRING_BACKEND \
     --fees=21000utia \
     --gas=220000
 ```
@@ -173,7 +178,8 @@ the command below to get the `celestiavaloper` of your local validator wallet in
 case you want to delegate more to it:
 
 ```bash
-celestia-appd keys show $VALIDATOR_WALLET --bech val -a
+celestia-appd keys show $VALIDATOR_WALLET --bech val -a \
+--keyring-backend=$KEYRING_BACKEND
 ```
 
 After entering the wallet passphrase you should see a similar output:
@@ -189,7 +195,8 @@ example you can run:
 ```bash
 celestia-appd tx staking delegate \
 <the_valoper_address_starts_with_celestiavaloper1...> 1000000utia \
---from=$VALIDATOR_WALLET --chain-id=mocha-4 \
+--from=$VALIDATOR_WALLET --chain-id=mocha-5 \
+--keyring-backend=$KEYRING_BACKEND \
 --fees=21000utia
 ```
 
