@@ -17,7 +17,8 @@ These docs are built with Next.js + Nextra and exported statically. Links below 
 - Agent skill: https://docs.celestia.org/SKILL.md
 - Agent skills index: https://docs.celestia.org/.well-known/agent-skills/index.json
 - API catalog: https://docs.celestia.org/.well-known/api-catalog
-- Node API OpenRPC spec: https://docs.celestia.org/specs/openrpc-v0.31.4.json
+- Node API OpenRPC spec (Mainnet Beta): https://docs.celestia.org/specs/openrpc-v0.33.2.json
+- Node API OpenRPC spec (Mocha): https://docs.celestia.org/specs/openrpc-v0.34.2-mocha.json
 - CIPs (Celestia Improvement Proposals): https://cips.celestia.org
 
 ## Overview
