@@ -41,17 +41,26 @@ From an implementation perspective, Bridge nodes run two separate processes:
 ## Pruned and archival modes
 
 Bridge nodes run in pruned mode by default. They retain recent headers and data
-within the availability window, which reduces storage requirements and allows a
-new bridge node to sync from a recent point instead of from genesis.
+within the storage window and can begin syncing from a recent point instead of
+from genesis.
 
-To retain the full history, pass `--archival` every time you start the bridge
-node. Archival mode disables pruning and syncs from genesis, so it requires
-substantially more storage. The connected consensus endpoint does not need to
-retain the full history: the bridge node can retrieve older headers and data
-from the peer-to-peer network.
+To retain historical headers and data, pass `--archival` every time you start
+the bridge node. A new archival node syncs from genesis, so it needs more storage
+and access to peers that still hold the historical headers and data. Archival
+nodes can still log pruning activity: they remove redundant erasure-coded data
+while keeping the original data and headers.
 
-See the [hardware requirements](/operate/getting-started/hardware-requirements)
-before choosing archival mode.
+> **Warning:** Choose archival mode before the node's first start and include
+> `--archival` every time it starts, including in a systemd service or another
+> process manager. A store previously started in pruned mode cannot switch to
+> archival mode; initialise a fresh store to sync from genesis.
+
+Both modes can use a non-archival consensus endpoint, provided it retains the
+recent blocks needed for syncing. During header sync, the bridge node routes
+recent ranges to the consensus endpoint and older ranges to the peer-to-peer
+network. Historical data is fetched separately from DA peers. This routing is
+automatic, but it does not replace missing recent blocks at the consensus
+endpoint or guarantee that peers retain the full history.
 
 ## Hardware requirements
 
@@ -74,10 +83,12 @@ You can find the address by running the following command:
 ./cel-key list --node.type bridge --keyring-backend test --p2p.network <network>
 ```
 
+You do not need to declare a network for Mainnet Beta. Refer to
+[the chain ID section on the troubleshooting page for more information](/operate/maintenance/troubleshooting).
+
 You can get testnet tokens from:
 
 - [Mocha](/operate/networks/mocha-testnet)
-- [Arabica](/operate/networks/arabica-devnet)
 
 > **Note:** If you are running a bridge node for your validator, it is highly recommended to request Mocha testnet tokens as this is the testnet used to test out validator operations.
 

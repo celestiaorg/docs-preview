@@ -11,7 +11,9 @@ The Celestia Go client lets you submit and retrieve data from the Celestia netwo
 
 ## Prerequisites
 
-- Go 1.25.1 or later
+- Go 1.25.x (Go 1.26 is not yet supported by a transitive dependency,
+  `bytedance/sonic`; if your default toolchain is newer, run the tutorial with
+  `GOTOOLCHAIN=go1.25.1 go run main.go`)
 - A Celestia account (created automatically)
 - Testnet tokens from the [Mocha faucet](/operate/networks/mocha-testnet#mocha-testnet-faucet)
 
@@ -124,7 +126,7 @@ cfg := client.Config{
     },
     SubmitConfig: client.SubmitConfig{
         DefaultKeyName: "my_key",
-        Network:        p2p.Network("mocha-4"),
+        Network:        p2p.Network("mocha-5"),
         CoreGRPCConfig: client.CoreGRPCConfig{
             Addr:       coreGRPC,
             TLSEnabled: coreTLS,
@@ -325,6 +327,10 @@ Blob 8 submitted at height 1234568
 ```
 
 **Important considerations:**
+
+**Ordering**: Parallel submission does NOT guarantee transaction ordering. Blobs may be included in blocks in a different order than submitted.
+
+**Default account only**: Queued and parallel submission modes always use your default account (`DefaultKeyName`). If you specify a different account in `TxConfig` (via `WithKeyName` or `WithSignerAddress`), it will be ignored and the default account will be used instead.
 
 **Retrieving blobs from parallel submission:**
 

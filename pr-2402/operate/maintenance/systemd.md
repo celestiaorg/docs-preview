@@ -69,6 +69,12 @@ until it is in sync.
 
 ## Data availability nodes
 
+Before creating either service, replace `<network>` in `ExecStart` with
+`mainnet` for Mainnet Beta or `mocha` for Mocha. Use the same network and
+user account as the corresponding `celestia bridge init` or `celestia light init`
+command. The network determines the default node store; omitting the flag selects
+Mainnet Beta, which may leave the service looking for an uninitialised store.
+
 ### Celestia bridge node
 
 Create Celestia Bridge systemd file:
@@ -81,7 +87,7 @@ After=network-online.target
 
 [Service]
 User=$USER
-ExecStart=$(which celestia) bridge start
+ExecStart=$(which celestia) bridge start --p2p.network <network>
 Restart=on-failure
 RestartSec=3
 LimitNOFILE=1400000
@@ -131,7 +137,7 @@ After=network-online.target
 
 [Service]
 User=$USER
-ExecStart=$(which celestia) light start --core.ip <URI> --core.port <port>
+ExecStart=$(which celestia) light start --p2p.network <network> --core.ip <URI> --core.port <port>
 Restart=on-failure
 RestartSec=3
 

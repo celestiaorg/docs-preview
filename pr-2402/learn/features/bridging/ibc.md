@@ -10,6 +10,8 @@
 
 You can use IBC to bridge assets between Celestia-native chains along with other chains.
 
+Celestia uses relayers to forward packets between chains. Relayers are processes that can be run by anyone which constantly scan for outbound packets on one chain and submits these packets alongside corresponding proofs on the destination chain. This doc covers using IBC to bridge assets; see also [how to run a relayer](/operate/data-availability/ibc-relayer). 
+
 ## How bridging works
 
 ```mermaid

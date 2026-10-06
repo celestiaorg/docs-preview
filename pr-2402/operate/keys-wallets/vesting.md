@@ -39,7 +39,7 @@ And set the location as the `CELESTIA_APP_HOME` variable. We will use this
 for the remainder of the devnet section.
 
 ```bash
-
+export CELESTIA_APP_HOME=/var/folders/_8/ljj6hspn0kn09qf9fy8kdyh40000gn/T/celestia_app_XXXXXXXXXXXXX.XV92a3qx
 ```
 
 > **Note:** This does not replace the `celestia-appd` binary that was installed with `celestia-appd`, but builds and runs one in the `$HOME/celestia-app/build` directory.
@@ -86,6 +86,7 @@ output:
   pubkey: '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"A5JF/we+s5gFt6g944XbKVVYgQB9OY+U/l5dhZjLDczO"}'
   type: local
 
+
 **Important** write this mnemonic phrase in a safe place.
 It is the only way to recover your account if you ever forget your password.
 
@@ -117,7 +118,8 @@ Set the keys as variables, using the validator address as the `FROM_ADDRESS`
 and the vesting-key as the `TO_ADDRESS`.
 
 ```bash
-
+export FROM_ADDRESS=celestia1adgkqcmzuxvg7x5avx8a8rjwpmxgzex3ztef6j
+export TO_ADDRESS=celestia127fpaygehlsgjdknwvlr2mux7h5uvhkxktgkc5
 ```
 
 #### Create your devnet vesting account
@@ -304,7 +306,8 @@ celestia-appd keys list
 Set your keys as variables:
 
 ```bash
-
+export FROM_ADDRESS=address_of_origin_account
+export TO_ADDRESS=address_of_vesting_account
 ```
 
 ### Fund your account
@@ -316,14 +319,14 @@ and fund your `origin` address.
 
 To create a vesting account on Mocha, you will need an RPC URL to send
 the transaction to. You can find the
-[RPC endpoints on the Mocha testnet page](/operate/networks/mocha-testnet#rpc-for-da-bridge-full-and-light-nodes).
+[consensus endpoints on the Mocha testnet page](/operate/networks/mocha-testnet#community-consensus-endpoints).
 
 If you are running a production application, use a production endpoint.
 
 Set your RPC URL:
 
 ```bash
-
+export RPC_URL=https://public-endpoint.celestia-mocha.quiknode.pro
 ```
 
 We will use a few flags in our vesting command that are different than the
@@ -377,7 +380,7 @@ keyring-backend = "test"
 # CLI output format (text|json)
 output = "text"
 # <host>:<port> to Tendermint RPC interface for this chain
-node = "tcp://rpc-mocha.pops.one:443"
+node = "https://public-endpoint.celestia-mocha.quiknode.pro"
 # Transaction broadcasting mode (sync|async|block)
 broadcast-mode = "sync"
 ```

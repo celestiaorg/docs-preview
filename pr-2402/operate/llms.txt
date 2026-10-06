@@ -5,18 +5,12 @@
 - Full docs index: https://docs.celestia.org/llms.txt
 - Full LLM context: https://docs.celestia.org/llms-full.txt
 
-## Blobstream
-
-- [Deploy Contract](https://docs.celestia.org/operate/blobstream/deploy-contract.md)
-- [Install Binary](https://docs.celestia.org/operate/blobstream/install-binary.md)
-- [Key Management](https://docs.celestia.org/operate/blobstream/key-management.md)
-- [Orchestrator](https://docs.celestia.org/operate/blobstream/orchestrator.md)
-- [Relayer](https://docs.celestia.org/operate/blobstream/relayer.md)
-
 ## Consensus Validators
 
 - [Cli Reference](https://docs.celestia.org/operate/consensus-validators/cli-reference.md)
 - [Consensus Node](https://docs.celestia.org/operate/consensus-validators/consensus-node.md)
+- [Fibre / Metrics](https://docs.celestia.org/operate/consensus-validators/fibre/metrics.md)
+- [Fibre](https://docs.celestia.org/operate/consensus-validators/fibre.md)
 - [Foundation Delegation Program](https://docs.celestia.org/operate/consensus-validators/foundation-delegation-program.md)
 - [Install Celestia App](https://docs.celestia.org/operate/consensus-validators/install-celestia-app.md)
 - [Metrics](https://docs.celestia.org/operate/consensus-validators/metrics.md)
@@ -61,7 +55,6 @@
 
 ## Networks
 
-- [Arabica Devnet](https://docs.celestia.org/operate/networks/arabica-devnet.md)
 - [Local Devnet](https://docs.celestia.org/operate/networks/local-devnet.md)
 - [Mainnet Beta](https://docs.celestia.org/operate/networks/mainnet-beta.md)
 - [Mocha Testnet](https://docs.celestia.org/operate/networks/mocha-testnet.md)
