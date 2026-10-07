@@ -874,7 +874,7 @@ than the height, namespace and commitment tuple used by `blob.Get`.
 You need:
 
 - A Mocha light or bridge node with Fibre support. The examples use
-  celestia-node `v0.34.2-mocha` and a core endpoint running
+  celestia-node `v0.34.3-mocha` and a core endpoint running
   celestia-app `v10.4.0-mocha` on `mocha-5`.
   Follow [Install celestia-node](/operate/data-availability/install-celestia-node).
 - Bash, `curl`, `jq` and Python 3 for the commands below.
@@ -5791,6 +5791,9 @@ You can get testnet tokens from:
 
 #### Optional: run the bridge node with a custom key
 
+For an archival bridge node, append `--archival` to either start command below
+to preserve archival mode.
+
 In order to run a bridge node using a custom key:
 
 1. The custom key must exist inside the celestia bridge node directory at the
@@ -5808,6 +5811,9 @@ To migrate a bridge node ID:
 
 Follow the
 [tutorial on setting up the bridge node as a background process with SystemD](/operate/maintenance/systemd).
+
+For an archival bridge node, use the archival `ExecStart` from that tutorial
+before starting the service, and keep `--archival` on every restart.
 
 You have successfully set up a bridge node that is syncing with the network.
 
@@ -7584,7 +7590,7 @@ testnet):
 
 ```bash
 docker run --name celestia-node -e NODE_TYPE=light -e P2P_NETWORK=mocha -p 26659:26659 \
-ghcr.io/celestiaorg/celestia-node:v0.34.2-mocha celestia light start \
+ghcr.io/celestiaorg/celestia-node:v0.34.3-mocha celestia light start \
 --core.ip public-endpoint.celestia-mocha.quiknode.pro --core.port 9090 \
 --core.tls --p2p.network mocha
 ```
@@ -8545,6 +8551,9 @@ Mainnet Beta, which may leave the service looking for an uninitialised store.
 
 ### Celestia bridge node
 
+The service below starts in pruned mode. For an archival bridge node, use the
+archival `ExecStart` shown below before starting the service.
+
 Create Celestia Bridge systemd file:
 
 ```sh
@@ -8564,6 +8573,21 @@ LimitNOFILE=1400000
 WantedBy=multi-user.target
 EOF
 ```
+
+For an archival bridge node, replace the service's `ExecStart` line with:
+
+```ini
+ExecStart=<celestia_binary_path> bridge start --p2p.network <network> --archival
+```
+
+Replace `<celestia_binary_path>` with the output of `which celestia` and
+`<network>` with `mainnet` or `mocha`.
+
+> **Warning:** Keep `--archival` in `ExecStart` on every start and restart of an
+> archival bridge node. Omitting it converts the store to pruned mode and deletes
+> historical headers and original data outside the storage window. Adding the
+> flag later cannot restore that history or reverse the conversion. A store
+> previously started in pruned mode requires a fresh store to run in archival mode.
 
 If the file was created successfully you will be able to see its content:
 
@@ -9521,7 +9545,7 @@ to the correct instructions on this page on how to connect to Mocha.
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [v0.34.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha) |
+| celestia-node  | [v0.34.3-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.3-mocha) |
 | celestia-app   | [v10.4.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)   |
 
 ## Network status
@@ -9752,7 +9776,7 @@ with the validator community.
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [v0.34.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha) |
+| celestia-node  | [v0.34.3-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.3-mocha) |
 | celestia-app   | [v10.4.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)   |
 
 ## Network upgrades
