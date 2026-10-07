@@ -874,7 +874,7 @@ than the height, namespace and commitment tuple used by `blob.Get`.
 You need:
 
 - A Mocha light or bridge node with Fibre support. The examples use
-  celestia-node `v0.34.2-mocha` and a core endpoint running
+  celestia-node `v0.34.3-mocha` and a core endpoint running
   celestia-app `v10.4.0-mocha` on `mocha-5`.
   Follow [Install celestia-node](/operate/data-availability/install-celestia-node).
 - Bash, `curl`, `jq` and Python 3 for the commands below.
@@ -887,7 +887,8 @@ You need:
 Check `celestia version` before starting. Older node releases without the
 `fibre` API cannot run these requests. The
 [released Node API reference](/build/rpc/node-api)
-covers these methods when you select `v0.34.2-mocha`; the older v0.31.4 specification does not.
+covers these methods when you select `v0.34.2-mocha`.
+Select the specification that matches your node version.
 
 If you already have a synced Mocha light or bridge node with a Fibre-capable
 core endpoint, use its store, key and RPC address. Otherwise, initialise a
@@ -1149,6 +1150,9 @@ By default, `Client.Upload` returns once it has collected signatures from
 enough validator voting power. Remaining uploads continue even if the caller
 then cancels its context, subject to RPC timeouts and retry limits. Cancelling before that
 threshold still aborts the upload.
+
+The same background-upload cancellation behaviour applies to `Client.Put`,
+which calls `Client.Upload` with the caller's context.
 
 To make cancellation stop the remaining uploads, configure the client with:
 
@@ -1492,9 +1496,13 @@ Celestia node RPC reference for blob, blobstream, da, das, header, node, p2p, sh
 
 Select `v0.34.2-mocha` in the version selector below for the
 released Fibre API, or download its [OpenRPC specification](/specs/openrpc-v0.34.2-mocha.json).
-The [Mocha Fibre walkthrough](/build/post-retrieve-blob/fibre) provides tested
-request encodings and explains the JSON-RPC size limit. The older v0.31.4
+The [Mocha Fibre walkthrough](/build/post-retrieve-blob/fibre) covers node setup,
+escrow funding, submission and retrieval, including tested request encodings
+and the JSON-RPC size limit. The Mainnet Beta `v0.33.2`
 specification does not include Fibre.
+
+The Mocha specification also includes `blob.SubscribeFromStartHeight`, which
+replays blobs for a namespace from a start height, then streams new blobs.
 
 ## celestia-node v0.31.3 breaking changes
 
@@ -4896,12 +4904,12 @@ Every 6 months, the Celestia Foundation will distribute a portion of the Foundat
 - The bottom 7 validators renew every 6 months.
 - Open slots may be filled by existing Cohort members up for renewal or new applicants.
 
-| Cohort   | Cohort Size | Delegation Duration | Renewal By Cohort |
-| -------- | ----------- | ------------------- | ----------------- |
-| Cohort 9 | 35          | 12 months           |  Cohort 11          |
-| Cohort 10 | 7          | 6 months           |  Cohort 11          |
-| Cohort 11 | 35          | 12 months           |  Cohort 13         |
-| Cohort 12 | 7          | 6 months           |  Cohort 13         |
+| Cohort    | Cohort size | Delegation duration | Renewal by cohort | Applications open | Applications close | Delegation begins |
+| --------- | ----------- | ------------------- | ----------------- | ----------------- | ------------------ | ----------------- |
+| Cohort 9  | 35          | 12 months           | Cohort 11         | 1 October 2026    | 1 November 2026    | 1 December 2026   |
+| Cohort 10 | 7           | 6 months            | Cohort 11         | 1 April 2027      | 1 May 2027         | 1 June 2027       |
+| Cohort 11 | 35          | 12 months           | Cohort 13         | 1 October 2027    | 1 November 2027    | 1 December 2027   |
+| Cohort 12 | 7           | 6 months            | Cohort 13         | 1 April 2028      | 1 May 2028         | 1 June 2028       |
 
 This structure allows for a steady flow of both existing applicants and new applicants to maintain a stable set of participants in the program.
 
@@ -6596,6 +6604,30 @@ celestia <node-type> start --metrics.tls=false --metrics \
     --p2p.network <network> --core.ip <URI> --core.port <port>
 ```
 
+## DAS sampling head lag
+
+Use `das_sampling_head_lag` to monitor how far data availability sampling (DAS)
+is behind the network head known to your node. Enable metrics with the flags
+above and view the gauge in your metrics backend.
+
+> This metric requires a celestia-node build that includes
+> [celestia-node #5307](https://github.com/celestiaorg/celestia-node/pull/5307).
+> The change is merged but is not included in a published release as of
+> 5 October 2026.
+
+The gauge reports `max(NetworkHead - SampledChainHead, 0)` in headers.
+`SampledChainHead` is the head of the continuously sampled chain. For example,
+a network head of 100 and a sampled chain head of 90 produce a lag of 10.
+This measures a difference in height, not elapsed time.
+
+A sustained or growing positive value means sampling remains behind the node's
+known network head; check the node logs for sampling errors. A value of zero means
+the sampled chain head has reached or exceeded that known head. It does not
+by itself prove the node has the latest network header.
+
+If the metric is missing, check that your build includes the change and that
+metrics are enabled and reaching your collector.
+
 ## Metrics endpoint design considerations
 
 At the moment, the architecture of celestia-node metrics
@@ -7481,7 +7513,7 @@ testnet):
 
 ```bash
 docker run --name celestia-node -e NODE_TYPE=light -e P2P_NETWORK=mocha -p 26659:26659 \
-ghcr.io/celestiaorg/celestia-node:v0.34.2-mocha celestia light start \
+ghcr.io/celestiaorg/celestia-node:v0.34.3-mocha celestia light start \
 --core.ip public-endpoint.celestia-mocha.quiknode.pro --core.port 9090 \
 --core.tls --p2p.network mocha
 ```
@@ -9409,7 +9441,7 @@ to the correct instructions on this page on how to connect to Mocha.
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [v0.34.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha) |
+| celestia-node  | [v0.34.3-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.3-mocha) |
 | celestia-app   | [v10.4.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)   |
 
 ## Network status
@@ -9639,7 +9671,7 @@ with the validator community.
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [v0.34.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha) |
+| celestia-node  | [v0.34.3-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.3-mocha) |
 | celestia-app   | [v10.4.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)   |
 
 ## Network upgrades

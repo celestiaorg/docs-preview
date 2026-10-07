@@ -15,7 +15,7 @@ than the height, namespace and commitment tuple used by `blob.Get`.
 You need:
 
 - A Mocha light or bridge node with Fibre support. The examples use
-  celestia-node `v0.34.2-mocha` and a core endpoint running
+  celestia-node `v0.34.3-mocha` and a core endpoint running
   celestia-app `v10.4.0-mocha` on `mocha-5`.
   Follow [Install celestia-node](/operate/data-availability/install-celestia-node).
 - Bash, `curl`, `jq` and Python 3 for the commands below.
@@ -28,7 +28,8 @@ You need:
 Check `celestia version` before starting. Older node releases without the
 `fibre` API cannot run these requests. The
 [released Node API reference](/build/rpc/node-api)
-covers these methods when you select `v0.34.2-mocha`; the older v0.31.4 specification does not.
+covers these methods when you select `v0.34.2-mocha`.
+Select the specification that matches your node version.
 
 If you already have a synced Mocha light or bridge node with a Fibre-capable
 core endpoint, use its store, key and RPC address. Otherwise, initialise a
@@ -290,6 +291,9 @@ By default, `Client.Upload` returns once it has collected signatures from
 enough validator voting power. Remaining uploads continue even if the caller
 then cancels its context, subject to RPC timeouts and retry limits. Cancelling before that
 threshold still aborts the upload.
+
+The same background-upload cancellation behaviour applies to `Client.Put`,
+which calls `Client.Upload` with the caller's context.
 
 To make cancellation stop the remaining uploads, configure the client with:
 
