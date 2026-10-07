@@ -874,7 +874,7 @@ than the height, namespace and commitment tuple used by `blob.Get`.
 You need:
 
 - A Mocha light or bridge node with Fibre support. The examples use
-  celestia-node `v0.34.2-mocha` and a core endpoint running
+  celestia-node `v0.34.3-mocha` and a core endpoint running
   celestia-app `v10.4.0-mocha` on `mocha-5`.
   Follow [Install celestia-node](/operate/data-availability/install-celestia-node).
 - Bash, `curl`, `jq` and Python 3 for the commands below.
@@ -887,7 +887,8 @@ You need:
 Check `celestia version` before starting. Older node releases without the
 `fibre` API cannot run these requests. The
 [released Node API reference](/build/rpc/node-api)
-covers these methods when you select `v0.34.2-mocha`; the older v0.31.4 specification does not.
+covers these methods when you select `v0.34.2-mocha`.
+Select the specification that matches your node version.
 
 If you already have a synced Mocha light or bridge node with a Fibre-capable
 core endpoint, use its store, key and RPC address. Otherwise, initialise a
@@ -1472,9 +1473,13 @@ Celestia node RPC reference for blob, blobstream, da, das, header, node, p2p, sh
 
 Select `v0.34.2-mocha` in the version selector below for the
 released Fibre API, or download its [OpenRPC specification](/specs/openrpc-v0.34.2-mocha.json).
-The [Mocha Fibre walkthrough](/build/post-retrieve-blob/fibre) provides tested
-request encodings and explains the JSON-RPC size limit. The older v0.31.4
+The [Mocha Fibre walkthrough](/build/post-retrieve-blob/fibre) covers node setup,
+escrow funding, submission and retrieval, including tested request encodings
+and the JSON-RPC size limit. The Mainnet Beta `v0.33.2`
 specification does not include Fibre.
+
+The Mocha specification also includes `blob.SubscribeFromStartHeight`, which
+replays blobs for a namespace from a start height, then streams new blobs.
 
 ## celestia-node v0.31.3 breaking changes
 
@@ -3977,7 +3982,16 @@ the limit, which is not recommended. Increasing the limit can increase peak
 memory consumption. Only raise it when the node has sufficient RAM, and monitor
 node memory usage under RPC load.
 
-#### Limit search results
+With celestia-core v0.42.3, `genesis` and `genesis_chunked` also share this
+budget. This is included in celestia-app v10.4.0 and v10.4.0-mocha, including
+when the multiplexer serves an earlier application version.
+
+When the budget is full, HTTP URI requests return `503`; JSON-RPC and
+WebSocket requests return an error with
+`server busy: too many concurrent heavy RPC requests, retry later` in
+`error.data`. Reduce concurrent requests and retry with backoff.
+
+#### Configure RPC search limits
 
 For nodes using the `kv` indexer, `max_search_results` limits how many matches
 a `tx_search` or `block_search` query can accumulate in memory before
@@ -4007,9 +4021,18 @@ released in the v0.40 line in
 and in the v0.42 line in
 [v0.42.2](https://github.com/celestiaorg/celestia-core/releases/tag/v0.42.2).
 For example, celestia-app v9.0.8 uses celestia-core v0.40.9 and does not support
-this setting; v10.4.0-mocha uses v0.42.3 and does. Check the celestia-core
+this setting; v10.4.0 and v10.4.0-mocha use v0.42.3 and do. Check the celestia-core
 dependency in your celestia-app release's `go.mod` before configuring it, and
 use the [release for your network](/operate/networks/overview).
+
+Both methods also reject query strings longer than **512 bytes** with
+`maximum query length exceeded`. This limit is fixed, not a configuration
+setting. Shorten the query before retrying.
+
+`tx_search` already enforced this query-length limit;
+[celestia-core v0.42.3](https://github.com/celestiaorg/celestia-core/releases/tag/v0.42.3)
+extended it to `block_search`. These RPC protections apply when running
+celestia-app v10.4.0 or v10.4.0-mocha, without waiting for v10 network activation.
 
 #### Expose RPC
 
@@ -4910,12 +4933,12 @@ Every 6 months, the Celestia Foundation will distribute a portion of the Foundat
 - The bottom 7 validators renew every 6 months.
 - Open slots may be filled by existing Cohort members up for renewal or new applicants.
 
-| Cohort   | Cohort Size | Delegation Duration | Renewal By Cohort |
-| -------- | ----------- | ------------------- | ----------------- |
-| Cohort 9 | 35          | 12 months           |  Cohort 11          |
-| Cohort 10 | 7          | 6 months           |  Cohort 11          |
-| Cohort 11 | 35          | 12 months           |  Cohort 13         |
-| Cohort 12 | 7          | 6 months           |  Cohort 13         |
+| Cohort    | Cohort size | Delegation duration | Renewal by cohort | Applications open | Applications close | Delegation begins |
+| --------- | ----------- | ------------------- | ----------------- | ----------------- | ------------------ | ----------------- |
+| Cohort 9  | 35          | 12 months           | Cohort 11         | 1 October 2026    | 1 November 2026    | 1 December 2026   |
+| Cohort 10 | 7           | 6 months            | Cohort 11         | 1 April 2027      | 1 May 2027         | 1 June 2027       |
+| Cohort 11 | 35          | 12 months           | Cohort 13         | 1 October 2027    | 1 November 2027    | 1 December 2027   |
+| Cohort 12 | 7           | 6 months            | Cohort 13         | 1 April 2028      | 1 May 2028         | 1 June 2028       |
 
 This structure allows for a steady flow of both existing applicants and new applicants to maintain a stable set of participants in the program.
 
@@ -6641,6 +6664,30 @@ celestia <node-type> start --metrics.tls=false --metrics \
     --p2p.network <network> --core.ip <URI> --core.port <port>
 ```
 
+## DAS sampling head lag
+
+Use `das_sampling_head_lag` to monitor how far data availability sampling (DAS)
+is behind the network head known to your node. Enable metrics with the flags
+above and view the gauge in your metrics backend.
+
+> This metric requires a celestia-node build that includes
+> [celestia-node #5307](https://github.com/celestiaorg/celestia-node/pull/5307).
+> The change is merged but is not included in a published release as of
+> 5 October 2026.
+
+The gauge reports `max(NetworkHead - SampledChainHead, 0)` in headers.
+`SampledChainHead` is the head of the continuously sampled chain. For example,
+a network head of 100 and a sampled chain head of 90 produce a lag of 10.
+This measures a difference in height, not elapsed time.
+
+A sustained or growing positive value means sampling remains behind the node's
+known network head; check the node logs for sampling errors. A value of zero means
+the sampled chain head has reached or exceeded that known head. It does not
+by itself prove the node has the latest network header.
+
+If the metric is missing, check that your build includes the change and that
+metrics are enabled and reaching your collector.
+
 ## Metrics endpoint design considerations
 
 At the moment, the architecture of celestia-node metrics
@@ -7526,7 +7573,7 @@ testnet):
 
 ```bash
 docker run --name celestia-node -e NODE_TYPE=light -e P2P_NETWORK=mocha -p 26659:26659 \
-ghcr.io/celestiaorg/celestia-node:v0.34.2-mocha celestia light start \
+ghcr.io/celestiaorg/celestia-node:v0.34.3-mocha celestia light start \
 --core.ip public-endpoint.celestia-mocha.quiknode.pro --core.port 9090 \
 --core.tls --p2p.network mocha
 ```
@@ -8199,14 +8246,22 @@ These settings apply to celestia-app consensus nodes:
 | Section in `config/config.toml` | Setting | Default |
 |---|---|---|
 | `[rpc]` | `max_concurrent_heavy_requests` | `20` |
+| `[tx_index]` | `max_search_results` | `100000` |
 | `[storage]` | `compact` | `false` |
 | `[storage]` | `compaction_interval` | `10000` |
 
 The RPC setting caps concurrent heavy requests such as `block_results` and
-`tx_search`; public RPC providers may want to raise it. Blockstore compaction
-is optional and does not enable pruning. When enabled, it compacts the pruned
-range in the background. To compact an existing blockstore once, stop the node
-and run `celestia-appd compact-blockstore`.
+`tx_search`. In celestia-app v10.4.0 and v10.4.0-mocha, this also
+includes `genesis` and `genesis_chunked`. These releases include the
+`max_search_results` cap for `kv` searches and a fixed 512-byte query-length
+limit for both `tx_search` and `block_search`. See
+[RPC search limits](/operate/consensus-validators/consensus-node#configure-rpc-search-limits)
+for configuration and handling rejected queries. These protections apply
+when running these binaries, without waiting for v10 network activation.
+
+Blockstore compaction is optional and does not enable pruning. When enabled,
+it compacts the pruned range in the background. To compact an existing
+blockstore once, stop the node and run `celestia-appd compact-blockstore`.
 
 See the [Mocha release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
 for details. Follow the upgrade announcement for your network before replacing
@@ -9276,6 +9331,11 @@ To check the current status, uptime, and health of all community endpoints, visi
 
 This is an essential resource when selecting endpoints for your nodes or applications.
 
+For a multi-region view of public consensus RPC endpoints, use
+[Cumulo's check_d Endpoint Scan](https://cumulo.pro/services/celestia/rpcscan.php).
+It shows endpoint health, block height, historical reliability, and response
+latency from probes in the United States, Europe, Canada, and Singapore.
+
 ## Analytics
 
 The following websites provide analytics for Celestia:
@@ -9449,7 +9509,7 @@ to the correct instructions on this page on how to connect to Mocha.
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [v0.34.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha) |
+| celestia-node  | [v0.34.3-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.3-mocha) |
 | celestia-app   | [v10.4.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)   |
 
 ## Network status
@@ -9543,6 +9603,11 @@ Celestia network. The default port is 26657.
 - `rpc-1.testnet.celestia.nodes.guru`
 - `rpc-2.testnet.celestia.nodes.guru`
 - `celestia-testnet-rpc.itrocket.net:443`
+
+For a multi-region view of public consensus RPC endpoints, use
+[Cumulo's check_d Endpoint Scan for Mocha](https://cumulo.pro/services/celestia_mocha/rpcscan.php).
+It shows endpoint health, block height, historical reliability, and response
+latency from probes in the United States, Europe, Canada, and Singapore.
 
 ## Community API endpoints
 
@@ -9674,7 +9739,7 @@ with the validator community.
 
 | Software       | Version                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
-| celestia-node  | [v0.34.2-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.2-mocha) |
+| celestia-node  | [v0.34.3-mocha](https://github.com/celestiaorg/celestia-node/releases/tag/v0.34.3-mocha) |
 | celestia-app   | [v10.4.0-mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)   |
 
 ## Network upgrades
