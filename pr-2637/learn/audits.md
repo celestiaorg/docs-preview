@@ -1,4 +1,14 @@
-# Audits
+# Security and audits
+
+## Security disclosures
+
+The security disclosure contact is [security@celestia.org](mailto:security@celestia.org).
+Do not report vulnerabilities in public issues or discussions. Follow the
+[Celestia security policy](https://github.com/celestiaorg/.github/blob/main/SECURITY.md):
+submit a private security advisory in the affected repository, or email the
+security disclosure contact if private reporting is unavailable.
+
+## Audit reports
 
 This page provides a comprehensive list of audits conducted on various Celestia software, including OP Stack, Nitro, celestia-app, Blobstream, and more. Each audit is linked to its respective report.
 
