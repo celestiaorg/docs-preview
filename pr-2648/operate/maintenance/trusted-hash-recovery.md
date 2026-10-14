@@ -27,9 +27,62 @@ By configuring these fields, your light node will maintain history from the spec
 
 ## General Approach
 
+### Get a trusted height and hash
+
+Get trusted height & hash from a consensus endpoint or [Celenium](https://celenium.io).
+
+### Initialize the node store
+
+   ```sh
+   celestia light init --p2p.network <network>
+   ```
+
+### Set the trusted height and hash
+
+1. Open your `config.toml` at `.celestia-light/config.toml` (or `.celestia-light-<other-network>/config.toml`)
+2. Set `Header.Syncer.SyncFromHeight` to the trusted height (e.g. `SyncFromHeight = 123456`)
+3. Set `Header.Syncer.SyncFromHash` to the trusted hash (e.g. `SyncFromHash = "<hash_of_block_n>"`, with **no `0x` prefix**.)
+
+### Start the node
+
+```sh
+celestia light start --p2p.network <network> --core.ip <consensus-node-rpc> --core.port <port>
+```
+
 ## Automated Approach
 
 You can automate the process of setting the trusted height and hash using the following commands for Mocha testnet:
+
+### Initialize the node store (if not already done)
+
+```sh
+celestia light init --p2p.network mocha
+```
+
+### Get and set the trusted height and hash automatically
+
+```sh
+# Get the height and hash of the same block in a single call
+read -r TRUSTED_HEIGHT TRUSTED_HASH <<<"$(curl -s https://public-endpoint.celestia-mocha.quiknode.pro/block | jq -r '.result | "\(.block.header.height) \(.block_id.hash)"')" && export TRUSTED_HEIGHT TRUSTED_HASH
+
+# Use sed to find and replace the SyncFromHeight value in the config file (macOS version)
+sed -i '' "s/SyncFromHeight = .*/SyncFromHeight = $TRUSTED_HEIGHT/" ~/.celestia-light-mocha-5/config.toml
+
+# Add/update the SyncFromHash value
+sed -i '' "s/SyncFromHash = .*/SyncFromHash = \"$TRUSTED_HASH\"/" ~/.celestia-light-mocha-5/config.toml
+
+# Display the updated values to confirm
+echo "SyncFromHeight updated to: $TRUSTED_HEIGHT"
+echo "SyncFromHash updated to: $TRUSTED_HASH"
+```
+
+### Start the node
+
+```sh
+celestia light start --p2p.network mocha \
+  --core.ip public-endpoint.celestia-mocha.quiknode.pro \
+  --core.port 9090 --core.tls
+```
 
 > **Tip (Linux):** Remove the empty string (`''`) after `-i` in the `sed` commands:  
 > `sed -i "s/SyncFromHeight = .*/SyncFromHeight = $TRUSTED_HEIGHT/" ~/.celestia-light-mocha-5/config.toml`  

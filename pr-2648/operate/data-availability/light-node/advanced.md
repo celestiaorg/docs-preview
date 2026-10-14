@@ -37,6 +37,20 @@ To use a non-default key, make sure the key exists in your node store and pass
 For key creation, backup, import/recover, and Docker setups, see
 [Create a wallet with celestia-node](/operate/keys-wallets/celestia-node-key).
 
+**Mainnet Beta**
+
+```bash
+celestia light start --core.ip <URI> --core.port <port> \
+  --keyring.keyname <name-of-custom-key>
+```
+
+**Mocha**
+
+```bash
+celestia light start --core.ip <URI> --core.port <port> \
+  --keyring.keyname <name-of-custom-key> --p2p.network mocha
+```
+
 ---
 
 ## Run the light node with SystemD
@@ -58,6 +72,36 @@ hash.
 
 Celestia also supports initializing from a trusted hash via
 [trusted hash recovery](/operate/maintenance/trusted-hash-recovery).
+
+### Get a trusted height and hash
+
+This example uses the public Quicknode Mocha endpoint. The `/block` response
+provides the height and hash of the same block:
+
+```bash
+read -r TRUSTED_HEIGHT TRUSTED_HASH <<<"$(curl -s https://public-endpoint.celestia-mocha.quiknode.pro/block | jq -r '.result | "\(.block.header.height) \(.block_id.hash)"')" && export TRUSTED_HEIGHT TRUSTED_HASH
+printf 'SyncFromHeight = %s\nSyncFromHash = "%s"\n' "$TRUSTED_HEIGHT" "$TRUSTED_HASH"
+```
+
+### Set `SyncFromHeight` and `SyncFromHash`
+
+Edit your config file at `~/.celestia-light-mocha-5/config.toml`
+and set `SyncFromHeight` and `SyncFromHash` to the values printed above. For example:
+
+```toml
+SyncFromHeight = 123456
+SyncFromHash = "E8BD0C48260C496BB7A4D8D1E7BDBF1F26A2FE3CF5714DECE1741B2FFB3C095C"
+```
+
+Ensure `SyncFromHash` has **no `0x` prefix**.
+
+### Start the node
+
+```bash
+celestia light start --p2p.network mocha \
+  --core.ip public-endpoint.celestia-mocha.quiknode.pro \
+  --core.port 9090 --core.tls
+```
 
 ---
 
@@ -85,6 +129,29 @@ queue.
 Enable synchronous, ordered submission by setting `TxWorkerAccounts` to `1` in
 your `config.toml`.
 
+#### Open your config file
+
+```bash
+nano ~/.celestia-light-mocha-5/config.toml
+```
+
+#### Set TxWorkerAccounts to 1
+
+Find the `[SubmitClient]` section and add or update:
+
+```toml
+[SubmitClient]
+TxWorkerAccounts = 1
+```
+
+#### Restart your node
+
+```bash
+celestia light start --p2p.network mocha \
+  --core.ip public-endpoint.celestia-mocha.quiknode.pro \
+  --core.port 9090 --core.tls
+```
+
 **Characteristics:**
 
 - Each transaction queues until the previous one is confirmed
@@ -98,6 +165,29 @@ your `config.toml`.
 
 For high-throughput applications that don't require sequential ordering, enable
 parallel submission by setting `TxWorkerAccounts` to a value greater than 1.
+
+#### Open your config file
+
+```bash
+nano ~/.celestia-light-mocha-5/config.toml
+```
+
+#### Set TxWorkerAccounts to desired number of lanes
+
+Find the `[SubmitClient]` section and add or update:
+
+```toml
+[SubmitClient]
+TxWorkerAccounts = 8
+```
+
+#### Restart your node
+
+```bash
+celestia light start --p2p.network mocha \
+  --core.ip public-endpoint.celestia-mocha.quiknode.pro \
+  --core.port 9090 --core.tls
+```
 
 **How it works:**
 

@@ -43,6 +43,70 @@ The steps below will create a binary file named `celestia-appd`
 inside `$HOME/go/bin` folder which will be used later to run the node.
 Be sure to select the correct network to install the binary for.
 
+### Remove any existing copy and clone the repository
+
+   ```bash
+   cd $HOME
+   rm -rf celestia-app
+   git clone https://github.com/celestiaorg/celestia-app.git
+   cd celestia-app
+   ```
+
+### Check out the desired version
+
+   
+
+**Mainnet Beta**
+
+```bash
+git checkout tags/v10.4.0
+```
+
+**Mocha**
+
+```bash
+git checkout tags/v10.4.0-mocha
+```
+
+   
+
+On Linux, enable BBR TCP congestion control before building. Run the following
+from the checked-out `celestia-app` directory on the node's host, with sudo
+access. Skip this step on macOS.
+
+```bash
+make enable-bbr
+make check-bbr
+```
+
+The enable command loads the `tcp_bbr` kernel module, persists it in
+`/etc/modules`, and adds the `fq` queueing and `bbr` congestion control defaults
+to `/etc/sysctl.conf` before applying that file. These are host-wide network
+settings. The check command should print `BBR is enabled.`
+
+If enabling BBR fails, inspect the command output and confirm that the host's
+Linux kernel provides the `tcp_bbr` module and that you have sudo access. Run
+these commands on the host rather than inside a container, then rerun
+`make check-bbr` to verify the result.
+
+### Build and install the `celestia-appd` binary with multiplexer support
+
+   ```bash
+   make install
+   ```
+
+### Verify the installation
+
+To check if the binary was successfully installed you can run the binary
+using the `--help` flag:
+
+   ```sh
+   celestia-appd --help
+   ```
+
+You will see an output with the menu for `celestia-appd`. Learn more
+on the [helpful CLI commands page](/operate/consensus-validators/cli-reference)
+
 ## Installing a pre-built binary
 
 Installing a pre-built binary is the fastest way to get started with your

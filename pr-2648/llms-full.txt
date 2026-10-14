@@ -435,7 +435,317 @@ The Celestia Go client lets you submit and retrieve data from the Celestia netwo
 
 ## Quick setup
 
+### Create your project
+
+```bash
+mkdir celestia-client-example
+cd celestia-client-example
+go mod init celestia-client-example
+```
+
+### Create main.go
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"time"
+
+	"github.com/celestiaorg/celestia-node/api/client"
+	"github.com/celestiaorg/celestia-node/blob"
+	"github.com/celestiaorg/celestia-node/nodebuilder/p2p"
+	"github.com/celestiaorg/go-square/v3/share"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+)
+
+func main() {
+	ctx := context.Background()
+
+	// Get connection details from environment
+	daURL := os.Getenv("CELE_DA_URL")
+	coreGRPC := os.Getenv("CELE_CORE_GRPC")
+	daTLS := os.Getenv("CELE_DA_TLS") == "true"
+	daToken := os.Getenv("CELE_DA_TOKEN")
+	coreTLS := os.Getenv("CELE_CORE_TLS") == "true"
+	coreToken := os.Getenv("CELE_CORE_TOKEN")
+
+	if daURL == "" {
+		fmt.Println("Error: Set CELE_DA_URL environment variable")
+		fmt.Println("Example: export CELE_DA_URL=http://localhost:26658")
+		return
+	}
+
+	// Create a new account
+	fmt.Println("Creating account...")
+	kr, err := client.KeyringWithNewKey(client.KeyringConfig{
+		KeyName:     "my_key",
+		BackendName: keyring.BackendTest,
+	}, "./keys")
+	if err != nil {
+		panic(err)
+	}
+
+	// Show your address
+	keyInfo, err := kr.Key("my_key")
+	if err != nil {
+		panic(err)
+	}
+	address, err := keyInfo.GetAddress()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Your address: %s\n", address.String())
+
+	// Connect to Celestia (read-only or full client)
+	cfg := client.Config{
+		ReadConfig: client.ReadConfig{
+			BridgeDAAddr: daURL,
+			EnableDATLS:  daTLS,
+		},
+		SubmitConfig: client.SubmitConfig{
+			DefaultKeyName: "my_key",
+		},
+	}
+
+	// Add DA auth token if provided
+	if daToken != "" {
+		cfg.ReadConfig.DAAuthToken = daToken
+	}
+
+	// Add Core gRPC config if provided
+	if coreGRPC != "" {
+		network := p2p.Network("mocha-5")
+		cfg.SubmitConfig.Network = network
+		cfg.SubmitConfig.CoreGRPCConfig = client.CoreGRPCConfig{
+			Addr:       coreGRPC,
+			TLSEnabled: coreTLS,
+		}
+		if coreToken != "" {
+			cfg.SubmitConfig.CoreGRPCConfig.AuthToken = coreToken
+		}
+		fmt.Println("Full client mode (can submit blobs)")
+	} else {
+		fmt.Println("Read-only mode (cannot submit blobs)")
+		fmt.Println("To submit blobs, set CELE_CORE_GRPC environment variable")
+	}
+
+	fmt.Println("Connecting to Celestia...")
+	c, err := client.New(ctx, cfg, kr)
+	if err != nil {
+		panic(err)
+	}
+	defer c.Close()
+
+	// Check your balance
+	balance, err := c.State.Balance(ctx)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Balance: %s\n", balance.String())
+
+	// Submit a blob only if in full mode
+	if coreGRPC != "" {
+		// Check if account has funds before trying to submit
+		balanceStr := balance.String()
+		if balanceStr == "0utia" || balanceStr == "0 utia" {
+			fmt.Println("Account has no funds. Fund this address at the Mocha faucet to submit blobs:")
+			fmt.Printf("Address: %s\n", address.String())
+			fmt.Println("Faucet: https://mocha.celenium.io/faucet")
+		} else {
+			if err := submitAndRetrieveBlob(ctx, c); err != nil {
+				panic(err)
+			}
+		}
+	}
+
+	fmt.Println("✓ Tutorial complete!")
+}
+
+func submitAndRetrieveBlob(ctx context.Context, c *client.Client) error {
+	// Set timeout for network operations
+	ctx, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
+
+	// Create namespace (groups your data)
+	ns, err := share.NewV0Namespace([]byte("tutorial"))
+	if err != nil {
+		return err
+	}
+
+	// Create blob with your data
+	message := "Hello Celestia!"
+	blobData := []byte(message)
+	b, err := blob.NewBlob(share.ShareVersionZero, ns, blobData, nil)
+	if err != nil {
+		return err
+	}
+
+	// Submit to network
+	fmt.Println("Submitting blob...")
+	height, err := c.Blob.Submit(ctx, []*blob.Blob{b}, nil)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("✓ Blob submitted at block %d\n", height)
+
+	// Retrieve it back
+	fmt.Println("Retrieving blob...")
+	retrieved, err := c.Blob.Get(ctx, height, ns, b.Commitment)
+	if err != nil {
+		return err
+	}
+
+	// Verify the data
+	retrievedData := string(retrieved.Data())
+	fmt.Printf("✓ Retrieved: %s\n", retrievedData)
+
+	if retrievedData != message {
+		return fmt.Errorf("data mismatch!")
+	}
+
+	fmt.Println("✓ Data verified!")
+	return nil
+}
+```
+
+### Set up your go.mod
+
+Create `go.mod` with these dependencies:
+
+```go
+module celestia-client-example
+
+go 1.25.1
+
+require (
+	github.com/celestiaorg/celestia-node v0.28.2-mocha
+	github.com/celestiaorg/go-square/v3 v3.0.2
+	github.com/cosmos/cosmos-sdk v0.50.13
+)
+
+replace (
+	cosmossdk.io/x/upgrade => github.com/celestiaorg/cosmos-sdk/x/upgrade v0.2.0
+	github.com/cometbft/cometbft => github.com/celestiaorg/celestia-core v0.39.10
+	github.com/cosmos/cosmos-sdk => github.com/celestiaorg/cosmos-sdk v0.51.4
+	github.com/cosmos/ibc-go/v8 => github.com/celestiaorg/ibc-go/v8 v8.7.2
+	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
+	// broken goleveldb needs to be replaced for the cosmos-sdk and celestia-app
+	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
+	// celestia-core(v0.34.x): used for multiplexing abci v1 requests
+	github.com/tendermint/tendermint => github.com/celestiaorg/celestia-core v1.55.0-tm-v0.34.35
+)
+
+replace github.com/ipfs/boxo => github.com/celestiaorg/boxo v0.29.0-fork-4
+
+replace github.com/ipfs/go-datastore => github.com/celestiaorg/go-datastore v0.0.0-20250801131506-48a63ae531e4
+```
+
+Then run:
+
+```bash
+go mod tidy
+```
+
 ## Running the tutorial
+
+### Set environment variables
+
+Choose your connection type:
+
+To submit blobs, you need both a DA JSON-RPC endpoint and a consensus gRPC endpoint.
+The public Quicknode Mocha endpoint serves both, and the full submit and
+retrieve flow in this guide was verified against it:
+`https://public-endpoint.celestia-mocha.quiknode.pro` for DA JSON-RPC and
+`public-endpoint.celestia-mocha.quiknode.pro:9090` for consensus gRPC.
+
+**Public endpoints (tested on Mocha):**
+
+```bash
+export CELE_DA_URL=https://public-endpoint.celestia-mocha.quiknode.pro
+export CELE_DA_TLS=true
+export CELE_CORE_GRPC=public-endpoint.celestia-mocha.quiknode.pro:9090
+export CELE_CORE_TLS=true
+```
+
+**Managed provider (for example Quicknode):**
+
+```bash
+export CELE_DA_URL=https://your-quicknode-url.celestia-mocha.quiknode.pro/<your-token>
+export CELE_DA_TLS=true
+export CELE_CORE_GRPC=your-quicknode-url:9090
+export CELE_CORE_TLS=true
+export CELE_CORE_TOKEN=<your-token>
+```
+
+**Local bridge node + local consensus node:**
+
+```bash
+export CELE_DA_URL=http://localhost:26658
+export CELE_DA_TLS=false
+export CELE_CORE_GRPC=localhost:9090
+export CELE_CORE_TLS=false
+```
+
+**Read-only mode (no blob submission):**
+
+```bash
+export CELE_DA_URL=https://public-endpoint.celestia-mocha.quiknode.pro
+export CELE_DA_TLS=true
+# Don't set CELE_CORE_GRPC for read-only mode
+```
+
+### Run the program
+
+```bash
+go run main.go
+```
+
+**First run:** You'll see your account address. Fund it at [https://mocha.celenium.io/faucet](https://mocha.celenium.io/faucet).
+
+**Second run:** After funding, you'll see:
+
+```
+Creating account...
+Your address: celestia16k0wsej6rewd2pfh0taah35suzf3apj552q8c3
+Full client mode (can submit blobs)
+Connecting to Celestia...
+Balance: 1000000utia
+Submitting blob...
+✓ Blob submitted at block 1234567
+Retrieving blob...
+✓ Retrieved: Hello Celestia!
+✓ Data verified!
+✓ Tutorial complete!
+```
+
+**First run (unfunded account):**
+
+```
+Creating account...
+Your address: celestia16k0wsej6rewd2pfh0taah35suzf3apj552q8c3
+Full client mode (can submit blobs)
+Connecting to Celestia...
+Balance: 0utia
+Account has no funds. Fund this address at the Mocha faucet to submit blobs:
+Address: celestia16k0wsej6rewd2pfh0taah35suzf3apj552q8c3
+Faucet: https://mocha.celenium.io/faucet
+✓ Tutorial complete!
+```
+
+**Read-only mode output:**
+
+```
+Creating account...
+Your address: celestia16k0wsej6rewd2pfh0taah35suzf3apj552q8c3
+Read-only mode (cannot submit blobs)
+To submit blobs, set CELE_CORE_GRPC environment variable
+Connecting to Celestia...
+Balance: 1000000utia
+✓ Tutorial complete!
+```
 
 ## Understanding the code
 
@@ -887,7 +1197,7 @@ You need:
 Check `celestia version` before starting. Older node releases without the
 `fibre` API cannot run these requests. The
 [released Node API reference](/build/rpc/node-api)
-covers these methods when you select `v0.34.2-mocha`.
+covers these methods when you select `v0.34.3-mocha`.
 Select the specification that matches your node version.
 
 If you already have a synced Mocha light or bridge node with a Fibre-capable
@@ -1383,6 +1693,231 @@ Source: app/build/private-blockspace/quickstart/page.mdx
 Private blockspace encrypts your blob data before it’s posted to Celestia using a lightweight proxy.  
 In this quickstart, you’ll use hosted Celestia nodes (like Quicknode) instead of running your own.
 
+## Get your node credentials
+
+To use Private Blockspace, you’ll need access to a hosted **Celestia Data Availability (DA) + Consensus Node**. The easiest option is [Quicknode’s Celestia service](https://www.quicknode.com/docs/celestia), which provides ready-to-use mainnet and Mocha testnet endpoints. They offer a free 30-day trial, which is enough for this quickstart.
+
+1. Visit the [Quicknode Celestia dashboard](https://www.quicknode.com/docs/celestia) and log in (or create a free account).  
+2. Click **Create Endpoint**, then select:  
+   - **Chain:** `Celestia`  
+   - **Network:** `Mainnet` or `Mocha`
+3. Copy the generated endpoint URL (it looks like this): `https://celestia-mocha.quiknode.pro/<your-token>/`
+4. Copy the token from your endpoint URL (this is your **write / read token**).  
+5. Save both the **URL** and **token** — you’ll add them to your `.env` file next.
+
+## Create your `.env`
+
+Download the repo’s `example.env` and save it as `.env`.  
+Edit **only** the following items.
+
+| Key | What to do |
+| --- | --- |
+| `PBS_DB_PATH` | Absolute path for local proxy data (e.g. `/Users/you/dev/pbs-db`) |
+| `ENCRYPTION_KEY` | 32-byte key — see command below |
+| `CELESTIA_NODE_RPC` | Your Quicknode HTTPS endpoint (includes your token) |
+| `CELESTIA_CORE_GRPC` | Same host + `:9090` (no token in path) |
+| `CELESTIA_NODE_WRITE_TOKEN` | Your Quicknode token |
+| `CELESTIA_SIGNING_KEY` | 32-byte private key for your signer (funded on Mocha) |
+| `TLS_CERTS_PATH` / `TLS_KEY_PATH` | Path to your local TLS cert + key (see next step) |
+| `CELESTIA_NETWORK` etc. | Keep defaults; ensure all paths are absolute |
+
+### Generate an `ENCRYPTION_KEY` (ChaCha20, 32 bytes)
+This is a random 256-bit symmetric key, **not** a wallet key.
+
+```bash
+openssl rand -hex 32
+# or
+python3 -c "import secrets; print(secrets.token_hex(32))"
+```
+
+Paste the value (no quotes) as your `ENCRYPTION_KEY`.
+
+## Generate TLS certificates
+
+The proxy requires TLS certificates (even for local testing).
+
+```bash
+mkdir -p tls
+openssl req -x509 -nodes -newkey rsa:2048   -keyout tls/tls.key -out tls/tls.crt -days 365   -subj "/CN=localhost"
+```
+
+Then mount that folder when running Docker and set:
+```
+TLS_CERTS_PATH=/app/tls/tls.crt
+TLS_KEY_PATH=/app/tls/tls.key
+```
+
+Without valid certs, the proxy will exit with  
+`TLS_CERTS_PATH required: NotPresent`.
+
+## Fund your signer
+
+Your `CELESTIA_SIGNING_KEY` corresponds to a Mocha testnet address.  
+That address must exist and hold some test TIA.
+
+**Get funds from the [Celestia Mocha faucet](https://faucet.celestia-mocha.com).**
+
+You can verify your signer address in the proxy logs it prints the address when starting.
+
+## Run the proxy container
+
+**Apple Silicon (M1/M2/M3)**
+
+The published image is `amd64` only — run it under emulation:
+
+```bash
+docker pull --platform=linux/amd64 ghcr.io/celestiaorg/pda-proxy:latest
+mkdir -p "$PBS_DB_PATH"
+
+docker run --name pda-proxy --rm -it   --platform=linux/amd64   --env-file ./.env   -v "$PBS_DB_PATH:$PBS_DB_PATH"   -v "./tls:/app/tls"   -p 26657:26657   ghcr.io/celestiaorg/pda-proxy:latest
+```
+
+**Intel/AMD Linux or other amd64 hosts**
+
+```bash
+docker pull ghcr.io/celestiaorg/pda-proxy:latest
+mkdir -p "$PBS_DB_PATH"
+
+docker run --name pda-proxy --rm -it   --env-file ./.env   -v "$PBS_DB_PATH:$PBS_DB_PATH"   -v "./tls:/app/tls"   -p 26657:26657   ghcr.io/celestiaorg/pda-proxy:latest
+```
+
+### Verify it’s running
+
+Check logs:
+```bash
+docker logs -f pda-proxy
+```
+
+Or test status:
+```bash
+curl -k -sS -X POST   -H "Content-Type: application/json"   -H "Authorization: Bearer YOUR_TOKEN"   --data '{"jsonrpc":"2.0","id":1,"method":"status","params":[]}'   https://127.0.0.1:26657 | jq .
+```
+
+On Apple Silicon, keep `--platform=linux/amd64` until a native arm64 image exists.
+
+## Send a blob
+
+Try a small encrypted payload:
+
+```bash
+curl -k -sS \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -X POST --data '{
+    "id": 1,
+    "jsonrpc": "2.0",
+    "method": "blob.Submit",
+    "params": [[
+      {
+        "namespace": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAMJ/xGlNMdE=",
+        "data": "SSBMb3ZlIEJpZyBCbG9icw==",
+        "share_version": 0,
+        "commitment": "aHlbp+J9yub6hw/uhK6dP8hBLR2mFy78XNRRdLf2794=",
+        "index": -1
+      }
+    ], {}]
+  }' https://127.0.0.1:26657 | jq .
+
+```
+
+The proxy will:
+- Encrypt your blob  
+- Submit to Celestia  
+- Return a `height` and `tx hash`
+
+If the response includes `"result": { "height": "…" }`, you’re set. Jump to **Verify your blob** with that height.
+
+If you see `"[pda-proxy] Verifiable encryption processing..."`, the proxy queued the job. Two quick options:
+
+**Option A — resend once**
+
+Sometimes it finishes fast and you’ll get the height on the next call.
+
+**Option B — find the height**
+
+Either tail logs:
+```bash
+docker logs -f pda-proxy | egrep -i 'submit|height|commit|error'
+```
+
+Or poll a small window around the tip for your namespace:
+```bash
+LATEST=$(
+  curl -k -sS \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer YOUR_TOKEN" \
+    -X POST --data '{"jsonrpc":"2.0","id":1,"method":"status","params":[]}' \
+    https://127.0.0.1:26657 |
+  jq -r '.result.sync_info.latest_block_height'
+)
+
+for h in $(seq $((LATEST-2)) $((LATEST+2))); do
+  RES=$(
+    curl -k -sS \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer YOUR_TOKEN" \
+      -X POST --data "{
+        \"id\":1,
+        \"jsonrpc\":\"2.0\",
+        \"method\":\"blob.GetAll\",
+        \"params\":[ $h, [ \"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAMJ/xGlNMdE=\" ] ]
+      }" \
+      https://127.0.0.1:26657
+  )
+
+  if echo "$RES" | jq -e '.result | length > 0' >/dev/null; then
+    echo "Height $h"
+    echo "$RES" | jq .
+  fi
+done
+```
+Copy the `commitment` you see there and use it with `blob.Get`.
+
+## Verify your blob
+
+Now, fetch the same blob through your proxy using the following command with `HEIGHT` replaced with your actual height:
+
+```bash
+curl -k -sS   -H "Content-Type: application/json"   -H "Authorization: Bearer YOUR_TOKEN"   -X POST --data "{
+    \"id\":1,
+    \"jsonrpc\":\"2.0\",
+    \"method\":\"blob.GetAll\",
+    \"params\":[HEIGHT,[\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAMJ/xGlNMdE=\"]]
+  }" https://127.0.0.1:26657 | jq .
+```
+
+You’ll see a `commitment` and your decrypted data:
+
+```json
+{
+  "commitment": "…base64…",
+  "data": "SSBMb3ZlIEJpZyBCbG9icw==",
+  "namespace": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAMJ/xGlNMdE="
+}
+```
+
+**Decode base64 to plaintext**
+
+When you retrieve a blob, the `data` field is base64. To see the plaintext:
+
+**macOS/Linux**
+```bash
+echo "SSBMb3ZlIEJpZyBCbG9icw==" | base64 -d
+```
+
+**Python**
+```bash
+python3 - <<'PY'
+import base64
+print(base64.b64decode("SSBMb3ZlIEJpZyBCbG9icw==").decode())
+PY
+```
+
+**Node.js**
+```bash
+node -e 'console.log(Buffer.from("SSBMb3ZlIEJpZyBCbG9icw==","base64").toString())'
+```
+
 ## Troubleshooting
 
 | Error message | Cause | Fix |
@@ -1471,11 +2006,11 @@ Celestia node RPC reference for blob, blobstream, da, das, header, node, p2p, sh
 
 ## Fibre on Mocha
 
-Select `v0.34.2-mocha` in the version selector below for the
-released Fibre API, or download its [OpenRPC specification](/specs/openrpc-v0.34.2-mocha.json).
+Select `v0.34.3-mocha` in the version selector below for the
+released Fibre API, or download its [OpenRPC specification](/specs/openrpc-v0.34.3-mocha.json).
 The [Mocha Fibre walkthrough](/build/post-retrieve-blob/fibre) covers node setup,
 escrow funding, submission and retrieval, including tested request encodings
-and the JSON-RPC size limit. The Mainnet Beta `v0.33.2`
+and the JSON-RPC size limit. The Mainnet Beta `v0.34.3`
 specification does not include Fibre.
 
 The Mocha specification also includes `blob.SubscribeFromStartHeight`, which
@@ -1668,6 +2203,169 @@ This guide walks through running [op-alt-da](https://github.com/celestiaorg/op-a
 - A Celestia RPC endpoint from [Quicknode](https://quicknode.com/)
 
 ## Getting started
+
+## Setup environment
+
+1. Install awscli:
+
+   ```bash
+   brew install awscli
+   ```
+
+2. Clone and build op-alt-da ([v0.12.0](https://github.com/celestiaorg/op-alt-da/releases/tag/v0.12.0)+):
+
+   ```bash
+   git clone https://github.com/celestiaorg/op-alt-da.git && cd op-alt-da
+   make
+   ```
+
+## Localstack
+
+1. Set mock AWS credentials (required even for localstack):
+
+   ```bash
+   export AWS_ACCESS_KEY_ID=test
+   export AWS_SECRET_ACCESS_KEY=test
+   export AWS_DEFAULT_REGION=us-east-1
+   ```
+
+2. Start localstack with KMS enabled:
+
+   ```bash
+   docker run -d \
+     --name localstack \
+     -p 4566:4566 \
+     -e SERVICES=kms \
+     localstack/localstack
+   ```
+
+3. Verify it's running:
+
+   ```bash
+   aws --endpoint-url=http://localhost:4566 kms list-keys
+   # should return: { "Keys": [] }
+   ```
+
+## Create KMS key
+
+Create a KMS key and alias:
+
+```bash
+KEY_ID=$(aws --endpoint-url=http://localhost:4566 kms create-key \
+  --key-spec ECC_SECG_P256K1 \
+  --key-usage SIGN_VERIFY \
+  --query 'KeyMetadata.KeyId' --output text)
+
+aws --endpoint-url=http://localhost:4566 kms create-alias \
+  --alias-name alias/op-alt-da/celestia_key --target-key-id $KEY_ID
+```
+
+## Configure op-alt-da
+
+1. Copy config example into `config.toml`:
+
+   ```bash
+   cp config.toml.example config.toml
+   ```
+
+2. Edit `config.toml` with the configs you gathered in the setup:
+
+   ```toml
+   [celestia]
+   namespace = "000000000000000000000000000000000000000000000000000000acfe"
+   keyring_backend = "awskms"
+   default_key_name = "alias/op-alt-da/celestia_key"
+
+   bridge_addr = "https://your-endpoint.celestia-mocha.quiknode.pro/your-token/"
+   bridge_auth_token = ""
+   bridge_tls_enabled = true
+
+   core_grpc_addr = "your-endpoint.celestia-mocha.quiknode.pro:9090"
+   core_grpc_auth_token = "your-token"
+   core_grpc_tls_enabled = true
+
+   [celestia.awskms]
+   region = "us-east-1"
+   endpoint = "http://localhost:4566"
+   ```
+
+   Note: In v0.12.0+, the `default_key_name` must include the full alias path (e.g., `alias/op-alt-da/celestia_key`).
+
+## Run the DA server
+
+1. Run the op-alt-da server:
+
+   ```bash
+   AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_DEFAULT_REGION=us-east-1 ./bin/da-server -config config.toml
+   ```
+
+   Where this is what the successful start looks like:
+
+   ```bash
+   INFO [01-20|14:53:56.130] Initializing Stateless Alt-DA server...
+   INFO [01-20|14:53:56.131] Using celestia storage                   url=https://your-endpoint.celestia-mocha.quiknode.pro/your-token/
+   INFO [01-20|14:53:56.179] Immediate submission mode (default, no queue)
+   INFO [01-20|14:53:56.992] Starting HTTP server                     addr=127.0.0.1:3100
+   INFO [01-20|14:53:56.992] Starting metrics server                  addr=:6060
+   INFO [01-20|14:53:57.004] Started DA Server
+   ```
+
+2. Test a POST request to get your Celestia address:
+
+   ```bash
+   curl -s -X POST http://127.0.0.1:3100/put \
+     -H "Content-Type: application/octet-stream" \
+     -d "hello celestia" -o /dev/null
+   ```
+
+   The first request will fail because the account has no funds. Check the server logs for the error message which reveals your Celestia address:
+
+   ```
+   submission failed: account for signer celestia1rwuklcs36jm6wqxk8w9cx9vyja93856nz3sdlf not found
+   ```
+
+3. Fund your address at the faucet: https://mocha.celenium.io/faucet
+
+   Copy the `celestia1...` address from the error message and request testnet tokens.
+
+4. Retry the POST request:
+
+   ```bash
+   curl -s -X POST http://127.0.0.1:3100/put \
+     -H "Content-Type: application/octet-stream" \
+     -d "hello celestia" -o /dev/null
+   ```
+
+   A successful POST shows in the server logs:
+
+   ```bash
+   INFO [01-20|14:54:15.342] celestia: blob successfully submitted    id=74a5940000000000677e645183667f4d9efe506226fd0dd0b70a4144c8fd05c0aa68407ccf886507
+   INFO [01-20|14:54:15.342] Blob submitted successfully              commitment=010c74a5940000000000677e645183667f4d9efe506226fd0dd0b70a4144c8fd05c0aa68407ccf886507 size=14 duration=11.5436025s
+   ```
+
+   Check your transaction on [Celenium](https://mocha.celenium.io) by navigating to `https://mocha.celenium.io/address/YOUR_CELESTIA_ADDRESS`.
+
+5. Verify your key and alias:
+
+   ```bash
+   AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_DEFAULT_REGION=us-east-1 aws --endpoint-url=http://localhost:4566 kms list-aliases
+   ```
+
+   You should see your alias pointing to the key:
+
+   ```bash
+   {
+       "Aliases": [
+           {
+               "AliasName": "alias/op-alt-da/celestia_key",
+               "AliasArn": "arn:aws:kms:us-east-1:000000000000:alias/op-alt-da/celestia_key",
+               "TargetKeyId": "79b26b15-0635-4b3c-aad0-0ab4406e6754"
+           }
+       ]
+   }
+   ```
+
+Congratulations, you're set up! You should be able to see your blob has been posted successfully using op-alt-da and AWS KMS. Now you can run your OP Stack rollup with AWS KMS, using the Celestia key in AWS.
 
 ## Production (AWS)
 
@@ -3693,6 +4391,23 @@ See [hardware requirements](/operate/getting-started/hardware-requirements).
 The following tutorial is done on an Ubuntu Linux 24.04 (LTS) x64
 instance machine.
 
+### Set up the dependencies
+
+Follow the instructions on [installing dependencies](/operate/getting-started/environment-setup).
+
+### Install celestia-app
+
+Follow the tutorial on [installing `celestia-app`](/operate/consensus-validators/install-celestia-app).
+
+### Set up the P2P networks
+
+To initialize the network, pick a "node-name" that describes your
+node. Keep in mind that this might change if a new testnet is deployed.
+
+Download the `genesis.json` file:
+
+Set seeds in the `$HOME/.celestia-app/config/config.toml` file:
+
 #### Optional: Set persistent peers
 
 You can set persistent peers in your `config.toml` file. If you set persistent peers, your node will **always** try to connect to these peers. This is useful when running a local devnet, for example, when you would always want to connect to the same local nodes in your devnet. In production, setting persistent peers is advised only if you are running a [sentry node](https://hub.cosmos.network/main/validators/security.html#sentry-nodes-ddos-protection).
@@ -4178,16 +4893,26 @@ Fibre is a data availability service that validators run alongside
 celestia-app. Clients upload blob shards to validator-operated Fibre servers
 and download them from there, and each server's storage budget is derived from
 the validator's stake. Starting with app version 10, every bonded validator is
-expected to run one. See the
-[Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/fibre/cmd/README.md)
-for the protocol details.
+expected to run one. Select your network below and use the matching release
+of celestia-app and Fibre throughout this guide.
 
-The examples use the Mocha release `v10.4.0-mocha`, its
-matching Fibre binary, and the Mocha chain ID. Substitute the values for your
-network.
+**Mainnet Beta**
 
-Mocha has activated app version 10. Bonded Mocha validators can now start Fibre
-and register their public address. See the
+Use `v10.4.0` for chain ID `celestia`.
+Read the [release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0)
+and [Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.4.0/fibre/cmd/README.md).
+
+Prepare Fibre before activation, then start it and register its public
+address only after your node reports active app version 10 or later.
+
+**Mocha**
+
+Use `v10.4.0-mocha` for chain ID `mocha-5`.
+Read the [release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
+and [Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/fibre/cmd/README.md).
+
+Mocha has activated app version 10. Bonded Mocha validators can now start
+Fibre and register their public address. See the
 [Mocha-5 upgrade history](/operate/maintenance/network-upgrades#mocha-5).
 
 Installing a v10 binary does not activate app version 10 on the chain. Prepare
@@ -4199,9 +4924,9 @@ for timing.
 
 - A running, synced [validator node](/operate/consensus-validators/validator-node)
   in the bonded validator set. Fibre derives its storage budget from your stake.
-- The v10 multiplexer celestia-app binary installed before activation. Follow the
-  [release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
-  and check the [celestia-app installation requirements](/operate/consensus-validators/install-celestia-app#linux-requirements).
+- The v10 multiplexer celestia-app binary installed before activation. Follow
+  your network's release upgrade instructions above and check the
+  [celestia-app installation requirements](/operate/consensus-validators/install-celestia-app#linux-requirements).
 - Separate disks for Fibre data and celestia-app data, and enough memory for
   the receive buffers described in [Plan capacity](#plan-capacity).
 - If your consensus key lives in an external key management system (KMS), the
@@ -4209,8 +4934,9 @@ for timing.
   at or below 10 ms. Fibre talks to the node's signing service, which forwards
   requests to the KMS.
 
-Any KMS may be used if it meets these requirements. Review the release's
-[KMS policy](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/docs/release-notes/release-notes.md#key-management-systems-kms)
+Any KMS may be used if it meets these requirements. Review the KMS policy for
+[Mainnet Beta](https://github.com/celestiaorg/celestia-app/blob/v10.4.0/docs/release-notes/release-notes.md#key-management-systems-kms)
+or [Mocha](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/docs/release-notes/release-notes.md#key-management-systems-kms)
 before choosing or upgrading a signer. It describes Horcrux's maintenance
 risks and the risk of double signing and slashing from incorrect KMS
 configuration.
@@ -4260,6 +4986,19 @@ check both when choosing the operating system for your validator.
 Download the Fibre archive and checksums from the same release as celestia-app.
 For Linux x86_64:
 
+**Mainnet Beta**
+
+```bash
+fibre_version=v10.4.0
+curl -fLO "https://github.com/celestiaorg/celestia-app/releases/download/$fibre_version/fibre_Linux_x86_64.tar.gz"
+curl -fLO "https://github.com/celestiaorg/celestia-app/releases/download/$fibre_version/checksums.txt"
+sha256sum --ignore-missing --check checksums.txt
+tar -xzf fibre_Linux_x86_64.tar.gz
+./fibre version
+```
+
+**Mocha**
+
 ```bash
 fibre_version=v10.4.0-mocha
 curl -fLO "https://github.com/celestiaorg/celestia-app/releases/download/$fibre_version/fibre_Linux_x86_64.tar.gz"
@@ -4275,9 +5014,25 @@ Place the verified binary on your executable path before using `fibre` below.
 
 ### Build from source
 
-Install Git, Make, a C compiler, and the Go version required by the release's
-[`go.mod`](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/go.mod).
+Install Git, Make, a C compiler, and the Go version required by your release.
 Clone the same release used by your celestia-app node:
+
+**Mainnet Beta**
+
+Check the Go version required by the release's
+[`go.mod`](https://github.com/celestiaorg/celestia-app/blob/v10.4.0/go.mod).
+
+```bash
+git clone --branch v10.4.0 --depth 1 https://github.com/celestiaorg/celestia-app.git celestia-app-fibre
+cd celestia-app-fibre
+make build-fibre-server VERSION=v10.4.0
+./build/fibre version
+```
+
+**Mocha**
+
+Check the Go version required by the release's
+[`go.mod`](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/go.mod).
 
 ```bash
 git clone --branch v10.4.0-mocha --depth 1 https://github.com/celestiaorg/celestia-app.git celestia-app-fibre
@@ -4412,10 +5167,12 @@ the change to take effect.
 
 ### Object storage
 
-Object storage is supported in `v10.4.0-mocha`. The older `v10.2.0-mocha`
-binary ignores `storage_backend` and `[object_storage]` and continues writing
-shards to local disk. Check `fibre version` before continuing. If upgrading,
-follow the [release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
+Object storage is supported in `v10.4.0` for Mainnet Beta and `v10.4.0-mocha`
+for Mocha. The older `v10.2.0-mocha` binary ignores `storage_backend` and
+`[object_storage]` and continues writing shards to local disk. Check `fibre version` before continuing. If upgrading,
+follow the release upgrade instructions for
+[Mainnet Beta](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0)
+or [Mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
 to replace both celestia-app and Fibre, sync their configuration, and check
 [signer TLS compatibility](#connections-between-fibre-and-your-validator).
 Use the matching binaries from [Install Fibre](#install-fibre).
@@ -4546,6 +5303,15 @@ override.
 Once Fibre is running and reachable, register its public host using your
 validator account:
 
+**Mainnet Beta**
+
+```bash
+celestia-appd tx valaddr set-host <public_host>:7980 \
+  --from <validator_account_key> --chain-id celestia
+```
+
+**Mocha**
+
 ```bash
 celestia-appd tx valaddr set-host <public_host>:7980 \
   --from <validator_account_key> --chain-id mocha-5
@@ -4590,8 +5356,9 @@ from the same host. No TLS certificates or extra flags are needed when Fibre
 connects to this address.
 
 For a remote signing connection, use binaries with mTLS support. The
-[`v10.4.0-mocha` release](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
-includes this support in both celestia-app and Fibre. The `v10.2.0-mocha`
+[`v10.4.0` Mainnet Beta release](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0)
+and [`v10.4.0-mocha` Mocha release](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
+include this support in both celestia-app and Fibre. The `v10.2.0-mocha`
 release does not; keep its signing connection on `127.0.0.1`.
 
 If Fibre connects from another host or through a container network, configure
@@ -4628,8 +5395,9 @@ connection shown in this guide is still unencrypted; keep it on the same host
 or a trusted private network. Fibre's automatic client TLS does not protect
 either connection.
 
-See the
-[Fibre server specification](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/specs/src/fibre_server.md)
+See the Fibre server specification for
+[Mainnet Beta](https://github.com/celestiaorg/celestia-app/blob/v10.4.0/specs/src/fibre_server.md)
+or [Mocha](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/specs/src/fibre_server.md)
 for details of how clients verify Fibre's certificate.
 
 ## Troubleshoot startup
@@ -4650,8 +5418,10 @@ for details of how clients verify Fibre's certificate.
 
 For logging, metrics, tracing, and profiling, see
 [Fibre monitoring](/operate/consensus-validators/fibre/metrics).
-The [Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/fibre/cmd/README.md)
-has further configuration details.
+The Fibre server references for
+[Mainnet Beta](https://github.com/celestiaorg/celestia-app/blob/v10.4.0/fibre/cmd/README.md)
+and [Mocha](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/fibre/cmd/README.md)
+have further configuration details.
 
 ---
 Title: Fibre monitoring
@@ -5049,6 +5819,70 @@ This section of the tutorial assumes you completed the steps in
 The steps below will create a binary file named `celestia-appd`
 inside `$HOME/go/bin` folder which will be used later to run the node.
 Be sure to select the correct network to install the binary for.
+
+### Remove any existing copy and clone the repository
+
+   ```bash
+   cd $HOME
+   rm -rf celestia-app
+   git clone https://github.com/celestiaorg/celestia-app.git
+   cd celestia-app
+   ```
+
+### Check out the desired version
+
+   
+
+**Mainnet Beta**
+
+```bash
+git checkout tags/v10.4.0
+```
+
+**Mocha**
+
+```bash
+git checkout tags/v10.4.0-mocha
+```
+
+   
+
+On Linux, enable BBR TCP congestion control before building. Run the following
+from the checked-out `celestia-app` directory on the node's host, with sudo
+access. Skip this step on macOS.
+
+```bash
+make enable-bbr
+make check-bbr
+```
+
+The enable command loads the `tcp_bbr` kernel module, persists it in
+`/etc/modules`, and adds the `fq` queueing and `bbr` congestion control defaults
+to `/etc/sysctl.conf` before applying that file. These are host-wide network
+settings. The check command should print `BBR is enabled.`
+
+If enabling BBR fails, inspect the command output and confirm that the host's
+Linux kernel provides the `tcp_bbr` module and that you have sudo access. Run
+these commands on the host rather than inside a container, then rerun
+`make check-bbr` to verify the result.
+
+### Build and install the `celestia-appd` binary with multiplexer support
+
+   ```bash
+   make install
+   ```
+
+### Verify the installation
+
+To check if the binary was successfully installed you can run the binary
+using the `--help` flag:
+
+   ```sh
+   celestia-appd --help
+   ```
+
+You will see an output with the menu for `celestia-appd`. Learn more
+on the [helpful CLI commands page](/operate/consensus-validators/cli-reference)
 
 ## Installing a pre-built binary
 
@@ -5746,6 +6580,71 @@ The following tutorial is done on an Ubuntu Linux 20.04 (LTS) x64 instance machi
 
 Deploy the Celestia bridge node with the following steps.
 
+### Setup the dependencies
+
+Follow the tutorial for [installing the dependencies](/operate/getting-started/environment-setup).
+
+### Install Celestia Node
+
+Install the `celestia-node` binary, which will be used to run the bridge node.
+
+Follow the tutorial for [installing `celestia-node`](/operate/data-availability/install-celestia-node).
+
+### Initialize the bridge node
+
+Run the following:
+
+```sh
+celestia bridge init --core.ip <URI> --core.port <port>
+```
+
+After v0.21.5, the `--core.port` must be specified.
+In most cases, it is port 9090 by default.
+
+> **Warning:** Make sure port 2121 TCP/UDP is open and publicly accessible on your bridge node so it can be discovered by other peers in the DHT network. This port is essential for P2P connectivity and if not properly configured, your node won't be able to participate in the network effectively.
+
+Refer to
+[the ports section of the celestia-node troubleshooting page](/operate/maintenance/troubleshooting#ports)
+for information on which ports are required to be open on your machine.
+
+Using an RPC of your own, or one from the
+[list on the Mocha testnet page](/operate/networks/mocha-testnet#community-rpc-endpoints),
+start your node.
+
+Connecting to a consensus node endpoint (flag: `--core.ip string`)
+provides the light node with access to state queries (reading balances, submitting
+transactions, and other state-related queries).
+
+Here is an example of initializing the bridge node:
+
+### Run the bridge node
+
+Start the bridge node with a connection to a consensus node's gRPC endpoint, which is usually exposed on port 9090:
+
+```sh
+celestia bridge start --core.ip <URI> --core.port <port>
+```
+
+Here is an example of starting the bridge node on Mocha:
+
+```sh
+celestia bridge start --core.ip <archival-consensus-endpoint> --core.port 9090 --p2p.network mocha
+```
+
+Bridge nodes sync headers from genesis and require an archival consensus node. Public RPC endpoints are typically pruned and will not work for initial sync. Use your own archival consensus node or an archival endpoint from an infrastructure provider.
+
+If you're connecting your bridge node to a localhost consensus node (`--core.ip localhost` or `--core.ip 127.0.0.1`), ensure that gRPC is enabled in your consensus node's `app.toml` configuration file. Look for the `[grpc]` section and verify that `enable = true` is set:
+
+```toml
+[grpc]
+# Enable defines if the gRPC server should be enabled.
+enable = true
+# Address defines the gRPC server address to bind to.
+address = "localhost:9090"
+```
+
+Without proper gRPC configuration, the bridge node will not be able to connect to the consensus node.
+
 You can create your key for your node by [following the `cel-key` instructions](/operate/keys-wallets/celestia-node-key).
 
 Once you start the bridge node, a wallet key will be generated for you.
@@ -6178,6 +7077,62 @@ tutorial assumes you completed the steps in
 Install the celestia-node binary by running the following
 commands:
 
+### Remove any existing copy and clone
+
+   ```bash
+   cd $HOME
+   rm -rf celestia-node
+   git clone https://github.com/celestiaorg/celestia-node.git
+   cd celestia-node/
+   ```
+
+### Check out the desired version
+
+   
+
+### Build the `celestia` binary
+
+   a. Standard build
+
+   ```bash
+   make build
+   ```
+
+   b. Experimental build (optional)
+
+   
+
+   If you're a node operator comfortable with experimental features and seeking optimal performance with minimal RAM usage, this option is recommended for you.
+   
+
+   ```bash
+   make build-jemalloc
+   ```
+
+   This build option enables CGO, and downloads and installs [jemalloc](https://jemalloc.net/). [Learn more about the build command](https://github.com/celestiaorg/celestia-node/releases/tag/v0.12.1#:~:text=%F0%9F%8F%97%EF%B8%8F-,New%20build%20option,-%3A%20Makefile%20now%20has).
+
+### Install the binary
+
+   ```bash
+   make install
+   ```
+
+### Build and install the `cel-key` utility
+
+   ```bash
+   make cel-key
+   make install-key
+   ```
+
+### Verify the installation
+
+   ```bash
+   celestia version
+   ```
+
+The output will show the semantic version of celestia-node,
+commit hash, build date, system version, and Golang version.
+
 ## Installing a pre-built binary
 
 Installing a pre-built binary is the fastest way to get started with your Celestia data availability node. Releases after celestia-node v0.13.3 have these binaries available.
@@ -6296,6 +7251,20 @@ To use a non-default key, make sure the key exists in your node store and pass
 For key creation, backup, import/recover, and Docker setups, see
 [Create a wallet with celestia-node](/operate/keys-wallets/celestia-node-key).
 
+**Mainnet Beta**
+
+```bash
+celestia light start --core.ip <URI> --core.port <port> \
+  --keyring.keyname <name-of-custom-key>
+```
+
+**Mocha**
+
+```bash
+celestia light start --core.ip <URI> --core.port <port> \
+  --keyring.keyname <name-of-custom-key> --p2p.network mocha
+```
+
 ---
 
 ## Run the light node with SystemD
@@ -6317,6 +7286,36 @@ hash.
 
 Celestia also supports initializing from a trusted hash via
 [trusted hash recovery](/operate/maintenance/trusted-hash-recovery).
+
+### Get a trusted height and hash
+
+This example uses the public Quicknode Mocha endpoint. The `/block` response
+provides the height and hash of the same block:
+
+```bash
+read -r TRUSTED_HEIGHT TRUSTED_HASH <<<"$(curl -s https://public-endpoint.celestia-mocha.quiknode.pro/block | jq -r '.result | "\(.block.header.height) \(.block_id.hash)"')" && export TRUSTED_HEIGHT TRUSTED_HASH
+printf 'SyncFromHeight = %s\nSyncFromHash = "%s"\n' "$TRUSTED_HEIGHT" "$TRUSTED_HASH"
+```
+
+### Set `SyncFromHeight` and `SyncFromHash`
+
+Edit your config file at `~/.celestia-light-mocha-5/config.toml`
+and set `SyncFromHeight` and `SyncFromHash` to the values printed above. For example:
+
+```toml
+SyncFromHeight = 123456
+SyncFromHash = "E8BD0C48260C496BB7A4D8D1E7BDBF1F26A2FE3CF5714DECE1741B2FFB3C095C"
+```
+
+Ensure `SyncFromHash` has **no `0x` prefix**.
+
+### Start the node
+
+```bash
+celestia light start --p2p.network mocha \
+  --core.ip public-endpoint.celestia-mocha.quiknode.pro \
+  --core.port 9090 --core.tls
+```
 
 ---
 
@@ -6344,6 +7343,29 @@ queue.
 Enable synchronous, ordered submission by setting `TxWorkerAccounts` to `1` in
 your `config.toml`.
 
+#### Open your config file
+
+```bash
+nano ~/.celestia-light-mocha-5/config.toml
+```
+
+#### Set TxWorkerAccounts to 1
+
+Find the `[SubmitClient]` section and add or update:
+
+```toml
+[SubmitClient]
+TxWorkerAccounts = 1
+```
+
+#### Restart your node
+
+```bash
+celestia light start --p2p.network mocha \
+  --core.ip public-endpoint.celestia-mocha.quiknode.pro \
+  --core.port 9090 --core.tls
+```
+
 **Characteristics:**
 
 - Each transaction queues until the previous one is confirmed
@@ -6357,6 +7379,29 @@ your `config.toml`.
 
 For high-throughput applications that don't require sequential ordering, enable
 parallel submission by setting `TxWorkerAccounts` to a value greater than 1.
+
+#### Open your config file
+
+```bash
+nano ~/.celestia-light-mocha-5/config.toml
+```
+
+#### Set TxWorkerAccounts to desired number of lanes
+
+Find the `[SubmitClient]` section and add or update:
+
+```toml
+[SubmitClient]
+TxWorkerAccounts = 8
+```
+
+#### Restart your node
+
+```bash
+celestia light start --p2p.network mocha \
+  --core.ip public-endpoint.celestia-mocha.quiknode.pro \
+  --core.port 9090 --core.tls
+```
 
 **How it works:**
 
@@ -6507,6 +7552,78 @@ This guide assumes you've completed:
 
 - [Hardware requirements](/operate/getting-started/hardware-requirements)
 - [Environment setup](/operate/getting-started/environment-setup)
+
+### Install `celestia-node`
+
+Follow the [Install celestia-node](/operate/data-availability/install-celestia-node)
+guide (from source or using the pre-built binary installer).
+
+### Initialize the node store
+
+This creates the node store and a key for the network you choose.
+
+Want to sync faster (skip sampling from genesis)? See
+[Fast sync with a trusted hash](/operate/data-availability/light-node/advanced#fast-sync-with-a-trusted-hash).
+
+### Start the light node
+
+Light nodes connect to a consensus node **gRPC** endpoint (usually port `9090`)
+for state access (balances, submitting `PayForBlobs`, etc.).
+
+You can use any consensus node gRPC endpoint listed on
+either [Mainnet Beta](/operate/networks/mainnet-beta#integrations) or
+[Mocha testnet](/operate/networks/mocha-testnet#community-data-availability-da-grpc-endpoints-for-state-access).
+
+If you're running on a server, make sure required ports are open. See
+[Troubleshooting ports](/operate/maintenance/troubleshooting#ports).
+
+### Get some testnet tokens (for blob posting)
+
+To submit blobs on testnets, fund your light node address:
+
+```bash
+celestia state account-address
+```
+
+Then use a faucet:
+
+- [Mocha faucet](/operate/networks/mocha-testnet#mocha-testnet-faucet)
+
+On Mainnet Beta, fund this address with TIA to submit blobs.
+
+### Check your balance (optional)
+
+```bash
+celestia state balance
+```
+
+### Post your first blob
+
+Use `celestia blob submit <namespace> <data>` to post your first blob.
+The example below uses a hex-encoded namespace and `0x`-prefixed hex data
+to submit the text `gm`:
+
+```bash
+celestia blob submit 0x676d 0x676d
+```
+
+Keep the `0x` prefix when passing hex-encoded data. This explicit-hex form
+works both before and after the blob submission fix in celestia-node #5262.
+On builds containing that fix, unprefixed data is submitted as literal text:
+`hello` submits `hello`, and `cafe` submits the four characters `cafe`.
+
+Save the returned `height` and the first value in `commitments`. Commitments
+are still returned as `0x`-prefixed hex strings.
+
+### Retrieve your first blob
+
+Replace `<height>` and `<commitment>` with the values from `blob submit`:
+
+```bash
+celestia blob get <height> 0x676d <commitment>
+```
+
+The returned `data` field should be `"gm"`.
 
 If you see `header: syncing in progress`, wait for the node to sync or use
 [fast sync](/operate/data-availability/light-node/advanced#fast-sync-with-a-trusted-hash).
@@ -6824,6 +7941,20 @@ zfs set compression=zstd-3 $ZFS_POOL_NAME/$ZFS_DATASET_NAME
 
 Set the custom path to the bridge data folder:
 
+**Mainnet Beta**
+
+```sh
+# Add flag --node.store /celestia/bridge/.celestia-bridge to your command, example:
+celestia bridge start --metrics.tls=true --metrics --metrics.endpoint otel.celestia.observer --p2p.metrics --node.store /celestia/bridge/.celestia-bridge
+```
+
+**Mocha**
+
+```sh
+# Add flag --node.store /celestia/bridge/.celestia-bridge-mocha-5 to your command, example:
+celestia bridge start --metrics.tls=true --metrics --metrics.endpoint otel.mocha.celestia.observer --p2p.metrics --node.store /celestia/bridge/.celestia-bridge-mocha-5 --p2p.network mocha
+```
+
 > **Note:** It is recommended to sync from scratch. In case of using a snapshot it is important to have your local route to `--data.store` identical to one in a snapshot.
 
 After completing the steps above, you can begin syncing your DA node.
@@ -6916,6 +8047,60 @@ Ubuntu. You can
 
 ## Quick start
 
+### Set the network
+
+Choose [the network](/operate/networks/overview) you would like to run your node on:
+
+   
+
+### Set the node type
+
+   
+
+**Light**
+
+```bash
+export NODE_TYPE=light
+```
+
+**Bridge**
+
+```bash
+export NODE_TYPE=bridge
+```
+
+**Full**
+
+```bash
+export NODE_TYPE=full
+```
+
+   
+
+### Configure the consensus endpoint
+
+celestia-node connects to consensus over gRPC via `--core.ip` and `--core.port`
+(default `9090`). Pick a consensus host from
+   [Mainnet Beta](/operate/networks/mainnet-beta#community-consensus-endpoints)
+   or [Mocha](/operate/networks/mocha-testnet#community-consensus-endpoints)
+   using the bare host (without `http://` or `https://`):
+
+   ```bash
+   export CORE_IP=consensus.example.com
+   ```
+
+Then set the gRPC port for that host (usually `9090`):
+
+   ```bash
+   export CORE_PORT=9090
+   ```
+
+### Run the container
+
+   
+
+Congratulations! You now have a celestia-node running!
+
 If you would like to run the node with custom flags,
 you can refer to the
 [celestia-node tutorial](/operate/data-availability/light-node/quickstart#start-the-light-node) page. Refer to
@@ -6953,6 +8138,36 @@ sudo chown 10001:10001 $HOME/my-node-store
 ```
 
 > Docker Desktop on Mac users typically do not need to change permissions.
+
+### Initialize the node store and key
+
+In order to mount a volume to the container, you need to specify
+the path to the volume. When you run your container, you can specify
+the path to the volume using the `--volume` (or `-v` for short) flag.
+In this command, we'll create our key and initialize the node store,
+using the variables we set in the [quick start](#quick-start) section:
+
+```bash
+# --volume == -v [local path]:[container path]
+docker run [args...] -v $HOME/my-node-store:/home/celestia \
+    celestia $NODE_TYPE init [args...]
+```
+
+An example init command will look similar to below:
+
+### Start the node
+
+Run the following command to start the node:
+
+```bash
+# --volume == -v [local path]:[container path]
+docker run [...args] -v $HOME/my-node-store:/home/celestia \
+    celestia <node-type> start [...args]
+```
+
+A full start command will look similar to below.
+
+Congratulations! You now have a node running with persistent storage.
 
 ## Video walkthrough
 
@@ -7008,6 +8223,121 @@ Celestia-app and celestia-node only officially support the following architectur
 - darwin/arm64 (macOS Apple Silicon)
 
 Only these four architectures are officially tested and supported.
+
+### Install dependencies
+
+Select your platform to update the OS and install required packages:
+
+**Ubuntu (APT)**
+
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install curl tar wget aria2 clang pkg-config libssl-dev jq build-essential \
+git make ncdu -y
+```
+
+**RHEL/CentOS (YUM)**
+
+```bash
+sudo yum update
+sudo yum install curl tar wget aria2 clang pkg-config libssl-dev jq build-essential \
+git make ncdu -y
+```
+
+**macOS**
+
+```bash
+# install Homebrew, then wget & jq
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew install wget && brew install jq
+```
+
+### Install Go
+
+Install Go to build celestia-node or celestia-app from source. The versions below
+meet the Go requirements of the releases documented for each network.
+When building a different release, check the `go` and, if present, `toolchain`
+directives in that release's `go.mod` before choosing a Go version.
+
+| Network | celestia-node requirements | celestia-app requirements |
+| --- | --- | --- |
+| Mainnet Beta | [Release go.mod](https://github.com/celestiaorg/celestia-node/blob/v0.34.3/go.mod) | [Release go.mod](https://github.com/celestiaorg/celestia-app/blob/v10.4.0/go.mod) |
+| Mocha | [Release go.mod](https://github.com/celestiaorg/celestia-node/blob/v0.34.3-mocha/go.mod) | [Release go.mod](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/go.mod) |
+
+Set the version for your desired network:
+
+- Mainnet Beta: `ver="1.26.8"`
+- Mocha: `ver="1.26.8"`
+
+Download and install Go:
+
+**Linux (AMD)**
+
+```bash
+cd $HOME
+wget "https://go.dev/dl/go$ver.linux-amd64.tar.gz"
+sudo rm -rf /usr/local/go
+sudo tar -C /usr/local -xzf "go$ver.linux-amd64.tar.gz"
+rm "go$ver.linux-amd64.tar.gz"
+```
+
+**Linux (ARM)**
+
+```bash
+cd $HOME
+wget "https://go.dev/dl/go$ver.linux-arm64.tar.gz"
+sudo rm -rf /usr/local/go
+sudo tar -C /usr/local -xzf "go$ver.linux-arm64.tar.gz"
+rm "go$ver.linux-arm64.tar.gz"
+```
+
+**macOS (Apple)**
+
+```bash
+cd $HOME
+wget "https://go.dev/dl/go$ver.darwin-arm64.tar.gz"
+sudo rm -rf /usr/local/go
+sudo tar -C /usr/local -xzf "go$ver.darwin-arm64.tar.gz"
+rm "go$ver.darwin-arm64.tar.gz"
+```
+
+**macOS (Intel)**
+
+```bash
+cd $HOME
+wget "https://go.dev/dl/go$ver.darwin-amd64.tar.gz"
+sudo rm -rf /usr/local/go
+sudo tar -C /usr/local -xzf "go$ver.darwin-amd64.tar.gz"
+rm "go$ver.darwin-amd64.tar.gz"
+```
+
+### Configure Go and verify
+
+Add your `/usr/local/go/bin` directory to your `$PATH` if you have not already:
+
+**bash**
+
+```bash
+echo "export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin" >> $HOME/.bash_profile
+source $HOME/.bash_profile
+```
+
+**zsh**
+
+```bash
+echo "export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin" >> $HOME/.zshrc
+source $HOME/.zshrc
+```
+
+Use `echo $SHELL` to figure out what type of shell you are using.
+
+To verify that the correct version of Go was installed correctly run:
+
+```bash
+go version
+```
+
+The output will show the version installed.
 
 ---
 Title: Hardware requirements
@@ -8982,9 +10312,62 @@ By configuring these fields, your light node will maintain history from the spec
 
 ## General Approach
 
+### Get a trusted height and hash
+
+Get trusted height & hash from a consensus endpoint or [Celenium](https://celenium.io).
+
+### Initialize the node store
+
+   ```sh
+   celestia light init --p2p.network <network>
+   ```
+
+### Set the trusted height and hash
+
+1. Open your `config.toml` at `.celestia-light/config.toml` (or `.celestia-light-<other-network>/config.toml`)
+2. Set `Header.Syncer.SyncFromHeight` to the trusted height (e.g. `SyncFromHeight = 123456`)
+3. Set `Header.Syncer.SyncFromHash` to the trusted hash (e.g. `SyncFromHash = "<hash_of_block_n>"`, with **no `0x` prefix**.)
+
+### Start the node
+
+```sh
+celestia light start --p2p.network <network> --core.ip <consensus-node-rpc> --core.port <port>
+```
+
 ## Automated Approach
 
 You can automate the process of setting the trusted height and hash using the following commands for Mocha testnet:
+
+### Initialize the node store (if not already done)
+
+```sh
+celestia light init --p2p.network mocha
+```
+
+### Get and set the trusted height and hash automatically
+
+```sh
+# Get the height and hash of the same block in a single call
+read -r TRUSTED_HEIGHT TRUSTED_HASH <<<"$(curl -s https://public-endpoint.celestia-mocha.quiknode.pro/block | jq -r '.result | "\(.block.header.height) \(.block_id.hash)"')" && export TRUSTED_HEIGHT TRUSTED_HASH
+
+# Use sed to find and replace the SyncFromHeight value in the config file (macOS version)
+sed -i '' "s/SyncFromHeight = .*/SyncFromHeight = $TRUSTED_HEIGHT/" ~/.celestia-light-mocha-5/config.toml
+
+# Add/update the SyncFromHash value
+sed -i '' "s/SyncFromHash = .*/SyncFromHash = \"$TRUSTED_HASH\"/" ~/.celestia-light-mocha-5/config.toml
+
+# Display the updated values to confirm
+echo "SyncFromHeight updated to: $TRUSTED_HEIGHT"
+echo "SyncFromHash updated to: $TRUSTED_HASH"
+```
+
+### Start the node
+
+```sh
+celestia light start --p2p.network mocha \
+  --core.ip public-endpoint.celestia-mocha.quiknode.pro \
+  --core.port 9090 --core.tls
+```
 
 > **Tip (Linux):** Remove the empty string (`''`) after `-i` in the `sed` commands:  
 > `sed -i "s/SyncFromHeight = .*/SyncFromHeight = $TRUSTED_HEIGHT/" ~/.celestia-light-mocha-5/config.toml`  
@@ -9011,6 +10394,181 @@ complete Celestia network environment on your local machine.
 ## Choose your setup method
 
 Pick the approach you want to follow:
+
+**Docker Compose**
+
+### Install Docker
+
+Install [Docker and Docker Compose](https://docs.docker.com/get-docker).
+
+### Create a Docker Compose file
+
+Create a `docker-compose.yml` file with the following content:
+
+   ```yaml
+   version: "3.8"
+   services:
+     celestia-validator:
+       image: ghcr.io/celestiaorg/celestia-app:latest
+       container_name: celestia-validator
+       volumes:
+         - celestia_validator_data:/home/celestia
+       ports:
+         - "9090:9090"
+         - "26656:26656"
+         - "26657:26657"
+       command: |
+         sh -c "
+         celestia-appd init mynode --chain-id private &&
+         celestia-appd start
+         "
+       networks:
+         - celestia-network
+
+     celestia-bridge:
+       image: ghcr.io/celestiaorg/celestia-node:latest
+       container_name: celestia-bridge
+       environment:
+         - P2P_NETWORK=private
+       volumes:
+         - celestia_bridge_data:/home/celestia
+       ports:
+         - "26658:26658"
+       command: >
+         celestia bridge start
+         --p2p.network private
+         --core.ip celestia-validator
+         --rpc.addr 0.0.0.0
+         --rpc.port 26658
+       depends_on:
+         - celestia-validator
+       networks:
+         - celestia-network
+
+   volumes:
+     celestia_validator_data:
+     celestia_bridge_data:
+
+   networks:
+     celestia-network:
+       driver: bridge
+   ```
+
+### Start the services
+
+   ```bash
+   docker-compose up -d
+   ```
+
+### Check the status
+
+   ```bash
+   docker-compose ps
+   docker-compose logs celestia-validator
+   docker-compose logs celestia-bridge
+   ```
+### Test your setup
+
+1. Check consensus node status:
+
+   ```bash
+   curl http://localhost:26657/status
+   ```
+
+2. Query the latest block:
+
+   ```bash
+   curl http://localhost:26657/block
+   ```
+
+3. Check the bridge node head:
+
+   ```bash
+   curl http://localhost:26658/head
+   ```
+
+### Stop the devnet
+
+Stop and remove containers:
+
+```bash
+docker-compose down
+```
+
+### Reset / start fresh
+
+Stop and remove containers **and wipe chain data** (volumes):
+
+```bash
+docker-compose down -v
+```
+
+**From source (scripts)**
+
+### Install dependencies
+
+- [Install celestia-app](/operate/consensus-validators/install-celestia-app)
+- [Install celestia-node](/operate/data-availability/install-celestia-node)
+
+### Start a single consensus node
+
+1. Clone and build celestia-app:
+
+   ```bash
+   git clone https://github.com/celestiaorg/celestia-app.git
+   cd celestia-app
+   make install
+   ```
+
+2. Run the single node script:
+
+   ```bash
+   ./scripts/single-node.sh
+   ```
+
+### Start a bridge node
+
+In a new terminal, run the bridge node script:
+
+```bash
+./scripts/single-bridge-node.sh
+```
+
+### Test your setup
+
+1. Check consensus node status:
+
+   ```bash
+   curl http://localhost:26657/status
+   ```
+
+2. Query the latest block:
+
+   ```bash
+   curl http://localhost:26657/block
+   ```
+
+3. Check the bridge node head:
+
+   ```bash
+   curl http://localhost:26658/head
+   ```
+
+### Stop the devnet
+
+Stop the processes with `Ctrl+C` in each terminal.
+
+### Reset / start fresh
+
+Stop the node(s) with `Ctrl+C`, then reset the local chain state (be careful if you’re
+running a real validator):
+
+```bash
+celestia-appd tendermint unsafe-reset-all --home $HOME/.celestia-app
+```
+
+For more reset options and safety notes (especially if you are running a validator), see
+[Reset network](/operate/consensus-validators/consensus-node#optional-reset-network).
 
 ## Default endpoints
 

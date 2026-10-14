@@ -20,6 +20,62 @@ tutorial assumes you completed the steps in
 Install the celestia-node binary by running the following
 commands:
 
+### Remove any existing copy and clone
+
+   ```bash
+   cd $HOME
+   rm -rf celestia-node
+   git clone https://github.com/celestiaorg/celestia-node.git
+   cd celestia-node/
+   ```
+
+### Check out the desired version
+
+   
+
+### Build the `celestia` binary
+
+   a. Standard build
+
+   ```bash
+   make build
+   ```
+
+   b. Experimental build (optional)
+
+   
+
+   If you're a node operator comfortable with experimental features and seeking optimal performance with minimal RAM usage, this option is recommended for you.
+   
+
+   ```bash
+   make build-jemalloc
+   ```
+
+   This build option enables CGO, and downloads and installs [jemalloc](https://jemalloc.net/). [Learn more about the build command](https://github.com/celestiaorg/celestia-node/releases/tag/v0.12.1#:~:text=%F0%9F%8F%97%EF%B8%8F-,New%20build%20option,-%3A%20Makefile%20now%20has).
+
+### Install the binary
+
+   ```bash
+   make install
+   ```
+
+### Build and install the `cel-key` utility
+
+   ```bash
+   make cel-key
+   make install-key
+   ```
+
+### Verify the installation
+
+   ```bash
+   celestia version
+   ```
+
+The output will show the semantic version of celestia-node,
+commit hash, build date, system version, and Golang version.
+
 ## Installing a pre-built binary
 
 Installing a pre-built binary is the fastest way to get started with your Celestia data availability node. Releases after celestia-node v0.13.3 have these binaries available.

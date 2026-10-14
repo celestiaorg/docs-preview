@@ -4,16 +4,26 @@ Fibre is a data availability service that validators run alongside
 celestia-app. Clients upload blob shards to validator-operated Fibre servers
 and download them from there, and each server's storage budget is derived from
 the validator's stake. Starting with app version 10, every bonded validator is
-expected to run one. See the
-[Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/fibre/cmd/README.md)
-for the protocol details.
+expected to run one. Select your network below and use the matching release
+of celestia-app and Fibre throughout this guide.
 
-The examples use the Mocha release `v10.4.0-mocha`, its
-matching Fibre binary, and the Mocha chain ID. Substitute the values for your
-network.
+**Mainnet Beta**
 
-Mocha has activated app version 10. Bonded Mocha validators can now start Fibre
-and register their public address. See the
+Use `v10.4.0` for chain ID `celestia`.
+Read the [release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0)
+and [Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.4.0/fibre/cmd/README.md).
+
+Prepare Fibre before activation, then start it and register its public
+address only after your node reports active app version 10 or later.
+
+**Mocha**
+
+Use `v10.4.0-mocha` for chain ID `mocha-5`.
+Read the [release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
+and [Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/fibre/cmd/README.md).
+
+Mocha has activated app version 10. Bonded Mocha validators can now start
+Fibre and register their public address. See the
 [Mocha-5 upgrade history](/operate/maintenance/network-upgrades#mocha-5).
 
 Installing a v10 binary does not activate app version 10 on the chain. Prepare
@@ -25,9 +35,9 @@ for timing.
 
 - A running, synced [validator node](/operate/consensus-validators/validator-node)
   in the bonded validator set. Fibre derives its storage budget from your stake.
-- The v10 multiplexer celestia-app binary installed before activation. Follow the
-  [release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
-  and check the [celestia-app installation requirements](/operate/consensus-validators/install-celestia-app#linux-requirements).
+- The v10 multiplexer celestia-app binary installed before activation. Follow
+  your network's release upgrade instructions above and check the
+  [celestia-app installation requirements](/operate/consensus-validators/install-celestia-app#linux-requirements).
 - Separate disks for Fibre data and celestia-app data, and enough memory for
   the receive buffers described in [Plan capacity](#plan-capacity).
 - If your consensus key lives in an external key management system (KMS), the
@@ -35,8 +45,9 @@ for timing.
   at or below 10 ms. Fibre talks to the node's signing service, which forwards
   requests to the KMS.
 
-Any KMS may be used if it meets these requirements. Review the release's
-[KMS policy](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/docs/release-notes/release-notes.md#key-management-systems-kms)
+Any KMS may be used if it meets these requirements. Review the KMS policy for
+[Mainnet Beta](https://github.com/celestiaorg/celestia-app/blob/v10.4.0/docs/release-notes/release-notes.md#key-management-systems-kms)
+or [Mocha](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/docs/release-notes/release-notes.md#key-management-systems-kms)
 before choosing or upgrading a signer. It describes Horcrux's maintenance
 risks and the risk of double signing and slashing from incorrect KMS
 configuration.
@@ -86,6 +97,19 @@ check both when choosing the operating system for your validator.
 Download the Fibre archive and checksums from the same release as celestia-app.
 For Linux x86_64:
 
+**Mainnet Beta**
+
+```bash
+fibre_version=v10.4.0
+curl -fLO "https://github.com/celestiaorg/celestia-app/releases/download/$fibre_version/fibre_Linux_x86_64.tar.gz"
+curl -fLO "https://github.com/celestiaorg/celestia-app/releases/download/$fibre_version/checksums.txt"
+sha256sum --ignore-missing --check checksums.txt
+tar -xzf fibre_Linux_x86_64.tar.gz
+./fibre version
+```
+
+**Mocha**
+
 ```bash
 fibre_version=v10.4.0-mocha
 curl -fLO "https://github.com/celestiaorg/celestia-app/releases/download/$fibre_version/fibre_Linux_x86_64.tar.gz"
@@ -101,9 +125,25 @@ Place the verified binary on your executable path before using `fibre` below.
 
 ### Build from source
 
-Install Git, Make, a C compiler, and the Go version required by the release's
-[`go.mod`](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/go.mod).
+Install Git, Make, a C compiler, and the Go version required by your release.
 Clone the same release used by your celestia-app node:
+
+**Mainnet Beta**
+
+Check the Go version required by the release's
+[`go.mod`](https://github.com/celestiaorg/celestia-app/blob/v10.4.0/go.mod).
+
+```bash
+git clone --branch v10.4.0 --depth 1 https://github.com/celestiaorg/celestia-app.git celestia-app-fibre
+cd celestia-app-fibre
+make build-fibre-server VERSION=v10.4.0
+./build/fibre version
+```
+
+**Mocha**
+
+Check the Go version required by the release's
+[`go.mod`](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/go.mod).
 
 ```bash
 git clone --branch v10.4.0-mocha --depth 1 https://github.com/celestiaorg/celestia-app.git celestia-app-fibre
@@ -238,10 +278,12 @@ the change to take effect.
 
 ### Object storage
 
-Object storage is supported in `v10.4.0-mocha`. The older `v10.2.0-mocha`
-binary ignores `storage_backend` and `[object_storage]` and continues writing
-shards to local disk. Check `fibre version` before continuing. If upgrading,
-follow the [release upgrade instructions](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
+Object storage is supported in `v10.4.0` for Mainnet Beta and `v10.4.0-mocha`
+for Mocha. The older `v10.2.0-mocha` binary ignores `storage_backend` and
+`[object_storage]` and continues writing shards to local disk. Check `fibre version` before continuing. If upgrading,
+follow the release upgrade instructions for
+[Mainnet Beta](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0)
+or [Mocha](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
 to replace both celestia-app and Fibre, sync their configuration, and check
 [signer TLS compatibility](#connections-between-fibre-and-your-validator).
 Use the matching binaries from [Install Fibre](#install-fibre).
@@ -372,6 +414,15 @@ override.
 Once Fibre is running and reachable, register its public host using your
 validator account:
 
+**Mainnet Beta**
+
+```bash
+celestia-appd tx valaddr set-host <public_host>:7980 \
+  --from <validator_account_key> --chain-id celestia
+```
+
+**Mocha**
+
 ```bash
 celestia-appd tx valaddr set-host <public_host>:7980 \
   --from <validator_account_key> --chain-id mocha-5
@@ -416,8 +467,9 @@ from the same host. No TLS certificates or extra flags are needed when Fibre
 connects to this address.
 
 For a remote signing connection, use binaries with mTLS support. The
-[`v10.4.0-mocha` release](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
-includes this support in both celestia-app and Fibre. The `v10.2.0-mocha`
+[`v10.4.0` Mainnet Beta release](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0)
+and [`v10.4.0-mocha` Mocha release](https://github.com/celestiaorg/celestia-app/releases/tag/v10.4.0-mocha)
+include this support in both celestia-app and Fibre. The `v10.2.0-mocha`
 release does not; keep its signing connection on `127.0.0.1`.
 
 If Fibre connects from another host or through a container network, configure
@@ -454,8 +506,9 @@ connection shown in this guide is still unencrypted; keep it on the same host
 or a trusted private network. Fibre's automatic client TLS does not protect
 either connection.
 
-See the
-[Fibre server specification](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/specs/src/fibre_server.md)
+See the Fibre server specification for
+[Mainnet Beta](https://github.com/celestiaorg/celestia-app/blob/v10.4.0/specs/src/fibre_server.md)
+or [Mocha](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/specs/src/fibre_server.md)
 for details of how clients verify Fibre's certificate.
 
 ## Troubleshoot startup
@@ -476,5 +529,7 @@ for details of how clients verify Fibre's certificate.
 
 For logging, metrics, tracing, and profiling, see
 [Fibre monitoring](/operate/consensus-validators/fibre/metrics).
-The [Fibre server reference](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/fibre/cmd/README.md)
-has further configuration details.
+The Fibre server references for
+[Mainnet Beta](https://github.com/celestiaorg/celestia-app/blob/v10.4.0/fibre/cmd/README.md)
+and [Mocha](https://github.com/celestiaorg/celestia-app/blob/v10.4.0-mocha/fibre/cmd/README.md)
+have further configuration details.

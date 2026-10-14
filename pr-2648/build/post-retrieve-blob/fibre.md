@@ -28,7 +28,7 @@ You need:
 Check `celestia version` before starting. Older node releases without the
 `fibre` API cannot run these requests. The
 [released Node API reference](/build/rpc/node-api)
-covers these methods when you select `v0.34.2-mocha`.
+covers these methods when you select `v0.34.3-mocha`.
 Select the specification that matches your node version.
 
 If you already have a synced Mocha light or bridge node with a Fibre-capable

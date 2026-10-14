@@ -29,6 +29,60 @@ Ubuntu. You can
 
 ## Quick start
 
+### Set the network
+
+Choose [the network](/operate/networks/overview) you would like to run your node on:
+
+   
+
+### Set the node type
+
+   
+
+**Light**
+
+```bash
+export NODE_TYPE=light
+```
+
+**Bridge**
+
+```bash
+export NODE_TYPE=bridge
+```
+
+**Full**
+
+```bash
+export NODE_TYPE=full
+```
+
+   
+
+### Configure the consensus endpoint
+
+celestia-node connects to consensus over gRPC via `--core.ip` and `--core.port`
+(default `9090`). Pick a consensus host from
+   [Mainnet Beta](/operate/networks/mainnet-beta#community-consensus-endpoints)
+   or [Mocha](/operate/networks/mocha-testnet#community-consensus-endpoints)
+   using the bare host (without `http://` or `https://`):
+
+   ```bash
+   export CORE_IP=consensus.example.com
+   ```
+
+Then set the gRPC port for that host (usually `9090`):
+
+   ```bash
+   export CORE_PORT=9090
+   ```
+
+### Run the container
+
+   
+
+Congratulations! You now have a celestia-node running!
+
 If you would like to run the node with custom flags,
 you can refer to the
 [celestia-node tutorial](/operate/data-availability/light-node/quickstart#start-the-light-node) page. Refer to
@@ -66,6 +120,36 @@ sudo chown 10001:10001 $HOME/my-node-store
 ```
 
 > Docker Desktop on Mac users typically do not need to change permissions.
+
+### Initialize the node store and key
+
+In order to mount a volume to the container, you need to specify
+the path to the volume. When you run your container, you can specify
+the path to the volume using the `--volume` (or `-v` for short) flag.
+In this command, we'll create our key and initialize the node store,
+using the variables we set in the [quick start](#quick-start) section:
+
+```bash
+# --volume == -v [local path]:[container path]
+docker run [args...] -v $HOME/my-node-store:/home/celestia \
+    celestia $NODE_TYPE init [args...]
+```
+
+An example init command will look similar to below:
+
+### Start the node
+
+Run the following command to start the node:
+
+```bash
+# --volume == -v [local path]:[container path]
+docker run [...args] -v $HOME/my-node-store:/home/celestia \
+    celestia <node-type> start [...args]
+```
+
+A full start command will look similar to below.
+
+Congratulations! You now have a node running with persistent storage.
 
 ## Video walkthrough
 

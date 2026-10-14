@@ -15,6 +15,23 @@ See [hardware requirements](/operate/getting-started/hardware-requirements).
 The following tutorial is done on an Ubuntu Linux 24.04 (LTS) x64
 instance machine.
 
+### Set up the dependencies
+
+Follow the instructions on [installing dependencies](/operate/getting-started/environment-setup).
+
+### Install celestia-app
+
+Follow the tutorial on [installing `celestia-app`](/operate/consensus-validators/install-celestia-app).
+
+### Set up the P2P networks
+
+To initialize the network, pick a "node-name" that describes your
+node. Keep in mind that this might change if a new testnet is deployed.
+
+Download the `genesis.json` file:
+
+Set seeds in the `$HOME/.celestia-app/config/config.toml` file:
+
 #### Optional: Set persistent peers
 
 You can set persistent peers in your `config.toml` file. If you set persistent peers, your node will **always** try to connect to these peers. This is useful when running a local devnet, for example, when you would always want to connect to the same local nodes in your devnet. In production, setting persistent peers is advised only if you are running a [sentry node](https://hub.cosmos.network/main/validators/security.html#sentry-nodes-ddos-protection).

@@ -48,6 +48,71 @@ The following tutorial is done on an Ubuntu Linux 20.04 (LTS) x64 instance machi
 
 Deploy the Celestia bridge node with the following steps.
 
+### Setup the dependencies
+
+Follow the tutorial for [installing the dependencies](/operate/getting-started/environment-setup).
+
+### Install Celestia Node
+
+Install the `celestia-node` binary, which will be used to run the bridge node.
+
+Follow the tutorial for [installing `celestia-node`](/operate/data-availability/install-celestia-node).
+
+### Initialize the bridge node
+
+Run the following:
+
+```sh
+celestia bridge init --core.ip <URI> --core.port <port>
+```
+
+After v0.21.5, the `--core.port` must be specified.
+In most cases, it is port 9090 by default.
+
+> **Warning:** Make sure port 2121 TCP/UDP is open and publicly accessible on your bridge node so it can be discovered by other peers in the DHT network. This port is essential for P2P connectivity and if not properly configured, your node won't be able to participate in the network effectively.
+
+Refer to
+[the ports section of the celestia-node troubleshooting page](/operate/maintenance/troubleshooting#ports)
+for information on which ports are required to be open on your machine.
+
+Using an RPC of your own, or one from the
+[list on the Mocha testnet page](/operate/networks/mocha-testnet#community-rpc-endpoints),
+start your node.
+
+Connecting to a consensus node endpoint (flag: `--core.ip string`)
+provides the light node with access to state queries (reading balances, submitting
+transactions, and other state-related queries).
+
+Here is an example of initializing the bridge node:
+
+### Run the bridge node
+
+Start the bridge node with a connection to a consensus node's gRPC endpoint, which is usually exposed on port 9090:
+
+```sh
+celestia bridge start --core.ip <URI> --core.port <port>
+```
+
+Here is an example of starting the bridge node on Mocha:
+
+```sh
+celestia bridge start --core.ip <archival-consensus-endpoint> --core.port 9090 --p2p.network mocha
+```
+
+Bridge nodes sync headers from genesis and require an archival consensus node. Public RPC endpoints are typically pruned and will not work for initial sync. Use your own archival consensus node or an archival endpoint from an infrastructure provider.
+
+If you're connecting your bridge node to a localhost consensus node (`--core.ip localhost` or `--core.ip 127.0.0.1`), ensure that gRPC is enabled in your consensus node's `app.toml` configuration file. Look for the `[grpc]` section and verify that `enable = true` is set:
+
+```toml
+[grpc]
+# Enable defines if the gRPC server should be enabled.
+enable = true
+# Address defines the gRPC server address to bind to.
+address = "localhost:9090"
+```
+
+Without proper gRPC configuration, the bridge node will not be able to connect to the consensus node.
+
 You can create your key for your node by [following the `cel-key` instructions](/operate/keys-wallets/celestia-node-key).
 
 Once you start the bridge node, a wallet key will be generated for you.
