@@ -2449,13 +2449,13 @@ Source: app/page.mdx
   Celestia is the modular blockchain powering unstoppable apps with full-stack
   control.
 
-[📚 Learn Understand modular blockchains and Celestia's architecture](/learn/celestia-101/data-availability)
+[Learn](/learn/celestia-101/data-availability): Understand modular blockchains and Celestia's architecture
 
-[🛠️ Build Start building applications on Celestia's data availability layer](/build/post-retrieve-blob/overview/)
+[Build](/build/post-retrieve-blob/overview/): Start building applications on Celestia's data availability layer
 
-[⚙️ Operate Run and maintain Celestia nodes and infrastructure](/operate/getting-started/overview/)
+[Operate](/operate/getting-started/overview/): Run and maintain Celestia nodes and infrastructure
 
-[🔌 API Reference for Celestia's node RPC methods and client libraries](/build/rpc/node-api)
+[API](/build/rpc/node-api): Reference for Celestia's node RPC methods and client libraries
 
 ---
 Title: Security and audits
