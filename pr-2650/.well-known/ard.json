@@ -1,4 +1,9 @@
 {
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "Celestia docs",
+    "identifier": "did:web:docs.celestia.org"
+  },
   "entries": [
     {
       "identifier": "urn:air:docs.celestia.org:skill:celestia",
