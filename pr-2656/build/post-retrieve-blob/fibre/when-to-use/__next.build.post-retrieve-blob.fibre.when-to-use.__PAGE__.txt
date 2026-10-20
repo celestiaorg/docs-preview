@@ -1,0 +1,147 @@
+1:"$Sreact.fragment"
+2:I[27603,["2545","static/chunks/c16f53c3-91823fac9848ebbe.js","9300","static/chunks/9300-6f1e6763cbe1eb03.js","4503","static/chunks/4503-aad86e62432f800e.js","9769","static/chunks/app/build/post-retrieve-blob/fibre/when-to-use/page-8d2fa4d0d2c98d28.js"],"WrapperWithFooter"]
+3:T163e,---
+description: Decide whether Fibre fits your workload, and learn what it guarantees and what it does not.
+---
+
+# When to use Fibre
+
+This guide covers Fibre clients on celestia-app
+`{{mainnetVersions['app-latest-tag']}}` (Mocha: `{{mochaVersions['app-latest-tag']}}`)
+and celestia-node `{{mainnetVersions['node-latest-tag']}}`. Fibre runs on
+Mainnet Beta and Mocha, starting from app version 10.
+
+{/* src shorthand: app@<tag>:<path> = celestia-app at that tag; node@<tag>:<path> = celestia-node at that tag; docs:<path> = a page on docs.celestia.org */}
+{/* src: docs: constants/mainnet_versions.json (app v10.4.0, node v0.34.3); constants/mocha_versions.json (app v10.4.0-mocha); node@v0.34.3:go.mod (celestia-app/v10 v10.4.0) */}
+{/* src: app@v10.4.0:x/fibre/README.md ("available starting from app version 10") */}
+
+## How Fibre works
+
+1. You deposit funds into an **escrow account**.
+2. Your client encodes the blob and signs a **payment promise** for it.
+3. Your client uploads pieces of the blob (shards) directly to validators'
+   **Fibre servers**.
+4. Each server checks its shard and the promise, stores the shard, and returns
+   a signature.
+5. When validators holding **at least 2/3 of total voting power** (rounded
+   down) have signed, your client submits `MsgPayForFibre`. The chain charges
+   your escrow and records a small on-chain blob with the commitment.
+6. Anyone with the **blob ID** can download the blob from the Fibre servers
+   until retention ends.
+
+{/* src: app@v10.4.0:x/fibre/README.md (flow); app@v10.4.0:specs/src/fibre_client.md sections 8-10 */}
+
+## Key terms
+
+| Term | Meaning |
+|---|---|
+| Fibre server | A server run by a validator. It stores and serves blob shards. Also called a Fibre provider. |
+| Escrow account | Prepaid funds that pay for Fibre storage. Separate from your wallet balance. |
+| Payment promise | A message your key signs for each blob. It promises payment from your escrow. |
+| `MsgPayForFibre` (PFF) | The transaction that settles a payment promise on chain. |
+| Quorum | Signatures from validators holding at least 2/3 of total voting power (rounded down). Needed to settle a blob. |
+| Blob ID | 33 bytes: blob version plus commitment. You use it to download the blob. |
+| Retention | How long Fibre servers must keep your shards, counted from promise creation. Set by the `shard_retention` parameter. |
+
+## Fibre compared with regular blobs
+
+| | Fibre | Regular blobs (PayForBlob) |
+|---|---|---|
+| Where the data lives | On validators' Fibre servers, for a limited time | In the block's data square |
+| What goes on chain | `MsgPayForFibre` and a small blob with the commitment | The full blob data |
+| Maximum size per blob | 128 MiB minus 5 bytes | Bounded by the 8 MiB maximum transaction size |
+| How you pay | Prepaid escrow, plus gas for the settlement transaction | Gas fee for the transaction |
+| How you read it back | `fibre.Download` with the blob ID | `blob.Get` with height, namespace and commitment |
+
+{/* src: app@v10.4.0:fibre/protocol_params.go (MaxBlobSize 1<<27); app@v10.4.0:fibre/blob.go (5-byte header) */}
+{/* src: app@v10.4.0:pkg/appconsts/app_consts.go (MaxTxSize 8 MiB) */}
+{/* src: app@v10.4.0:specs/src/fibre_module.md "Data Square Construction" (system blob holds the commitment) */}
+{/* src: docs:/build/post-retrieve-blob/fibre (blob_id vs height/namespace/commitment) */}
+
+## Fibre is a good fit when
+
+- Your blobs are large: from several MiB up to 128 MiB.
+- You need high data throughput and don't need the bytes stored in blocks.
+- You can keep your own copy of the data, or only need it to be available
+  for a short window.
+
+## Fibre is not a good fit when
+
+- You need the data to stay retrievable for days or longer. Fibre is not
+  archival storage.
+- Your blobs are tiny. Every Fibre blob is charged for at least 256 KiB.
+  See [pricing](/build/post-retrieve-blob/fibre/getting-started#4-estimate-the-cost).
+
+{/* src: app@v10.4.0:fibre/README.md "Notes" (not archival) */}
+
+## What Fibre guarantees
+
+- **Upload:** a settled blob carries signed storage attestations from
+  validators holding at least 2/3 of total voting power (rounded down).
+- **Download:** shards from validators holding about 1/3 of voting power
+  are enough to rebuild the blob.
+- **Integrity:** every honest downloader of the same blob ID gets
+  byte-identical data.
+- **Retention:** servers keep shards until the later of two times: the
+  promise's creation time plus `shard_retention` (default 4 hours), or the
+  promise's expiry. The window is counted from promise creation, not upload.
+
+{/* src: app@v10.4.0:fibre/protocol_params.go (SafetyThreshold 2/3, LivenessThreshold 1/3) */}
+{/* src: app@v10.4.0:x/fibre/keeper/msg_server.go validateValidatorSignatures (NewSignatureSet 2/3); app@v10.4.0:fibre/validator/signature_set.go NewSignatureSet (min = total*2/3, integer division) */}
+{/* src: app@v10.4.0:fibre/client_download.go Download doc comment (byte-identical data) */}
+{/* src: app@v10.4.0:fibre/server_upload.go shardPruneAt (max(creation_timestamp + shard_retention, promise expiration)); app@v10.4.0:x/fibre/keeper/keeper.go validatePaymentPromiseStatefulInternal (expiration = creation_timestamp + payment_promise_timeout) */}
+{/* src: app@v10.4.0:x/fibre/types/params.go DefaultShardRetention (4h) */}
+
+## What Fibre does not guarantee
+
+- **Permanent storage.** After retention, servers may delete shards. Keep
+  your own copy.
+- **That the content is "right".** The blob ID binds the bytes, not their
+  meaning. Check the content in your application.
+
+{/* src: app@v10.4.0:fibre/client_download.go Download doc comment ("deciding whether that data is the right data is the caller's responsibility") */}7:X
+c:X
+c:C
+0:{"buildId":"Tqe0qC9YyOkIZmx1ZjB2Q","data":[{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"metadata":{"description":"Decide whether Fibre fits your workload, and learn what it guarantees and what it does not.","title":"When to use Fibre","filePath":"app/build/post-retrieve-blob/fibre/when-to-use/page.mdx","timestamp":1792504235000},"toc":[{"value":"How Fibre works","id":"how-fibre-works","depth":2},{"value":"Key terms","id":"key-terms","depth":2},{"value":"Fibre compared with regular blobs","id":"fibre-compared-with-regular-blobs","depth":2},{"value":"Fibre is a good fit when","id":"fibre-is-a-good-fit-when","depth":2},{"value":"Fibre is not a good fit when","id":"fibre-is-not-a-good-fit-when","depth":2},{"value":"What Fibre guarantees","id":"what-fibre-guarantees","depth":2},{"value":"What Fibre does not guarantee","id":"what-fibre-does-not-guarantee","depth":2}],"sourceCode":"$3","children":"$L4"}],null,"$L5"]}],"isPartial":"$@6","staleTime":"$7","varyParams":null},{"rsc":"$L8","isPartial":"$@9","staleTime":"$7","varyParams":null},{"rsc":"$La","isPartial":"$@b","staleTime":"$7","varyParams":"$c"},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$7","varyParams":"$c"},{"rsc":"$Lf","isPartial":"$@10","staleTime":"$7","varyParams":"$c"},{"rsc":"$L11","isPartial":"$@12","staleTime":"$7","varyParams":"$c"}],"isUpgradeableISRFallback":false,"a":"$@13","rootVaryParams":null,"needsRuntimeRequest":"$@14"}
+15:I[90721,["2545","static/chunks/c16f53c3-91823fac9848ebbe.js","9300","static/chunks/9300-6f1e6763cbe1eb03.js","4503","static/chunks/4503-aad86e62432f800e.js","9769","static/chunks/app/build/post-retrieve-blob/fibre/when-to-use/page-8d2fa4d0d2c98d28.js"],"HeadingAnchor"]
+25:I[90484,[],"OutletBoundary"]
+26:"$Sreact.suspense"
+28:I[90484,[],"ViewportBoundary"]
+29:I[90484,[],"MetadataBoundary"]
+2a:I[86869,[],"IconMark"]
+2b:I[57121,[],""]
+2c:I[74581,[],""]
+4:[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["When to use Fibre","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This guide covers Fibre clients on celestia-app\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"v10.4.0"}]," (Mocha: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"v10.4.0-mocha"}],")\nand celestia-node ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"v0.34.3"}],". Fibre runs on\nMainnet Beta and Mocha, starting from app version 10."]}],"\n","\n","\n","\n",["$","h2",null,{"id":"how-fibre-works","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["How Fibre works",["$","$L15",null,{"id":"how-fibre-works"}]]}],"\n",["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["You deposit funds into an ",["$","strong",null,{"children":"escrow account"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Your client encodes the blob and signs a ",["$","strong",null,{"children":"payment promise"}]," for it."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Your client uploads pieces of the blob (shards) directly to validators’\n",["$","strong",null,{"children":"Fibre servers"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Each server checks its shard and the promise, stores the shard, and returns\na signature."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["When validators holding ",["$","strong",null,{"children":"at least 2/3 of total voting power"}]," (rounded\ndown) have signed, your client submits ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"MsgPayForFibre"}],". The chain charges\nyour escrow and records a small on-chain blob with the commitment."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Anyone with the ",["$","strong",null,{"children":"blob ID"}]," can download the blob from the Fibre servers\nuntil retention ends."]}],"\n"]}],"\n","\n",["$","h2",null,{"id":"key-terms","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Key terms",["$","$L15",null,{"id":"key-terms"}]]}],"\n",["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Term","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Meaning","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Fibre server","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"A server run by a validator. It stores and serves blob shards. Also called a Fibre provider.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Escrow account","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Prepaid funds that pay for Fibre storage. Separate from your wallet balance.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L16","$L17","$L18","$L19","$L1a"]}]]}],"\n","$L1b","\n","$L1c","\n","\n","\n","\n","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","\n","$L21","\n","$L22","\n","\n","\n","\n","\n","\n","$L23","\n","$L24","\n"]
+5:["$","$L25",null,{"children":["$","$26",null,{"name":"Next.MetadataOutlet","children":"$@27"}]}]
+8:["$","$1","h",{"children":[null,["$","$L28",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L29",null,{"children":["$","$26",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Celestia docs - Modular data availability"}],["$","meta","1",{"name":"description","content":"Learn, build, and operate on Celestia - the modular data availability network."}],["$","meta","2",{"name":"robots","content":"index, follow"}],["$","meta","3",{"name":"googlebot","content":"index, follow"}],["$","meta","4",{"name":"is-agentic-site-type","content":"content"}],["$","meta","5",{"property":"og:title","content":"Celestia Documentation"}],["$","meta","6",{"property":"og:description","content":"Learn, build, and operate on Celestia - the modular data availability network."}],["$","meta","7",{"property":"og:site_name","content":"Celestia Documentation"}],["$","meta","8",{"property":"og:image","content":"https://docs.celestia.org/Celestia-og.png"}],["$","meta","9",{"property":"og:image:width","content":"1200"}],["$","meta","10",{"property":"og:image:height","content":"630"}],["$","meta","11",{"property":"og:image:alt","content":"Celestia Documentation"}],["$","meta","12",{"property":"og:type","content":"website"}],["$","meta","13",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","14",{"name":"twitter:site","content":"@CelestiaOrg"}],["$","meta","15",{"name":"twitter:title","content":"Celestia Documentation"}],["$","meta","16",{"name":"twitter:description","content":"Learn, build, and operate on Celestia - the modular data availability network."}],["$","meta","17",{"name":"twitter:image","content":"https://docs.celestia.org/Celestia-og.png"}],["$","link","18",{"rel":"icon","href":"/docs-preview/pr-2656/favicon.ico?603d046c9a6fdfbb","type":"image/x-icon","sizes":"16x16"}],["$","$L2a","19",{}]]}]}]}],null]}]
+a:["$","$1","c",{"children":[null,["$","$L2b",null,{"parallelRouterKey":"children","template":["$","$L2c",null,{}]}]]}]
+d:["$","$1","c",{"children":[null,["$","$L2b",null,{"parallelRouterKey":"children","template":["$","$L2c",null,{}]}]]}]
+f:["$","$1","c",{"children":[null,["$","$L2b",null,{"parallelRouterKey":"children","template":["$","$L2c",null,{}]}]]}]
+11:["$","$1","c",{"children":[null,["$","$L2b",null,{"parallelRouterKey":"children","template":["$","$L2c",null,{}]}]]}]
+14:true
+2d:I[98500,["2545","static/chunks/c16f53c3-91823fac9848ebbe.js","9300","static/chunks/9300-6f1e6763cbe1eb03.js","4503","static/chunks/4503-aad86e62432f800e.js","9769","static/chunks/app/build/post-retrieve-blob/fibre/when-to-use/page-8d2fa4d0d2c98d28.js"],""]
+16:["$","tr",null,{"children":[["$","td",null,{"children":"Payment promise","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"A message your key signs for each blob. It promises payment from your escrow.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+17:["$","tr",null,{"children":[["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"MsgPayForFibre"}]," (PFF)"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The transaction that settles a payment promise on chain.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+18:["$","tr",null,{"children":[["$","td",null,{"children":"Quorum","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Signatures from validators holding at least 2/3 of total voting power (rounded down). Needed to settle a blob.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+19:["$","tr",null,{"children":[["$","td",null,{"children":"Blob ID","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"33 bytes: blob version plus commitment. You use it to download the blob.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+1a:["$","tr",null,{"children":[["$","td",null,{"children":"Retention","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["How long Fibre servers must keep your shards, counted from promise creation. Set by the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"shard_retention"}]," parameter."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+1b:["$","h2",null,{"id":"fibre-compared-with-regular-blobs","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Fibre compared with regular blobs",["$","$L15",null,{"id":"fibre-compared-with-regular-blobs"}]]}]
+1c:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Fibre","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Regular blobs (PayForBlob)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Where the data lives","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"On validators’ Fibre servers, for a limited time","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"In the block’s data square","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"What goes on chain","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"MsgPayForFibre"}]," and a small blob with the commitment"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The full blob data","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Maximum size per blob","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"128 MiB minus 5 bytes","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Bounded by the 8 MiB maximum transaction size","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"How you pay","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Prepaid escrow, plus gas for the settlement transaction","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Gas fee for the transaction","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"How you read it back","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"fibre.Download"}]," with the blob ID"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"blob.Get"}]," with height, namespace and commitment"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+1d:["$","h2",null,{"id":"fibre-is-a-good-fit-when","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Fibre is a good fit when",["$","$L15",null,{"id":"fibre-is-a-good-fit-when"}]]}]
+1e:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Your blobs are large: from several MiB up to 128 MiB."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"You need high data throughput and don’t need the bytes stored in blocks."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"You can keep your own copy of the data, or only need it to be available\nfor a short window."}],"\n"]}]
+1f:["$","h2",null,{"id":"fibre-is-not-a-good-fit-when","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Fibre is not a good fit when",["$","$L15",null,{"id":"fibre-is-not-a-good-fit-when"}]]}]
+20:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"You need the data to stay retrievable for days or longer. Fibre is not\narchival storage."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Your blobs are tiny. Every Fibre blob is charged for at least 256 KiB.\nSee ",["$","$L2d",null,{"href":"/build/post-retrieve-blob/fibre/getting-started#4-estimate-the-cost","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"pricing"}],"."]}],"\n"]}]
+21:["$","h2",null,{"id":"what-fibre-guarantees","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What Fibre guarantees",["$","$L15",null,{"id":"what-fibre-guarantees"}]]}]
+22:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Upload:"}]," a settled blob carries signed storage attestations from\nvalidators holding at least 2/3 of total voting power (rounded down)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Download:"}]," shards from validators holding about 1/3 of voting power\nare enough to rebuild the blob."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Integrity:"}]," every honest downloader of the same blob ID gets\nbyte-identical data."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Retention:"}]," servers keep shards until the later of two times: the\npromise’s creation time plus ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"shard_retention"}]," (default 4 hours), or the\npromise’s expiry. The window is counted from promise creation, not upload."]}],"\n"]}]
+23:["$","h2",null,{"id":"what-fibre-does-not-guarantee","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What Fibre does not guarantee",["$","$L15",null,{"id":"what-fibre-does-not-guarantee"}]]}]
+24:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Permanent storage."}]," After retention, servers may delete shards. Keep\nyour own copy."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"That the content is “right”."}]," The blob ID binds the bytes, not their\nmeaning. Check the content in your application."]}],"\n"]}]
+27:null
+7:300
+7:C
+13:0
+9:"$undefined"
+b:"$undefined"
+e:"$undefined"
+10:"$undefined"
+12:"$undefined"
+6:"$undefined"

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+  "skills": [
+    {
+      "name": "celestia",
+      "type": "skill-md",
+      "description": "Route Celestia requests to the correct repo and apply canonical blob submit/retrieve guidance with docs guardrails.",
+      "url": "https://docs.celestia.org/.well-known/agent-skills/celestia/SKILL.md",
+      "digest": "sha256:b2141c14e2bc7f03a4692c17859dc0085a3d9a8b806155d349291ce84bac72e0"
+    }
+  ]
+}
